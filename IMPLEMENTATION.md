@@ -1,0 +1,383 @@
+# COMMON GROUND: Implementation Guide
+
+This is the build manual for COMMON GROUND. The product plan and reasoning are in [`common_ground_research_and_plan.md`](common_ground_research_and_plan.md) (Revision 3.0). This file says **what to build, in what order, and how to commit it.**
+
+Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, `1.2`, …). To run one, say:
+
+> "Implement step 2.3" or "Implement track 2"
+
+---
+
+## How an AI session should use this file
+
+When asked to implement a step or track:
+
+1. Read this file and the relevant sections of the plan.
+2. Check the **Progress tracker** below. Don't redo finished steps. If a step depends on an unfinished one, say so and stop.
+3. Implement the step exactly as specified. If reality differs from the spec (e.g. the Qloo API behaves differently), follow reality, note the difference in `docs/DECISIONS.md`, and update this file.
+4. **Commit in small, meaningful pieces while working** (see the commit rules). Don't wait until the end.
+5. Run the step's **Done when** checks.
+6. Tick the step in the progress tracker, commit that change, and `git push`.
+7. Reply with a short summary: what was built, which commits were made, and anything blocked.
+
+Never commit secrets. The Qloo key and LLM key live only in `.env.local`, which is git-ignored.
+
+---
+
+## Commit rules (always follow)
+
+The aim is a clean, honest history with many commits. Each commit should be one small but real step that a reviewer could understand on its own.
+
+- **One logical change per commit.** Adding a type, adding a function, adding its test, and wiring it in are separate commits.
+- **Typical step = 3–8 commits.** If a step ends with one giant commit, it was committed wrong.
+- **Commit whenever something works**: a script runs, a test passes, a screen renders.
+- **Format:** [Conventional Commits](https://www.conventionalcommits.org/)
+  ```text
+  feat(engine): add harmonic-mean bilateral lift scoring
+  test(engine): cover one-sided candidates in lift scoring
+  fix(qloo): send API key in X-Api-Key header
+  docs(spike): record popularity baseline findings
+  chore: add .env.example
+  refactor(ui): extract BridgeCard component
+  ```
+  Scopes: `qloo`, `spike`, `engine`, `agent`, `api`, `ui`, `intake`, `eval`, `docs`, `deploy`.
+- **Every commit must build/run.** Don't commit broken code to `main`.
+- **No fake commits.** No empty commits, whitespace-only commits, or splitting one line across commits. Many commits come from working in small steps, not from padding.
+- **Push after every step** (`git push`), so the GitHub contribution graph updates daily.
+- Commit author must use the email verified on the GitHub account (`Dhamani-aryan`), or commits won't count on the profile.
+- End every commit message with the attribution line the session's tooling requires (if any).
+
+---
+
+## Progress tracker
+
+| Step | Title | Status |
+|---|---|---|
+| 0.1 | Repository, plan, guide, license | ✅ done |
+| 1.1 | Project scaffold (Next.js + TS + tooling) | ⬜ |
+| 1.2 | Environment and secrets handling | ⬜ |
+| 1.3 | Typed Qloo client | ⬜ |
+| 1.4 | Spike script: entity resolution | ⬜ |
+| 1.5 | Spike script: A / B / combined Insights | ⬜ |
+| 1.6 | Spike script: popularity baseline and lift | ⬜ |
+| 1.7 | Spike script: explainability, compare, location | ⬜ |
+| 1.8 | Spike findings and go/pivot decision | ⬜ |
+| 2.1 | Core domain types and evidence ledger | ⬜ |
+| 2.2 | Seed resolution service | ⬜ |
+| 2.3 | Profile expansion across domains | ⬜ |
+| 2.4 | Candidate generation | ⬜ |
+| 2.5 | Bilateral validation | ⬜ |
+| 2.6 | Normalization and popularity lift | ⬜ |
+| 2.7 | Bridge Potential scoring and diverse selection | ⬜ |
+| 2.8 | Engine CLI and fixture-based tests | ⬜ |
+| 3.1 | LLM client with structured (Zod) outputs | ⬜ |
+| 3.2 | Domain planner | ⬜ |
+| 3.3 | Bridge notes (activity fit, friction) | ⬜ |
+| 3.4 | Program generator: entity lineup | ⬜ |
+| 3.5 | Critic pass and evidence guard | ⬜ |
+| 3.6 | LLM-only baseline | ⬜ |
+| 3.7 | Orchestrator, state machine, and event stream | ⬜ |
+| 3.8 | Analysis API routes | ⬜ |
+| 4.1 | Design system and layout shell | ⬜ |
+| 4.2 | Screen 1: profiles and seed confirmation | ⬜ |
+| 4.3 | Participant intake page and KV store | ⬜ |
+| 4.4 | Screen 2: live agent investigation | ⬜ |
+| 4.5 | Screen 3: bridge comparison (Obvious vs Discovered) | ⬜ |
+| 4.6 | Screen 4: program lineup and provenance | ⬜ |
+| 4.7 | With/without-Qloo comparison view | ⬜ |
+| 4.8 | Empty, partial, error, and insufficient-evidence states | ⬜ |
+| 5.1 | Prebuilt scenarios and response caching | ⬜ |
+| 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ⬜ |
+| 5.3 | Evaluation run (6 cases + ablation) | ⬜ |
+| 5.4 | Deployment to Vercel | ⬜ |
+| 5.5 | README, architecture, limitations, responsible use | ⬜ |
+| 5.6 | Screenshots, submission copy, final checks | ⬜ |
+
+---
+
+## Target repository layout
+
+```text
+qloo-hackathon/
+├── common_ground_research_and_plan.md
+├── IMPLEMENTATION.md
+├── CLAUDE.md
+├── README.md
+├── LICENSE
+├── .env.example
+├── docs/
+│   ├── DECISIONS.md          design decisions and spec deviations
+│   ├── SPIKE_FINDINGS.md     results of Track 1
+│   ├── EVALUATION.md         results of 5.3
+│   └── screenshots/
+├── spike/                    throwaway exploration scripts (tsx)
+├── fixtures/                 sanitized Qloo responses used by tests
+├── src/
+│   ├── app/                  Next.js App Router pages + API routes
+│   ├── components/
+│   ├── lib/
+│   │   ├── qloo/             Qloo client + response normalizers
+│   │   ├── engine/           deterministic bridge engine
+│   │   ├── agent/            orchestrator, planner, generator, critic
+│   │   ├── llm/              LLM client
+│   │   ├── intake/           participant intake store
+│   │   └── types.ts
+│   └── scenarios/            prebuilt demo scenarios
+└── tests/
+```
+
+**Stack:** Next.js (App Router) + TypeScript (strict) + Tailwind CSS + Zod + Vitest + `tsx` for scripts. npm as the package manager. Anthropic SDK for the LLM (model from env `LLM_MODEL`, default `claude-sonnet-5` for latency). Upstash Redis for intake only. Deploy on Vercel.
+
+---
+
+# Track 0: Setup ✅
+
+### Step 0.1: Repository, plan, guide, license ✅
+Repo `qloo-hackathon` created with the plan, this guide, `CLAUDE.md`, `README.md`, MIT `LICENSE`, and `.gitignore`.
+
+---
+
+# Track 1: Foundation and API spike
+
+**Goal:** find out from live data whether the idea works before building the product.
+**Exit gate:** `docs/SPIKE_FINDINGS.md` answers the decisive question (plan §18) with a go/pivot decision.
+**Needs:** Qloo hackathon API key.
+
+### Step 1.1: Project scaffold
+- `npx create-next-app@latest` in the repo root (TypeScript, App Router, Tailwind, ESLint, `src/` dir, no Turbopack-specific config needed). Don't overwrite the existing docs.
+- Add Vitest, Zod, `tsx`, Prettier. Scripts: `dev`, `build`, `lint`, `test`, `typecheck`, `spike`.
+- Enable `strict` in `tsconfig.json`.
+- Replace the default home page with a one-line placeholder ("COMMON GROUND: coming soon").
+
+**Commits:** scaffold → add vitest + sample test → add prettier/typecheck scripts → placeholder page.
+**Done when:** `npm run build`, `npm test`, and `npm run typecheck` pass.
+
+### Step 1.2: Environment and secrets
+- `.env.example` with `QLOO_API_KEY=`, `QLOO_BASE_URL=https://hackathon.api.qloo.com`, `ANTHROPIC_API_KEY=`, `LLM_MODEL=claude-sonnet-5`, `UPSTASH_REDIS_REST_URL=`, `UPSTASH_REDIS_REST_TOKEN=`.
+- `src/lib/env.ts`: Zod-validated server-only env loader (`import "server-only"` for app code; a plain variant for scripts).
+- Confirm `.env.local` is git-ignored.
+
+**Commits:** env example → validated env loader → test for missing-key error.
+**Done when:** a missing key gives a clear error and no secret appears in `git status`.
+
+### Step 1.3: Typed Qloo client
+`src/lib/qloo/client.ts`, implementing the `QlooClient` interface from plan §13:
+- `searchEntities`, `searchTags`, `getInsights`, `compareProfiles`.
+- GET requests with query params; key in `X-Api-Key`; base URL from env.
+- Timeout (8s), at most 2 retries with exponential backoff on 429/5xx, no retry on 4xx.
+- Optional raw-response dump to `spike/out/` when `QLOO_DUMP=1` (git-ignored).
+- Normalizers in `src/lib/qloo/normalize.ts` turn raw responses into internal types (`EntityMatch`, `InsightsResult`). **Warn when a 200 response has empty results**, because Qloo may silently ignore bad params.
+
+**Commits:** request helper + errors → search methods → insights method → compare method → normalizers → unit tests with mocked fetch.
+**Done when:** tests pass, and one live call from a quick script returns entities.
+
+### Step 1.4: Spike, entity resolution
+`spike/01-resolve.ts`:
+- Input: `spike/seeds.json` with two scenarios (Campus ↔ City first, Jaipur backup), each with 2 communities and 6–8 seeds across ≥2 domains (artists, films, books, TV, places).
+- Resolve each seed through `/search`; print top 3 matches with type and ID.
+- Write resolved IDs to `spike/out/resolved.json` and the hit rate per scenario to the console.
+
+**Commits:** seed file → resolve script → results summary.
+**Done when:** each seed has a confirmed ID or is marked unresolved, and the resolution rate per scenario is recorded.
+
+### Step 1.5: Spike, A / B / combined Insights
+`spike/02-insights.ts`:
+- For each output type (movie, artist, tv_show, book, place, brand, videogame, destination; exact URNs from the hackathon docs), query Insights with: A seeds, B seeds, A+B seeds. `take=25`.
+- Record result count, latency, and the numeric fields present (affinity, popularity, rank, …).
+- Find overlap: entities in both A and B results.
+- Save fixtures (sanitized) to `fixtures/`.
+
+**Commits:** insights script → overlap analysis → fixtures.
+**Done when:** a table of type × {A, B, A+B, overlap count, latency} exists.
+
+### Step 1.6: Spike, popularity baseline and lift ⭐ (most important)
+`spike/03-lift.ts`:
+- Test each baseline option from plan §8 Stage 5b: entity popularity field; neutral/no-signal query rank; popularity filter cap.
+- For each overlap candidate compute `liftA`, `liftB`, and harmonic mean.
+- Print two lists side by side: **top by raw bilateral support** vs **top by bilateral lift**.
+- A person (the user) reads the lift list and judges: are ≥3 items non-obvious and plausible for both groups?
+
+**Commits:** baseline fetchers → lift computation → side-by-side report.
+**Done when:** the side-by-side report exists for Campus ↔ City and the user has given their verdict.
+
+### Step 1.7: Spike, explainability, compare, location
+`spike/04-features.ts`:
+- `feature.explainability=true` on the A+B query: does it return per-seed contributions?
+- `/v2/analysis/compare` with A vs B: what does it return, and is it useful?
+- `filter.results.entities` shortlist scoring against A and against B.
+- Location: the same Insights call for `place` with the candidate city; check that the results are real local venues.
+- Taste analysis (`filter.type=urn:tag`) for theme labels.
+
+**Commits:** one commit per feature tested, plus a fixture commit.
+**Done when:** each feature is marked works / partial / unavailable.
+
+### Step 1.8: Spike findings and decision
+Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan §18, the chosen popularity baseline, the 3–5 production domains, the chosen city, latency per call, and **the decision: GO / extra day / PIVOT**. Update the plan and this guide if anything changes.
+
+**Commits:** findings doc → plan/guide adjustments.
+**Done when:** the decision is recorded. **Don't start Track 4 before this.**
+
+---
+
+# Track 2: Bridge engine (deterministic, no LLM)
+
+**Goal:** profiles in, ranked bridges with evidence out. Reproducible and fully tested on fixtures.
+**Exit gate:** every ranked candidate links to stored Qloo evidence (plan §17 gate).
+
+### Step 2.1: Core types and evidence ledger
+`src/lib/types.ts` and `src/lib/engine/ledger.ts`:
+- Types: `Seed`, `CommunityProfile` (with `source: "intake" | "organizer"` and `contributorCount`), `Candidate`, `Evidence` (schema in plan §13 incl. `popularityBaseline`, `lift`), `Bridge`, `AnalysisResult`.
+- `EvidenceLedger` class: `add(evidence) → evidenceId`, `forCandidate(id)`, `toJSON()`.
+- Zod schemas mirror the types.
+
+**Commits:** types → Zod schemas → ledger → ledger tests.
+
+### Step 2.2: Seed resolution service
+`src/lib/engine/resolve.ts`: input strings in, `EntityMatch[]` candidates per seed out, with ambiguity flags (top-2 score gap small, or type mismatch). Seeds stay unconfirmed until the user confirms them.
+
+**Commits:** resolver → ambiguity rules → tests on fixtures.
+
+### Step 2.3: Profile expansion
+`src/lib/engine/expand.ts`: for each production domain, run A, B, and A+B Insights queries with bounded concurrency (max 4 in flight) and a per-analysis call budget. Every result row is written to the ledger.
+
+**Commits:** expansion → concurrency/budget limiter → tests.
+
+### Step 2.4: Candidate generation
+`src/lib/engine/candidates.ts`: build the pool from overlap in A∩B, combined results with two-sided explainability contributions (if available), and compare/tag support. Deduplicate by entity ID. Record which rule admitted each candidate.
+
+**Commits:** overlap rule → combined/explainability rule → tag rule → dedupe + tests.
+
+### Step 2.5: Bilateral validation
+`src/lib/engine/validate.ts`: score each candidate against A and against B (shortlist query with `filter.results.entities` if the spike confirmed it, else rank in the A/B lists). Reject candidates with one-sided support. Label evidence `direct | rank-based | tag-based | location-conditioned`.
+
+**Commits:** validator → rejection reasons → tests.
+
+### Step 2.6: Normalization and popularity lift
+`src/lib/engine/normalize.ts` and `lift.ts`: per-query percentile normalization, reciprocal-rank fusion across queries, and the popularity baseline chosen in 1.8. Compute `liftA`, `liftB`. Flag an **obvious bridge** (high raw, low lift).
+
+**Commits:** percentile → RRF → baseline → lift → tests including "popular item must not win" case.
+
+### Step 2.7: Bridge Potential scoring and diverse selection
+`src/lib/engine/score.ts`: the simplified formula in plan §8 Stage 6. `select.ts`: pick the top 3 *meaningfully different* bridges (different domains or themes), plus the single best obvious bridge for comparison. Return `insufficient evidence` if fewer than 1 validated candidate.
+
+**Commits:** scoring → diversity selection → insufficient-evidence path → tests.
+
+### Step 2.8: Engine CLI and fixture tests
+`spike/run-engine.ts` runs the full engine on a scenario and prints ranked JSON. An end-to-end test runs the engine against `fixtures/` with zero network calls, and its output is deterministic (snapshot).
+
+**Commits:** CLI → e2e fixture test → snapshot.
+**Done when:** the CLI prints 3 bridges + 1 obvious bridge for Campus ↔ City, and every one cites evidence IDs.
+
+---
+
+# Track 3: Agent and program generation
+
+**Goal:** the LLM plans, explains, and designs, but never invents cultural entities.
+**Exit gate:** full analysis + program from one function call, every entity in the program backed by the ledger.
+
+### Step 3.1: LLM client
+`src/lib/llm/client.ts`: Anthropic SDK wrapper; `generateStructured(schema, prompt)` with Zod validation and one repair retry; token and latency logging (no secrets, no raw profiles in logs).
+
+**Commits:** client → structured output helper → tests with mocked SDK.
+
+### Step 3.2: Domain planner
+`src/lib/agent/planner.ts`: given profiles + objective, choose 3–5 domains from the spike's supported set, with a one-line reason each. A deterministic fallback runs if the LLM fails.
+
+**Commits:** planner prompt + schema → fallback → tests.
+
+### Step 3.3: Bridge notes
+`src/lib/agent/notes.ts`: for each bridge, generate labelled notes (activity fit, main friction, why it beats the obvious bridge). They must cite evidence IDs, and the UI marks them as *interpretation*.
+
+### Step 3.4: Program generator, entity lineup
+`src/lib/agent/program.ts`: generates the program schema from plan §10, including `lineup[]`. **Guard:** every `qlooEntityId` in the lineup must exist in the ledger; unknown entities are removed and logged.
+
+**Commits:** schema → prompt → entity guard → tests (guard rejects invented entity).
+
+### Step 3.5: Critic pass and evidence guard
+`src/lib/agent/critic.ts`: runs the plan §10 checklist once, returns issues + revised program, and re-runs the entity guard on the revision. Unsupported cultural claims in prose are stripped.
+
+### Step 3.6: LLM-only baseline
+`src/lib/agent/baseline.ts`: same objective, community descriptions, and seed names, but **no Qloo data**. Produces the same program schema for side-by-side comparison.
+
+### Step 3.7: Orchestrator and event stream
+`src/lib/agent/orchestrator.ts`: the state machine from plan §9 (RESOLVE → … → EXPLAIN). It emits typed events (`domain_selected`, `qloo_query_done`, `candidate_found`, `candidate_rejected`, `bridge_ranked`, `program_ready`, `error`) through an async iterator. Only real actions are shown, with no fake chain-of-thought.
+
+### Step 3.8: Analysis API routes
+Route handlers from plan §13: `/api/entities/resolve`, `/api/analysis/start`, `/api/analysis/[id]/events` (SSE), `/api/analysis/[id]`, `/api/analysis/[id]/program`. Analysis state is kept in memory, with cache fallback for prebuilt scenarios.
+
+**Done when:** `curl` can run a full analysis and stream its events.
+
+---
+
+# Track 4: Product UI and participant intake
+
+**Goal:** the four screens + intake page, polished enough that a judge understands the product in 3 minutes.
+**Design:** clean, editorial, plenty of white space. Two community colours used consistently (A = one hue, B = another; the bridge uses a blend). Responsive down to 375px. Light and dark mode.
+
+### Step 4.1: Design system and layout shell
+Tailwind tokens (colours, type scale), app shell with a stepper (Profiles → Investigate → Bridges → Program), and reusable `Card`, `Badge`, `EvidenceChip`, `EntityTile` (image, name, type).
+
+### Step 4.2: Screen 1, profiles and seed confirmation
+Pick a prebuilt scenario or start custom. Two columns (A and B). Add seed → live Qloo resolution → confirm or choose an alternative. Objective and constraints field, optional city. Shows `source` and `contributorCount`.
+
+### Step 4.3: Participant intake page and store
+- `POST /api/intake/session` creates a session with two share links.
+- `/join/[sessionId]/[side]`: mobile-first, three favourite picks, each resolved and confirmed, plus a privacy notice.
+- Upstash Redis stores only `{entityId: count}` per side, with a TTL of 30 days.
+- Screen 1 can import an intake session as the profile.
+
+**Commits:** store module → session API → submit API → join page → import into Screen 1 → tests.
+
+### Step 4.4: Screen 2, live investigation
+Consumes the SSE stream: domains chosen, Qloo calls with counts, candidates found/rejected with reasons, and a progress indicator. Shown as a calm, scannable timeline, not a log dump.
+
+### Step 4.5: Screen 3, bridge comparison ⭐ (the centrepiece)
+The **Obvious vs Discovered** panel at the top: the obvious bridge (high raw support, low lift) next to the top discovered bridge (high lift on both sides), with A-side and B-side supporting seeds visible. Below it, three bridge cards: Bridge Potential, liftA/liftB bars, evidence breadth, locality, interpretation notes, and expandable provenance.
+
+### Step 4.6: Screen 4, program lineup
+Four session cards, each anchored to a Qloo entity (image + name + type) with "supported by A: … · B: …". Then roles, venue, accessibility, success measures, limitations, and the critic's fixes as one collapsible line. Export as Markdown/print.
+
+### Step 4.7: With/without-Qloo view
+Toggle or split view: COMMON GROUND program vs LLM-only baseline. Entities, specificity, and evidence that are missing from the baseline are highlighted automatically.
+
+### Step 4.8: Empty, partial, error, and insufficient-evidence states
+Every screen handles: no seeds resolved, ambiguous seeds, Qloo timeout, partial domain failure, no bilateral candidate ("insufficient evidence", with suggestions), and LLM failure (engine results still shown).
+
+---
+
+# Track 5: Evaluation, hardening, submission
+
+**Goal:** a reliable public demo and a repo that judges respect.
+
+### Step 5.1: Prebuilt scenarios and caching
+`src/scenarios/`: main + backup scenario with confirmed seeds. A server-side cache is keyed by normalized Qloo request, and prebuilt scenarios are warmed so the judge demo is fast and reliable.
+
+### Step 5.2: Reliability
+Per-analysis Qloo call budget, per-IP rate limit on analysis and intake, global timeouts, and graceful degradation. Tested in incognito, on mobile, on a slow network, with an invalid key, and with empty results.
+
+### Step 5.3: Evaluation run
+`eval/`: 6 fixed profile pairs (1 held out). Run three conditions (LLM-only, direct overlap, COMMON GROUND) and record the technical metrics (plan §14). Collect ~5 reviewer ratings. Write `docs/EVALUATION.md` honestly, as informal feedback.
+
+### Step 5.4: Deploy to Vercel
+Connect the repo, set env vars in Vercel (never in code), use a production URL, and smoke-test the full flow from another device.
+
+### Step 5.5: README and documentation
+README: one-sentence pitch, screenshot, live URL, how it works (diagram from plan §13), how Qloo is used, setup (`.env.example`, `npm i`, `npm run dev`), evaluation summary, known limitations, responsible-use notes (plan §15), license.
+
+### Step 5.6: Submission package
+Screenshots in `docs/screenshots/`, submission copy (plan §20), repo set to **public**, license visible in the GitHub About section, Git history checked for secrets (`git log -p | grep -i key`), and all public URLs tested logged-out. Submit by **October 29**.
+
+---
+
+## Schedule mapping (adjusts to when the key arrives)
+
+| Window | Track |
+|---|---|
+| Key arrival + 0–2 days | Track 1 (1.1–1.3 can start before the key) |
+| next ~5 days | Track 2 |
+| next ~4 days | Track 3 |
+| next ~5 days | Track 4 |
+| Oct 25–29 | Track 5 |
+| Oct 30 | Buffer only. No new features. |
+
+Steps 1.1, 1.2, and 1.3 (code only, tested with mocks) can be done **now**, before the API key arrives.
