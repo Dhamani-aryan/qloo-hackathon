@@ -57,7 +57,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 |---|---|---|
 | 0.1 | Repository, plan, guide, license | ✅ done |
 | 1.1 | Project scaffold (Next.js + TS + tooling) | ✅ done |
-| 1.2 | Environment and secrets handling | ⬜ |
+| 1.2 | Environment and secrets handling | ✅ done |
 | 1.3 | Typed Qloo client | ⬜ |
 | 1.4 | Spike script: entity resolution | ⬜ |
 | 1.5 | Spike script: A / B / combined Insights | ⬜ |
