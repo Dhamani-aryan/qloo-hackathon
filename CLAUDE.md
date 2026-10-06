@@ -5,3 +5,5 @@
 - Commit in small, meaningful Conventional Commits while working (rules in `IMPLEMENTATION.md`). Push after each step and tick the progress tracker.
 - Never commit secrets. Keys live in `.env.local` (git-ignored). Never expose the Qloo key client-side.
 - The LLM must never invent cultural entities. Every entity shown to users must come from Qloo via the evidence ledger.
+
+@AGENTS.md
