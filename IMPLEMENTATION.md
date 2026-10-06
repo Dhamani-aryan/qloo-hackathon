@@ -58,7 +58,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 0.1 | Repository, plan, guide, license | ✅ done |
 | 1.1 | Project scaffold (Next.js + TS + tooling) | ✅ done |
 | 1.2 | Environment and secrets handling | ✅ done |
-| 1.3 | Typed Qloo client | ⬜ |
+| 1.3 | Typed Qloo client | ✅ code + tests done · live check waits for key |
 | 1.4 | Spike script: entity resolution | ⬜ |
 | 1.5 | Spike script: A / B / combined Insights | ⬜ |
 | 1.6 | Spike script: popularity baseline and lift | ⬜ |
@@ -94,6 +94,15 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 5.4 | Deployment to Vercel | ⬜ |
 | 5.5 | README, architecture, limitations, responsible use | ⬜ |
 | 5.6 | Screenshots, submission copy, final checks | ⬜ |
+
+---
+
+## When the Qloo API key arrives
+
+1. Copy `.env.example` to `.env.local` and paste the key into `QLOO_API_KEY=`.
+2. Run the live check: `npm run spike spike/00-ping.ts`. All three checks should pass.
+   - `401` means a wrong key or base URL. Hackathon keys only work on `https://hackathon.api.qloo.com`.
+3. Then say **"implement step 1.4"** and continue through Track 1 (the API spike).
 
 ---
 
