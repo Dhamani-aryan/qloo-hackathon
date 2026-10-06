@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# next.js / build
+.next/
+out/
+build/
+dist/
+
+# env and secrets
+.env
+.env.local
+.env.*.local
+
+# spike raw output (may contain unsanitized API responses)
+spike/out/
+
+# misc
+.DS_Store
+Thumbs.db
+*.log
+.vercel
+coverage/
