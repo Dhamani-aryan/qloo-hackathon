@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "entity_id": "FAKE-MOVIE-0001",
+        "name": "Example Film One",
+        "type": "urn:entity:movie",
+        "subtype": "urn:entity:movie",
+        "popularity": 0.62,
+        "properties": {
+          "description": "A made-up film used only in tests.",
+          "image": { "url": "https://example.test/one.jpg" }
+        },
+        "tags": [
+          { "tag_id": "urn:tag:genre:test:drama", "name": "Drama", "type": "urn:tag:genre" }
+        ],
+        "query": {
+          "affinity": 0.91,
+          "affinity_rank": 1,
+          "explainability": {
+            "FAKE-SEED-A1": { "score": 0.7 },
+            "FAKE-SEED-B1": { "score": 0.3 }
+          }
+        }
+      },
+      {
+        "entity_id": "FAKE-MOVIE-0002",
+        "name": "Example Film Two",
+        "type": "urn:entity:movie",
+        "popularity": 0.18,
+        "properties": { "image": "https://example.test/two.jpg" },
+        "tags": ["urn:tag:genre:test:comedy"],
+        "query": { "affinity": 0.77 }
+      },
+      { "name": "Entity without an ID is dropped" }
+    ],
+    "duration": 120
+  },
+  "query": {
+    "explainability": { "all": { "FAKE-SEED-A1": 0.55, "FAKE-SEED-B1": 0.45 } }
+  }
+}

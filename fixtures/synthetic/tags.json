@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "duration": 12,
+  "results": {
+    "tags": [
+      {
+        "id": "urn:tag:keyword:test:coming_of_age",
+        "name": "Coming of age",
+        "type": "urn:tag:keyword",
+        "parents": [{ "type": "urn:entity:movie" }]
+      },
+      {
+        "id": "urn:tag:genre:test:folk",
+        "name": "Folk",
+        "type": "urn:tag:genre",
+        "parents": ["urn:entity:artist"]
+      }
+    ]
+  }
+}

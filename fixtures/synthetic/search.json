@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "duration": 30,
+  "results": [
+    {
+      "entity_id": "FAKE-ARTIST-0001",
+      "name": "Example Artist",
+      "types": ["urn:entity:artist"],
+      "disambiguation": "Made-up band",
+      "popularity": 0.8,
+      "properties": { "image": { "url": "https://example.test/artist.jpg" } }
+    },
+    {
+      "entity_id": "FAKE-ARTIST-0002",
+      "name": "Example Artist (Tribute)",
+      "types": ["urn:entity:artist"]
+    }
+  ]
+}
