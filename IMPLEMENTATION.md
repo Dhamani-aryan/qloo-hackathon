@@ -22,6 +22,8 @@ When asked to implement a step or track:
 
 Never commit secrets. The Qloo key and LLM key live only in `.env.local`, which is git-ignored.
 
+Never commit real Qloo API responses. Qloo's hackathon terms prohibit storing them in a public repository. Use git-ignored `spike/out/` or `fixtures/local/`; committed fixtures must be synthetic.
+
 ---
 
 ## Commit rules (always follow)
@@ -54,7 +56,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | Step | Title | Status |
 |---|---|---|
 | 0.1 | Repository, plan, guide, license | ✅ done |
-| 1.1 | Project scaffold (Next.js + TS + tooling) | ⬜ |
+| 1.1 | Project scaffold (Next.js + TS + tooling) | ✅ done |
 | 1.2 | Environment and secrets handling | ⬜ |
 | 1.3 | Typed Qloo client | ⬜ |
 | 1.4 | Spike script: entity resolution | ⬜ |
@@ -111,7 +113,7 @@ qloo-hackathon/
 │   ├── EVALUATION.md         results of 5.3
 │   └── screenshots/
 ├── spike/                    throwaway exploration scripts (tsx)
-├── fixtures/                 sanitized Qloo responses used by tests
+├── fixtures/                 SYNTHETIC Qloo-shaped responses for tests (real ones: fixtures/local/, git-ignored)
 ├── src/
 │   ├── app/                  Next.js App Router pages + API routes
 │   ├── components/
@@ -185,7 +187,7 @@ Repo `qloo-hackathon` created with the plan, this guide, `CLAUDE.md`, `README.md
 - For each output type (movie, artist, tv_show, book, place, brand, videogame, destination; exact URNs from the hackathon docs), query Insights with: A seeds, B seeds, A+B seeds. `take=25`.
 - Record result count, latency, and the numeric fields present (affinity, popularity, rank, …).
 - Find overlap: entities in both A and B results.
-- Save fixtures (sanitized) to `fixtures/`.
+- Save real responses to `fixtures/local/` (git-ignored). **Qloo prohibits storing its responses in a public repo** (see `docs/DECISIONS.md`). Then hand-write *synthetic* fixtures in `fixtures/` with the same shape, fake IDs and made-up names, for committed tests.
 
 **Commits:** insights script → overlap analysis → fixtures.
 **Done when:** a table of type × {A, B, A+B, overlap count, latency} exists.
@@ -263,7 +265,7 @@ Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan 
 **Commits:** scoring → diversity selection → insufficient-evidence path → tests.
 
 ### Step 2.8: Engine CLI and fixture tests
-`spike/run-engine.ts` runs the full engine on a scenario and prints ranked JSON. An end-to-end test runs the engine against `fixtures/` with zero network calls, and its output is deterministic (snapshot).
+`spike/run-engine.ts` runs the full engine on a scenario and prints ranked JSON. An end-to-end test runs the engine against the synthetic `fixtures/` with zero network calls, and its output is deterministic (snapshot).
 
 **Commits:** CLI → e2e fixture test → snapshot.
 **Done when:** the CLI prints 3 bridges + 1 obvious bridge for Campus ↔ City, and every one cites evidence IDs.

@@ -26,3 +26,6 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 *.pem
+
+# real Qloo responses must never be committed (Qloo terms)
+fixtures/local/
