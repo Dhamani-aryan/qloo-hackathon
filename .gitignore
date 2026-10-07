@@ -29,3 +29,6 @@ next-env.d.ts
 
 # real Qloo responses must never be committed (Qloo terms)
 fixtures/local/
+
+# local credentials (ChatGPT subscription sign-in)
+.secrets/
