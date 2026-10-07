@@ -1,6 +1,7 @@
 import { QlooError } from "./errors";
 import type {
   CompareResult,
+  CompareTag,
   EntityMatch,
   InsightsEntity,
   InsightsResult,
@@ -38,15 +39,45 @@ function tagsOf(raw: Obj): QlooEntity["tags"] {
   });
 }
 
-/** Explainability values may be numbers or `{ score }` objects. */
+/**
+ * Explainability → `{ inputEntityId: score }`. Accepts the observed hackathon shape
+ * `{ "signal.interests.entities": [{ entity_id, score | avg_score }] }` as well as the
+ * documented map shape `{ entityId: number | { score } }`.
+ */
 function scoreMap(v: unknown): Record<string, number> | null {
-  if (!isObj(v)) return null;
   const out: Record<string, number> = {};
-  for (const [key, value] of Object.entries(v)) {
-    const score = num(value) ?? (isObj(value) ? num(value.score) : null);
-    if (score !== null) out[key] = score;
+  const fromList = (list: unknown[]) => {
+    for (const item of list) {
+      if (!isObj(item)) continue;
+      const id = str(item.entity_id);
+      const score = num(item.score) ?? num(item.avg_score);
+      if (id && score !== null) out[id] = score;
+    }
+  };
+  if (Array.isArray(v)) fromList(v);
+  else if (isObj(v)) {
+    const signal = v["signal.interests.entities"];
+    if (Array.isArray(signal)) fromList(signal);
+    else {
+      for (const [key, value] of Object.entries(v)) {
+        const score = num(value) ?? (isObj(value) ? num(value.score) : null);
+        if (score !== null) out[key] = score;
+      }
+    }
   }
   return Object.keys(out).length > 0 ? out : null;
+}
+
+/** Aggregate influence: prefer the broadest `effect_on_*` list (e.g. all over top3). */
+function aggregateMap(v: unknown): Record<string, number> | null {
+  const e = obj(v);
+  const signal = e["signal.interests.entities"];
+  if (isObj(signal)) {
+    const keys = Object.keys(signal).filter((k) => Array.isArray(signal[k]));
+    const best = keys.find((k) => k.includes("all")) ?? keys.sort().at(-1);
+    return best ? scoreMap(signal[best]) : null;
+  }
+  return scoreMap(e.all) ?? scoreMap(e.top_10);
 }
 
 export function normalizeEntity(raw: unknown): QlooEntity | null {
@@ -110,10 +141,9 @@ export function normalizeInsights(body: unknown): InsightsResult {
       },
     ];
   });
-  const aggregate = obj(obj(b.query).explainability);
   return {
     entities,
-    aggregateExplainability: scoreMap(aggregate.all) ?? scoreMap(aggregate.top_10),
+    aggregateExplainability: aggregateMap(obj(b.query).explainability),
     durationMs: num(results.duration) ?? num(b.duration),
   };
 }
@@ -133,13 +163,48 @@ export function normalizeTags(body: unknown): TagMatch[] {
   });
 }
 
+/** Compare tags repeat once per supporting seed pair, so merge them by tag ID. */
+function compareTags(list: unknown[]): CompareTag[] {
+  const byId = new Map<string, CompareTag>();
+  for (const t of list) {
+    if (!isObj(t)) continue;
+    const id = str(t.tag_id) ?? str(t.id);
+    const name = str(t.name);
+    if (!id || !name) continue;
+    const q = obj(t.query);
+    const ids = (side: string) =>
+      arr(q[`${side}.signal.interests.entities`]).flatMap((e) =>
+        isObj(e) && str(e.entity_id) ? [str(e.entity_id)!] : [],
+      );
+    const tag = byId.get(id) ?? {
+      id,
+      name,
+      subtype: str(t.subtype),
+      popularity: num(t.popularity),
+      score: null,
+      count: null,
+      aEntityIds: [],
+      bEntityIds: [],
+    };
+    const score = num(q.score);
+    if (score !== null) tag.score = Math.max(tag.score ?? 0, score);
+    const count = Number(q.count);
+    if (Number.isFinite(count)) tag.count = Math.max(tag.count ?? 0, count);
+    tag.aEntityIds = [...new Set([...tag.aEntityIds, ...ids("a")])];
+    tag.bEntityIds = [...new Set([...tag.bEntityIds, ...ids("b")])];
+    byId.set(id, tag);
+  }
+  return [...byId.values()].sort((x, y) => (y.score ?? 0) - (x.score ?? 0));
+}
+
 export function normalizeCompare(body: unknown): CompareResult {
   const b = requireSuccess(body, "/v2/analysis/compare");
-  const list = Array.isArray(b.results)
-    ? b.results
-    : [...arr(obj(b.results).entities), ...arr(obj(b.results).tags)];
+  const r = obj(b.results);
   return {
-    entities: list.flatMap((raw) => normalizeEntity(raw) ?? []),
+    sharedTags: compareTags(arr(r.tags)),
+    aTags: compareTags(arr(r.a)),
+    bTags: compareTags(arr(r.b)),
+    matchEntities: arr(r.matchEntities).flatMap((raw) => normalizeEntity(raw) ?? []),
     raw: b.results ?? null,
     durationMs: num(b.duration),
   };
