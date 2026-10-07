@@ -64,14 +64,14 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 1.6 | Spike script: popularity baseline and lift | ✅ done |
 | 1.7 | Spike script: explainability, compare, location | ✅ done |
 | 1.8 | Spike findings and go/pivot decision | ✅ done |
-| 2.1 | Core domain types and evidence ledger | ⬜ |
-| 2.2 | Seed resolution service | ⬜ |
-| 2.3 | Profile expansion across domains | ⬜ |
-| 2.4 | Candidate generation | ⬜ |
-| 2.5 | Bilateral validation | ⬜ |
-| 2.6 | Normalization and popularity lift | ⬜ |
-| 2.7 | Bridge Potential scoring and diverse selection | ⬜ |
-| 2.8 | Engine CLI and fixture-based tests | ⬜ |
+| 2.1 | Core domain types and evidence ledger | ✅ done |
+| 2.2 | Seed resolution service | ✅ done |
+| 2.3 | Profile expansion across domains | ✅ done |
+| 2.4 | Candidate generation | ✅ done |
+| 2.5 | Bilateral validation | ✅ done |
+| 2.6 | Normalization and popularity lift | ✅ done |
+| 2.7 | Bridge Potential scoring and diverse selection | ✅ done |
+| 2.8 | Engine CLI and fixture-based tests | ✅ done |
 | 3.1 | LLM client with structured (Zod) outputs | ⬜ |
 | 3.2 | Domain planner | ⬜ |
 | 3.3 | Bridge notes (activity fit, friction) | ⬜ |
