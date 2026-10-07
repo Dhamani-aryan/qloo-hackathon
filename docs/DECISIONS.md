@@ -2,6 +2,14 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-07: LLM = OpenAI through the ChatGPT subscription (no API key)
+
+The agent uses the owner's ChatGPT subscription via the Codex backend (`chatgpt.com/backend-api/codex/responses`), with the device-code sign-in flow adapted from [earendil-works/pi](https://github.com/earendil-works/pi). Model defaults to `gpt-5.6-sol` (`LLM_MODEL`).
+
+- One-time sign-in: `npm run llm:login`, which saves `.secrets/chatgpt-auth.json` (git-ignored) and auto-refreshes.
+- The project keeps its own credential instead of reusing `~/.codex/auth.json`, because refresh tokens rotate and sharing them would log the Codex CLI out.
+- Deployment note for Track 5: the credential file must be available to the server, and rotated refresh tokens must be persisted (e.g. KV) or the deployed app will lose its session. Pre-generating LLM output for prebuilt scenarios reduces this dependency.
+
 ## 2026-10-06: No real Qloo responses in the public repo
 
 The hackathon developer guide says server-side caching of Qloo responses is permitted but **storing them in a public repository is prohibited**.
