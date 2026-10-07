@@ -1,0 +1,60 @@
+[
+  {
+    "id": "campus-city-nyc",
+    "title": "Campus ↔ City (New York)",
+    "location": "New York City",
+    "a": {
+      "label": "University film & music club (hypothetical test seeds)",
+      "seeds": [
+        { "name": "Phoebe Bridgers", "type": "artist" },
+        { "name": "Frank Ocean", "type": "artist" },
+        { "name": "Tame Impala", "type": "artist" },
+        { "name": "Everything Everywhere All at Once", "type": "movie" },
+        { "name": "Lady Bird", "type": "movie" },
+        { "name": "Atlanta", "type": "tvShow" },
+        { "name": "Normal People", "type": "book" },
+        { "name": "Hades", "type": "videoGame" }
+      ]
+    },
+    "b": {
+      "label": "Neighbourhood arts association (hypothetical test seeds)",
+      "seeds": [
+        { "name": "Nina Simone", "type": "artist" },
+        { "name": "Joni Mitchell", "type": "artist" },
+        { "name": "Miles Davis", "type": "artist" },
+        { "name": "Cinema Paradiso", "type": "movie" },
+        { "name": "Casablanca", "type": "movie" },
+        { "name": "Columbo", "type": "tvShow" },
+        { "name": "The Great Gatsby", "type": "book" },
+        { "name": "Just Kids", "type": "book" }
+      ]
+    }
+  },
+  {
+    "id": "jaipur-craft-futures",
+    "title": "Jaipur Craft Futures (backup)",
+    "location": "Jaipur",
+    "a": {
+      "label": "Young digital creators (hypothetical test seeds)",
+      "seeds": [
+        { "name": "Prateek Kuhad", "type": "artist" },
+        { "name": "Ritviz", "type": "artist" },
+        { "name": "AP Dhillon", "type": "artist" },
+        { "name": "Gully Boy", "type": "movie" },
+        { "name": "Rang De Basanti", "type": "movie" },
+        { "name": "Panchayat", "type": "tvShow" }
+      ]
+    },
+    "b": {
+      "label": "Heritage and craft practitioners (hypothetical test seeds)",
+      "seeds": [
+        { "name": "Lata Mangeshkar", "type": "artist" },
+        { "name": "Jagjit Singh", "type": "artist" },
+        { "name": "Bismillah Khan", "type": "artist" },
+        { "name": "Mughal-e-Azam", "type": "movie" },
+        { "name": "Pakeezah", "type": "movie" },
+        { "name": "Malgudi Days", "type": "tvShow" }
+      ]
+    }
+  }
+]
