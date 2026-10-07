@@ -2,6 +2,14 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-07: Spike decisions
+
+- **GO** with Campus ↔ City, New York as the main scenario. Jaipur is a backup that needs topic and venue filters.
+- Video game type is `urn:entity:videogame`; it works for both search and Insights.
+- Popularity method: within-pool percentiles × (1 − popularity). Division-based lift and neutral baselines were rejected.
+- Production domains: tv_show, artist, book, podcast, place (movie optional). Brand and destination dropped as too generic.
+- Analysis Compare is used for themes, and explainability for provenance.
+
 ## 2026-10-07: LLM = OpenAI through the ChatGPT subscription (no API key)
 
 The agent uses the owner's ChatGPT subscription via the Codex backend (`chatgpt.com/backend-api/codex/responses`), with the device-code sign-in flow adapted from [earendil-works/pi](https://github.com/earendil-works/pi). Model defaults to `gpt-5.6-sol` (`LLM_MODEL`).

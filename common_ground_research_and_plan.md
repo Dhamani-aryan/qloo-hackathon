@@ -411,6 +411,8 @@ Never average unverified scores from different models or categories.
 
 ## Stage 5b: Adjust for popularity (lift) — Revision 3.0
 
+> **Validated in the API spike (2026-10-07).** Final method: within-pool percentiles from per-side shortlist scoring, `discovered = harmonic_mean(pctA, pctB) × (1 − popularity)`, popularity in [0.3, 0.9]. Details in `docs/SPIKE_FINDINGS.md`. The division-based lift below was tested and rejected.
+
 The central risk of bilateral intersection is **popularity bias**: items that everyone likes score well with any two profiles, so the "bridge" collapses into the obvious mainstream pick.
 
 For each candidate, compare its support from each community against a **baseline**, meaning its standing for the general public. Possible baselines, in order of preference (confirmed during the spike):
@@ -568,7 +570,7 @@ Reject or revise the program if:
 
 Do not lock the scenario until live tests are complete.
 
-**Revision 3.0 default:** Campus ↔ City (Candidate B) is the main scenario, set in a city with strong Qloo coverage (for example New York or London; the spike decides). Jaipur Craft Futures is a backup only if the spike shows that its seeds resolve to real Qloo entities without guesswork.
+**Decided by the spike (2026-10-07): Campus ↔ City, New York is the main scenario.** Campus ↔ City (Candidate B) is the main scenario, set in a city with strong Qloo coverage (for example New York or London; the spike decides). Jaipur Craft Futures is a backup only if the spike shows that its seeds resolve to real Qloo entities without guesswork.
 
 ## Candidate A: Jaipur Craft Futures (conditional backup)
 
