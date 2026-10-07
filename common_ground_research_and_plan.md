@@ -686,6 +686,7 @@ B seed ─┘
 - Next.js and TypeScript;
 - React and Tailwind CSS;
 - server-side route handlers;
+- LLM: OpenAI via the owner's ChatGPT subscription (Codex backend), provider-swappable behind `LlmClient`;
 - structured LLM outputs validated with Zod;
 - server-only Qloo REST calls;
 - Vercel deployment;

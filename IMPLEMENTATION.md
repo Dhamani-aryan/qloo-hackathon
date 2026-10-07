@@ -137,7 +137,7 @@ qloo-hackathon/
 └── tests/
 ```
 
-**Stack:** Next.js (App Router) + TypeScript (strict) + Tailwind CSS + Zod + Vitest + `tsx` for scripts. npm as the package manager. Anthropic SDK for the LLM (model from env `LLM_MODEL`, default `claude-sonnet-5` for latency). Upstash Redis for intake only. Deploy on Vercel.
+**Stack:** Next.js (App Router) + TypeScript (strict) + Tailwind CSS + Zod + Vitest + `tsx` for scripts. npm as the package manager. LLM: OpenAI through the ChatGPT subscription (`src/lib/llm/`, sign in once with `npm run llm:login`; model from `LLM_MODEL`, default `gpt-5.6-sol`). Upstash Redis for intake only. Deploy on Vercel.
 
 ---
 
@@ -287,9 +287,9 @@ Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan 
 **Exit gate:** full analysis + program from one function call, every entity in the program backed by the ledger.
 
 ### Step 3.1: LLM client
-`src/lib/llm/client.ts`: Anthropic SDK wrapper; `generateStructured(schema, prompt)` with Zod validation and one repair retry; token and latency logging (no secrets, no raw profiles in logs).
+✅ Text generation through the ChatGPT subscription is already built (`src/lib/llm/chatgpt.ts`, `getLlm()`). Remaining: `src/lib/llm/structured.ts` with `generateStructured(schema, prompt)` with Zod validation and one repair retry; token and latency logging (no secrets, no raw profiles in logs).
 
-**Commits:** client → structured output helper → tests with mocked SDK.
+**Commits:** client → structured output helper → tests with a mocked LlmClient.
 
 ### Step 3.2: Domain planner
 `src/lib/agent/planner.ts`: given profiles + objective, choose 3–5 domains from the spike's supported set, with a one-line reason each. A deterministic fallback runs if the LLM fails.
