@@ -1,0 +1,49 @@
+import { clamp01, harmonicMean } from "./normalize";
+import { bilateralFailure } from "./validate";
+
+/** Popularity band for discovered bridges (docs/SPIKE_FINDINGS.md). */
+export const MIN_POPULARITY = 0.3;
+export const MAX_POPULARITY = 0.9;
+
+export interface LiftResult {
+  bilateral: number;
+  novelty: number;
+  /** bilateral × novelty: high only for items both sides like that aren't mainstream. */
+  bilateralLift: number;
+  verdict: "discovered" | "obvious" | "rejected";
+  reason: string | null;
+}
+
+/**
+ * Popularity adjustment. Raw bilateral support favours famous items, which are the
+ * "obvious" bridge; discovered bridges must be well supported on both sides AND outside
+ * the mainstream. Unknown popularity is treated as mid-band (0.5).
+ */
+export function assessLift(
+  pctA: number | null,
+  pctB: number | null,
+  popularity: number | null,
+): LiftResult {
+  const bilateral = pctA !== null && pctB !== null ? harmonicMean(pctA, pctB) : 0;
+  const pop = popularity ?? 0.5;
+  const novelty = clamp01((1 - pop) / (1 - MIN_POPULARITY));
+  const base = { bilateral, novelty, bilateralLift: bilateral * novelty };
+
+  const failure = bilateralFailure(pctA, pctB);
+  if (failure) return { ...base, verdict: "rejected", reason: failure };
+  if (pop > MAX_POPULARITY) {
+    return {
+      ...base,
+      verdict: "obvious",
+      reason: `Mainstream (popularity ${Math.round(pop * 100)}th percentile): shown as the obvious alternative`,
+    };
+  }
+  if (pop < MIN_POPULARITY) {
+    return {
+      ...base,
+      verdict: "rejected",
+      reason: `Too niche to recruit around (popularity ${Math.round(pop * 100)}th percentile)`,
+    };
+  }
+  return { ...base, verdict: "discovered", reason: null };
+}
