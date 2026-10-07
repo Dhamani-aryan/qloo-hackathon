@@ -1,0 +1,27 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`runBridgeEngine (synthetic world) > finds two-sided, non-mainstream bridges and explains every rejection 1`] = `
+{
+  "bridges": [
+    "Jazz Fusion Duo (artist) BP 68",
+    "Corner Café (place) BP 53",
+    "Shared Comedy (tvShow) BP 47",
+  ],
+  "calls": 13,
+  "obvious": "Famous Square",
+  "rejections": [
+    "Campus Only Show: One-sided: community B support is only at the 0th percentile of the pool",
+    "Far Away Diner: Weak support from both communities (0th and 0th percentile of the pool)",
+    "Grand Stay: Unsuitable venue for a program (hotel)",
+    "Low Show: Weak support from both communities (0th and 20th percentile of the pool)",
+    "Mid Show: One-sided: community A support is only at the 20th percentile of the pool",
+    "Political Anthems: Sensitive topic (political): excluded by responsible-use rules",
+    "Quiet Folk: Weak support from both communities (0th and 0th percentile of the pool)",
+    "Tiny Cult Show: Too niche to recruit around (popularity 10th percentile)",
+  ],
+  "status": "ok",
+  "themes": [
+    "Personal growth",
+  ],
+}
+`;
