@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import { buildPool, MAX_POOL } from "@/lib/engine/candidates";
+import { createContext } from "@/lib/engine/context";
+import type { DomainExpansion } from "@/lib/engine/expand";
+import { rejectionReason, sensitiveReason, venueReason } from "@/lib/engine/filters";
+import { findThemes } from "@/lib/engine/themes";
+import type { CompareTag } from "@/lib/qloo";
+import { entity, fakeClient, scenario } from "./helpers";
+
+function expansion(
+  top: ReturnType<typeof entity>[],
+  capped: ReturnType<typeof entity>[] = [],
+): DomainExpansion {
+  return {
+    domain: "book",
+    results: { "combined-top": top, "popularity-capped": capped },
+    evidenceIds: new Map([["X1", ["ev_0001"]]]),
+    supportingSeeds: new Map([["X1", { A: ["SA1"], B: [] }]]),
+    locationConditioned: false,
+    error: null,
+  };
+}
+
+describe("filters", () => {
+  it("rejects religious and political titles or tags", () => {
+    expect(sensitiveReason(entity("1", "Why I Am a Believer of Religion"))).toMatch(/Sensitive/);
+    expect(
+      sensitiveReason(
+        entity("2", "Neutral title", {
+          tags: [{ id: "urn:tag:genre:media:politics", name: null, type: null }],
+        }),
+      ),
+    ).toMatch(/polit/);
+    expect(sensitiveReason(entity("3", "M Train"))).toBeNull();
+  });
+
+  it("rejects hotels and banquet halls only for places", () => {
+    const hotel = entity("4", "Grand Palace Banquets");
+    expect(venueReason(hotel)).toMatch(/banquet/);
+    expect(rejectionReason(hotel, "place")).toMatch(/Unsuitable/);
+    expect(rejectionReason(hotel, "book")).toBeNull();
+    expect(venueReason(entity("5", "Community Arts Café"))).toBeNull();
+  });
+});
+
+describe("buildPool", () => {
+  it("dedupes across rules, keeps provenance and rejects filtered items", () => {
+    const { client } = fakeClient(() => []);
+    const ctx = createContext(client, scenario());
+    const { candidates, rejections } = buildPool(
+      ctx,
+      expansion(
+        [entity("X1", "Shared Pick"), entity("X2", "Politics Today")],
+        [entity("X1", "Shared Pick"), entity("X3", "Quiet Pick")],
+      ),
+    );
+    expect(candidates.map((c) => c.entity.id)).toEqual(["X1", "X3"]);
+    expect(candidates[0].admittedBy).toEqual(["combined-top", "popularity-capped"]);
+    expect(candidates[0].supportingSeeds).toEqual({ A: ["SA1"], B: [] });
+    expect(candidates[0].evidenceIds).toEqual(["ev_0001"]);
+    expect(rejections).toEqual([
+      expect.objectContaining({ candidateId: "X2", reason: expect.stringMatching(/Sensitive/) }),
+    ]);
+  });
+
+  it("caps the pool at the shortlist limit", () => {
+    const { client } = fakeClient(() => []);
+    const many = Array.from({ length: MAX_POOL + 10 }, (_, i) => entity(`E${i}`, `Pick ${i}`));
+    const { candidates } = buildPool(createContext(client, scenario()), expansion(many));
+    expect(candidates).toHaveLength(MAX_POOL);
+  });
+});
+
+describe("findThemes", () => {
+  const tag = (
+    id: string,
+    name: string,
+    subtype: string,
+    a: string[],
+    b: string[],
+  ): CompareTag => ({
+    id,
+    name,
+    subtype,
+    popularity: 0.9,
+    score: 0.7,
+    count: null,
+    aEntityIds: a,
+    bEntityIds: b,
+  });
+
+  it("keeps two-sided theme tags, drops genres, duplicates and sensitive tags", async () => {
+    const { client } = fakeClient(() => [], {
+      sharedTags: [
+        tag("t:soul", "Soul", "urn:tag:genre:music", ["SA1"], ["SB1"]),
+        tag("t:growth", "Personal growth", "urn:tag:theme:qloo", ["SA1"], ["SB2"]),
+        tag("t:growth-kw", "Personal Growth", "urn:tag:keyword:qloo", ["SA2"], ["SB2"]),
+        tag("t:faith", "Religion", "urn:tag:theme:qloo", ["SA1"], ["SB1"]),
+        tag("t:solo", "Solitude", "urn:tag:theme:qloo", ["SA1"], []),
+      ],
+    });
+    const ctx = createContext(client, scenario());
+    const themes = await findThemes(ctx);
+    expect(themes.map((t) => t.name)).toEqual(["Personal growth"]);
+    expect(themes[0].supportingSeeds).toEqual({ A: ["SA1"], B: ["SB2"] });
+    expect(ctx.ledger.get(themes[0].evidenceId)?.kind).toBe("tag-based");
+  });
+});
