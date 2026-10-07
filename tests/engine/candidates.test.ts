@@ -41,6 +41,30 @@ describe("filters", () => {
     expect(rejectionReason(hotel, "book")).toBeNull();
     expect(venueReason(entity("5", "Community Arts Café"))).toBeNull();
   });
+
+  it("uses category tags but ignores incidental amenity and theme tags", () => {
+    const concertHall = entity("6", "Jazz Venue", {
+      tags: [
+        { id: "urn:tag:category:place:concert_hall", name: "Concert hall", type: null },
+        {
+          id: "urn:tag:accessibility:place:wheelchair_accessible_parking_lot",
+          name: "Wheelchair accessible parking lot",
+          type: null,
+        },
+        { id: "urn:tag:nearby_attraction:qloo:grand_hotel", name: "Grand hotel", type: null },
+      ],
+    });
+    const singer = entity("7", "A Singer", {
+      tags: [{ id: "urn:tag:theme:qloo:spirituality", name: "Spirituality", type: null }],
+    });
+    const hotel = entity("8", "Palace Stay", {
+      tags: [{ id: "urn:tag:category:place:hotel", name: "Hotel", type: null }],
+    });
+    expect(rejectionReason(concertHall, "place")).toBeNull();
+    expect(rejectionReason(singer, "artist")).toBeNull();
+    expect(rejectionReason(hotel, "place")).toMatch(/hotel/);
+    expect(rejectionReason(entity("9", "The Church of St. Example"), "place")).toMatch(/church/);
+  });
 });
 
 describe("buildPool", () => {
