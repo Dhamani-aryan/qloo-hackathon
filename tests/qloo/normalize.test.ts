@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeInsights, normalizeSearch, normalizeTags } from "@/lib/qloo/normalize";
+import {
+  normalizeCompare,
+  normalizeInsights,
+  normalizeSearch,
+  normalizeTags,
+} from "@/lib/qloo/normalize";
 import { fixture } from "./helpers";
 
 describe("normalizeInsights", () => {
@@ -29,7 +34,7 @@ describe("normalizeInsights", () => {
     expect(two.affinityRank).toBeNull();
   });
 
-  it("reads per-entity and aggregate explainability", () => {
+  it("reads explainability in the list shape the hackathon API returns", () => {
     expect(r.entities[0].explainability).toEqual({ "FAKE-SEED-A1": 0.7, "FAKE-SEED-B1": 0.3 });
     expect(r.entities[1].explainability).toBeNull();
     expect(r.aggregateExplainability).toEqual({ "FAKE-SEED-A1": 0.55, "FAKE-SEED-B1": 0.45 });
@@ -66,5 +71,23 @@ describe("normalizeTags", () => {
         parents: ["urn:entity:artist"],
       },
     ]);
+  });
+});
+
+describe("normalizeCompare", () => {
+  const r = normalizeCompare(fixture("compare"));
+
+  it("merges repeated shared tags and unions their supporting seeds", () => {
+    expect(r.sharedTags.map((t) => t.name)).toEqual(["Soul", "Identity"]);
+    expect(r.sharedTags[0]).toMatchObject({
+      score: 0.95,
+      aEntityIds: ["FAKE-SEED-A1", "FAKE-SEED-A2"],
+      bEntityIds: ["FAKE-SEED-B1"],
+    });
+  });
+
+  it("reads one-sided tags with their counts", () => {
+    expect(r.aTags[0]).toMatchObject({ name: "Youth", count: 4, score: null });
+    expect(r.bTags).toEqual([]);
   });
 });

@@ -1,0 +1,90 @@
+{
+  "success": true,
+  "duration": 40,
+  "results": {
+    "tags": [
+      {
+        "tag_id": "urn:tag:genre:test:soul",
+        "name": "Soul",
+        "type": "urn:tag",
+        "subtype": "urn:tag:genre:music",
+        "entity_id": "FAKE-TAG-1",
+        "popularity": 0.99,
+        "query": {
+          "score": 0.9,
+          "a.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-A1",
+              "name": "Fake A1"
+            }
+          ],
+          "b.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-B1",
+              "name": "Fake B1"
+            }
+          ]
+        }
+      },
+      {
+        "tag_id": "urn:tag:genre:test:soul",
+        "name": "Soul",
+        "type": "urn:tag",
+        "subtype": "urn:tag:genre:music",
+        "entity_id": "FAKE-TAG-1",
+        "popularity": 0.99,
+        "query": {
+          "score": 0.95,
+          "a.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-A2",
+              "name": "Fake A2"
+            }
+          ],
+          "b.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-B1",
+              "name": "Fake B1"
+            }
+          ]
+        }
+      },
+      {
+        "tag_id": "urn:tag:theme:test:identity",
+        "name": "Identity",
+        "type": "urn:tag",
+        "subtype": "urn:tag:theme:qloo",
+        "entity_id": "FAKE-TAG-2",
+        "popularity": 0.9,
+        "query": {
+          "score": 0.8,
+          "a.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-A1"
+            }
+          ],
+          "b.signal.interests.entities": [
+            {
+              "entity_id": "FAKE-SEED-B2"
+            }
+          ]
+        }
+      }
+    ],
+    "a": [
+      {
+        "tag_id": "urn:tag:theme:test:youth",
+        "name": "Youth",
+        "type": "urn:tag",
+        "subtype": "urn:tag:theme:qloo",
+        "entity_id": "FAKE-TAG-3",
+        "popularity": 0.8,
+        "query": {
+          "count": "4"
+        }
+      }
+    ],
+    "b": [],
+    "matchEntities": []
+  }
+}

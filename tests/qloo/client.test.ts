@@ -27,7 +27,7 @@ describe("request building", () => {
   });
 
   it("maps compare inputs to a./b. signal params", async () => {
-    const m = mockFetch(jsonResponse({ success: true, results: [{ entity_id: "X", name: "X" }] }));
+    const m = mockFetch(jsonResponse(fixture("compare")));
     const qloo = createQlooClient({ ...base, fetch: m.fetch });
     await qloo.compareProfiles({ aEntities: ["A1", "A2"], bEntities: ["B1"] });
     const { url } = m.calls[0];

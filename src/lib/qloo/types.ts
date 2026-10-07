@@ -77,10 +77,30 @@ export interface TagMatch {
   parents: string[];
 }
 
+/** A tag from Analysis Compare, merged across the seed pairs that produced it. */
+export interface CompareTag {
+  id: string;
+  name: string;
+  /** e.g. `urn:tag:genre:music`, `urn:tag:theme:qloo`. */
+  subtype: string | null;
+  popularity: number | null;
+  /** Shared-tag strength (`query.score`), present on shared tags. */
+  score: number | null;
+  /** Number of a side's seeds carrying the tag (`query.count`), present on one-sided tags. */
+  count: number | null;
+  /** Seeds from A / B that support this tag: provenance for program themes. */
+  aEntityIds: string[];
+  bEntityIds: string[];
+}
+
 export interface CompareResult {
-  /** Entities or tags returned by the comparison, normalized where they look like entities. */
-  entities: QlooEntity[];
-  /** Full raw `results` payload; the shape is not documented in detail and is studied in the spike. */
+  /** Tags both groups share, strongest first. */
+  sharedTags: CompareTag[];
+  /** Tags characteristic of A / of B. */
+  aTags: CompareTag[];
+  bTags: CompareTag[];
+  /** `matchEntities` (empty in every spike call so far). */
+  matchEntities: QlooEntity[];
   raw: unknown;
   durationMs: number | null;
 }

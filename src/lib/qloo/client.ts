@@ -90,8 +90,7 @@ export function createQlooClient(opts: QlooClientOptions): QlooClient {
           take: input.take,
         },
         normalizeCompare,
-        // The compare payload shape is unconfirmed, so only warn when it is truly empty.
-        (r) => (r.raw === null || (Array.isArray(r.raw) && r.raw.length === 0) ? 0 : 1),
+        (r) => r.sharedTags.length + r.aTags.length + r.bTags.length,
       ),
   };
 }
