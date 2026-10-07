@@ -63,6 +63,7 @@ describe("selectBridges", () => {
     expect(s.status).toBe("ok");
     expect(s.bridges.map((b) => b.entity.id)).toEqual(["tv1", "tv2", "art1"]);
     expect(s.obvious?.entity.id).toBe("famous");
+    expect(s.runnersUp).toEqual([]);
   });
 
   it("returns insufficient evidence when nothing is discovered", () => {

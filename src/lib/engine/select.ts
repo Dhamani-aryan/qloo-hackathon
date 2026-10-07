@@ -1,11 +1,13 @@
 import type { ScoredCandidate } from "./types";
 
 export const MAX_BRIDGES = 3;
+export const MAX_RUNNERS_UP = 6;
 
 export interface Selection {
   status: "ok" | "insufficient_evidence";
   bridges: ScoredCandidate[];
   obvious: ScoredCandidate | null;
+  runnersUp: ScoredCandidate[];
 }
 
 const byPotential = (x: ScoredCandidate, y: ScoredCandidate) =>
@@ -45,5 +47,6 @@ export function selectBridges(scored: ScoredCandidate[]): Selection {
     status: picked.length > 0 ? "ok" : "insufficient_evidence",
     bridges: picked.sort(byPotential),
     obvious,
+    runnersUp: discovered.filter((c) => !picked.includes(c)).slice(0, MAX_RUNNERS_UP),
   };
 }
