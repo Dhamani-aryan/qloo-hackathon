@@ -58,12 +58,12 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 0.1 | Repository, plan, guide, license | ✅ done |
 | 1.1 | Project scaffold (Next.js + TS + tooling) | ✅ done |
 | 1.2 | Environment and secrets handling | ✅ done |
-| 1.3 | Typed Qloo client | ✅ code + tests done · live check waits for key |
-| 1.4 | Spike script: entity resolution | ⬜ |
-| 1.5 | Spike script: A / B / combined Insights | ⬜ |
-| 1.6 | Spike script: popularity baseline and lift | ⬜ |
-| 1.7 | Spike script: explainability, compare, location | ⬜ |
-| 1.8 | Spike findings and go/pivot decision | ⬜ |
+| 1.3 | Typed Qloo client | ✅ done (live-verified) |
+| 1.4 | Spike script: entity resolution | ✅ done |
+| 1.5 | Spike script: A / B / combined Insights | ✅ done |
+| 1.6 | Spike script: popularity baseline and lift | ✅ done |
+| 1.7 | Spike script: explainability, compare, location | ✅ done |
+| 1.8 | Spike findings and go/pivot decision | ✅ done |
 | 2.1 | Core domain types and evidence ledger | ⬜ |
 | 2.2 | Seed resolution service | ⬜ |
 | 2.3 | Profile expansion across domains | ⬜ |
@@ -254,7 +254,7 @@ Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan 
 **Commits:** expansion → concurrency/budget limiter → tests.
 
 ### Step 2.4: Candidate generation
-`src/lib/engine/candidates.ts`: build the pool from overlap in A∩B, combined results with two-sided explainability contributions (if available), and compare/tag support. Deduplicate by entity ID. Record which rule admitted each candidate.
+`src/lib/engine/candidates.ts`: build the pool from the combined A+B top results plus the combined results with `filter.popularity.max=0.9` (≤ 50 per domain). A∩B overlap of separate top lists is too strict (spike: zero overlap for NYC films, music, books). Themes come from Analysis Compare shared tags. Deduplicate by entity ID. Record which rule admitted each candidate.
 
 **Commits:** overlap rule → combined/explainability rule → tag rule → dedupe + tests.
 
@@ -264,7 +264,7 @@ Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan 
 **Commits:** validator → rejection reasons → tests.
 
 ### Step 2.6: Normalization and popularity lift
-`src/lib/engine/normalize.ts` and `lift.ts`: per-query percentile normalization, reciprocal-rank fusion across queries, and the popularity baseline chosen in 1.8. Compute `liftA`, `liftB`. Flag an **obvious bridge** (high raw, low lift).
+`src/lib/engine/normalize.ts` and `lift.ts`, using the method validated in `docs/SPIKE_FINDINGS.md`: within-pool percentiles `pctA`/`pctB` from shortlist scoring, `bilateral = harmonic_mean(pctA, pctB)`, `discovered = bilateral × (1 − popularity)` with popularity in [0.3, 0.9] and both percentiles ≥ 0.4. **Obvious bridge** = best bilateral among popularity ≥ 0.95. Add the sensitive-topic filter (religion/politics) and the place venue-type filter.
 
 **Commits:** percentile → RRF → baseline → lift → tests including "popular item must not win" case.
 
