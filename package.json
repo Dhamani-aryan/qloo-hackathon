@@ -12,7 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "spike": "tsx --env-file-if-exists=.env.local"
+    "spike": "tsx --env-file-if-exists=.env.local",
+    "llm:login": "tsx --env-file-if-exists=.env.local scripts/chatgpt-login.ts"
   },
   "dependencies": {
     "next": "16.3.8",
