@@ -32,8 +32,10 @@ const qlooSchema = z.object({
 });
 
 const llmSchema = z.object({
-  ANTHROPIC_API_KEY: nonEmpty("ANTHROPIC_API_KEY"),
-  LLM_MODEL: z.string().trim().min(1).default("claude-sonnet-5"),
+  LLM_PROVIDER: z.enum(["chatgpt"], { error: "LLM_PROVIDER must be: chatgpt" }).default("chatgpt"),
+  LLM_MODEL: z.string().trim().min(1).default("gpt-5.6-sol"),
+  LLM_REASONING_EFFORT: z.enum(["minimal", "low", "medium", "high"]).default("low"),
+  CHATGPT_AUTH_FILE: z.string().trim().min(1).default(".secrets/chatgpt-auth.json"),
 });
 
 const intakeSchema = z.object({
@@ -66,7 +68,12 @@ export function getQlooEnv(env: Env = process.env): QlooEnv {
 
 export function getLlmEnv(env: Env = process.env) {
   const e = load("LLM", llmSchema, env);
-  return { apiKey: e.ANTHROPIC_API_KEY, model: e.LLM_MODEL };
+  return {
+    provider: e.LLM_PROVIDER,
+    model: e.LLM_MODEL,
+    reasoningEffort: e.LLM_REASONING_EFFORT,
+    chatgptAuthFile: e.CHATGPT_AUTH_FILE,
+  };
 }
 
 export function getIntakeEnv(env: Env = process.env) {

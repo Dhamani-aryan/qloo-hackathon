@@ -35,8 +35,17 @@ describe("getQlooEnv", () => {
 });
 
 describe("other areas", () => {
-  it("LLM env defaults the model", () => {
-    expect(getLlmEnv({ ANTHROPIC_API_KEY: "a" }).model).toBe("claude-sonnet-5");
+  it("LLM env defaults to the ChatGPT subscription provider", () => {
+    expect(getLlmEnv({})).toEqual({
+      provider: "chatgpt",
+      model: "gpt-5.6-sol",
+      reasoningEffort: "low",
+      chatgptAuthFile: ".secrets/chatgpt-auth.json",
+    });
+  });
+
+  it("LLM env rejects unknown providers", () => {
+    expect(() => getLlmEnv({ LLM_PROVIDER: "other" })).toThrow(/LLM_PROVIDER/);
   });
 
   it("isQlooConfigured reflects key presence", () => {
