@@ -4,6 +4,12 @@ import { bilateralFailure } from "./validate";
 /** Popularity band for discovered bridges (docs/SPIKE_FINDINGS.md). */
 export const MIN_POPULARITY = 0.3;
 export const MAX_POPULARITY = 0.9;
+/**
+ * Novelty only modulates bilateral support: it ranges from NOVELTY_FLOOR (at the popularity
+ * cap) to 1 (at the niche end). With a full 0–1 range, a 54th/85th-percentile show beat a
+ * 96th/96th-percentile one in the first live run just for being less popular.
+ */
+export const NOVELTY_FLOOR = 0.5;
 
 export interface LiftResult {
   bilateral: number;
@@ -26,7 +32,9 @@ export function assessLift(
 ): LiftResult {
   const bilateral = pctA !== null && pctB !== null ? harmonicMean(pctA, pctB) : 0;
   const pop = popularity ?? 0.5;
-  const novelty = clamp01((1 - pop) / (1 - MIN_POPULARITY));
+  const novelty =
+    NOVELTY_FLOOR +
+    (1 - NOVELTY_FLOOR) * clamp01((MAX_POPULARITY - pop) / (MAX_POPULARITY - MIN_POPULARITY));
   const base = { bilateral, novelty, bilateralLift: bilateral * novelty };
 
   const failure = bilateralFailure(pctA, pctB);

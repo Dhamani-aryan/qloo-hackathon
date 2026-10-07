@@ -99,7 +99,7 @@ export interface ScoredCandidate extends Candidate {
   popularity: number | null;
   /** harmonic_mean(pctA, pctB). */
   bilateral: number;
-  /** Rescaled (1 − popularity), 0–1 over the allowed popularity band. */
+  /** Popularity modifier: 0.5 at the popularity cap up to 1 at the niche end. */
   novelty: number;
   /** bilateral × novelty. */
   bilateralLift: number;
@@ -141,6 +141,8 @@ export interface EngineResult {
   bridges: ScoredCandidate[];
   /** The best popular, high-support pick, shown as the contrast in the UI. */
   obvious: ScoredCandidate | null;
+  /** Next-best discovered candidates not selected, for "other options" in the UI. */
+  runnersUp: ScoredCandidate[];
   themes: Theme[];
   rejections: Rejection[];
   evidence: Evidence[];
