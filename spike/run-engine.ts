@@ -7,6 +7,7 @@
  * Qloo data).
  */
 import { runBridgeEngine, ScenarioSchema, type ScoredCandidate } from "../src/lib/engine";
+import { ordinalPct } from "../src/lib/engine/normalize";
 import { qloo, readResolved, writeOut, type ResolvedSeed } from "./lib";
 
 const id = process.argv[2] ?? "campus-city-nyc";
@@ -60,7 +61,7 @@ const line = (b: ScoredCandidate) =>
   `${b.entity.name} [${b.domain}]  BP ${b.bridgePotential}  ` +
   `A ${pctStr(b.pct.A)} · B ${pctStr(b.pct.B)} · pop ${b.popularity?.toFixed(2) ?? "?"}  ` +
   `evidence ${b.evidenceIds.length}`;
-const pctStr = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}th`);
+const pctStr = (v: number | null) => (v === null ? "—" : ordinalPct(v));
 
 async function main() {
   const events: string[] = [];
@@ -90,7 +91,7 @@ async function main() {
   const reasons = new Map<string, number>();
   for (const x of r.rejections) {
     const key = x.reason
-      .replace(/\d+th/, "N")
+      .replace(/\d+(st|nd|rd|th)/g, "N")
       .replace(/\(.*\)/, "")
       .trim();
     reasons.set(key, (reasons.get(key) ?? 0) + 1);
