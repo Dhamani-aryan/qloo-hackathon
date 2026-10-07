@@ -2,6 +2,14 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-08: Bridge engine tuning from the first live runs
+
+- **Filters read names and classifying tags only** (genre / subgenre / category). Incidental tags caused false rejections: Jazz at Lincoln Center was rejected for the amenity tag "wheelchair accessible parking lot", and Weyes Blood for the theme tag "spirituality". Places of worship are excluded as venues (religion is out of scope).
+- **Novelty modulates, it doesn't dominate.** The novelty factor runs 0.5–1 across the popularity band [0.3, 0.9]. With a full 0–1 range, a 54th/85th-percentile show outranked a 96th/96th-percentile one just for being less popular.
+- **Rejection reasons distinguish** "one-sided" (one community low) from "weak support from both".
+- **Result shape:** up to 3 bridges (one per domain first), 1 obvious contrast, up to 6 runners-up, shared themes, all rejections with reasons, and the full evidence ledger.
+- A five-domain live run on Campus ↔ City NYC uses **21 Qloo calls and about 8–9 s**.
+
 ## 2026-10-07: Spike decisions
 
 - **GO** with Campus ↔ City, New York as the main scenario. Jaipur is a backup that needs topic and venue filters.
