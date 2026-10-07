@@ -1,6 +1,6 @@
 import { QLOO_TYPES } from "@/lib/qloo";
 import { qlooCall, type EngineContext } from "./context";
-import { percentiles } from "./normalize";
+import { ordinalPct, percentiles } from "./normalize";
 import { SIDES, type Candidate, type DomainKey, type Side } from "./types";
 
 /** Each side must place a candidate at least this high in the pool (validated in the spike). */
@@ -90,9 +90,12 @@ export function bilateralFailure(pctA: number | null, pctB: number | null): stri
   if (pctA === null && pctB === null) return "Qloo returned no support from either community";
   if (pctA === null) return "No support measured for community A";
   if (pctB === null) return "No support measured for community B";
+  if (pctA < MIN_SIDE_PERCENTILE && pctB < MIN_SIDE_PERCENTILE) {
+    return `Weak support from both communities (${ordinalPct(pctA)} and ${ordinalPct(pctB)} percentile of the pool)`;
+  }
   const [low, side] = pctA <= pctB ? [pctA, "A"] : [pctB, "B"];
   if (low < MIN_SIDE_PERCENTILE) {
-    return `One-sided: community ${side} support is only at the ${Math.round(low * 100)}th percentile of the pool`;
+    return `One-sided: community ${side} support is only at the ${ordinalPct(low)} percentile of the pool`;
   }
   return null;
 }

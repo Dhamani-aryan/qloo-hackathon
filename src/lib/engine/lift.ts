@@ -1,4 +1,4 @@
-import { clamp01, harmonicMean } from "./normalize";
+import { clamp01, harmonicMean, ordinalPct } from "./normalize";
 import { bilateralFailure } from "./validate";
 
 /** Popularity band for discovered bridges (docs/SPIKE_FINDINGS.md). */
@@ -43,14 +43,14 @@ export function assessLift(
     return {
       ...base,
       verdict: "obvious",
-      reason: `Mainstream (popularity ${Math.round(pop * 100)}th percentile): shown as the obvious alternative`,
+      reason: `Mainstream (popularity ${ordinalPct(pop)} percentile): shown as the obvious alternative`,
     };
   }
   if (pop < MIN_POPULARITY) {
     return {
       ...base,
       verdict: "rejected",
-      reason: `Too niche to recruit around (popularity ${Math.round(pop * 100)}th percentile)`,
+      reason: `Too niche to recruit around (popularity ${ordinalPct(pop)} percentile)`,
     };
   }
   return { ...base, verdict: "discovered", reason: null };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createContext } from "@/lib/engine/context";
 import { assessLift } from "@/lib/engine/lift";
-import { harmonicMean, percentiles } from "@/lib/engine/normalize";
+import { harmonicMean, ordinalPct, percentiles } from "@/lib/engine/normalize";
 import { bilateralFailure, scoreSides } from "@/lib/engine/validate";
 import type { Candidate } from "@/lib/engine/types";
 import { entity, fakeClient, scenario } from "./helpers";
@@ -21,6 +21,18 @@ describe("percentiles", () => {
     expect(percentiles(new Map()).size).toBe(0);
   });
 
+  it("formats ordinal percentiles", () => {
+    expect([0.01, 0.02, 0.03, 0.11, 0.22, 0.0, 1].map(ordinalPct)).toEqual([
+      "1st",
+      "2nd",
+      "3rd",
+      "11th",
+      "22nd",
+      "0th",
+      "100th",
+    ]);
+  });
+
   it("harmonic mean punishes one-sided support", () => {
     expect(harmonicMean(0.9, 0.9)).toBeCloseTo(0.9);
     expect(harmonicMean(1, 0.1)).toBeLessThan(0.2);
@@ -31,9 +43,10 @@ describe("percentiles", () => {
 describe("bilateralFailure", () => {
   it("passes two-sided candidates and explains failures", () => {
     expect(bilateralFailure(0.7, 0.5)).toBeNull();
-    expect(bilateralFailure(0.9, 0.22)).toMatch(/community B.*22th percentile/);
+    expect(bilateralFailure(0.9, 0.22)).toMatch(/community B.*22nd percentile/);
     expect(bilateralFailure(null, 0.9)).toMatch(/community A/);
     expect(bilateralFailure(null, null)).toMatch(/either/);
+    expect(bilateralFailure(0.1, 0.2)).toMatch(/Weak support from both/);
   });
 });
 

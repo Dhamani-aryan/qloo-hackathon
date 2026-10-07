@@ -26,3 +26,14 @@ export function harmonicMean(x: number, y: number): number {
 }
 
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/** 0.22 → "22nd", 0.03 → "3rd": percentiles for display. */
+export function ordinalPct(v: number): string {
+  const n = Math.round(v * 100);
+  const mod100 = n % 100;
+  const suffix =
+    mod100 >= 11 && mod100 <= 13
+      ? "th"
+      : (({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th");
+  return `${n}${suffix}`;
+}
