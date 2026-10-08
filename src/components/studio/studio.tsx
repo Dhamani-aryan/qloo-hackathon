@@ -5,6 +5,8 @@ import { PREBUILT } from "@/scenarios";
 import { Main, Stepper, type StepKey } from "../shell";
 import { Card, Eyebrow, Heading } from "../ui";
 import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
+import type { Scenario } from "@/lib/engine/types";
+import { BridgesScreen } from "./bridges-screen";
 import { InvestigateScreen } from "./investigate-screen";
 import { ProfilesScreen, useSeedResolver } from "./profiles-screen";
 import { artifacts, useAgentRun } from "./run";
@@ -15,6 +17,7 @@ export function Studio() {
   const [draft, dispatch] = useReducer(draftReducer, PREBUILT[0], draftFromPrebuilt);
   const resolve = useSeedResolver(dispatch);
   const { run, start, stop } = useAgentRun();
+  const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
   const loaded = useRef(false);
   const view = artifacts(run);
 
@@ -36,8 +39,10 @@ export function Studio() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const runAnalysis = () => {
+    const scenario = toScenario(draft);
+    setRanScenario(scenario);
     go("investigate");
-    void start(toScenario(draft));
+    void start(scenario);
   };
 
   const reachable: StepKey[] = ["profiles"];
@@ -61,10 +66,19 @@ export function Studio() {
             onContinue={() => go("bridges")}
           />
         )}
-        {step === "bridges" && (
+        {step === "bridges" && view.engine && ranScenario && (
+          <BridgesScreen
+            scenario={ranScenario}
+            engine={view.engine}
+            notes={view.notes}
+            programReady={Boolean(view.program)}
+            onContinue={() => go("program")}
+          />
+        )}
+        {step === "program" && (
           <Card>
             <Eyebrow tone="bridge">Coming next</Eyebrow>
-            <Heading level={2}>Obvious vs discovered</Heading>
+            <Heading level={2}>The program</Heading>
           </Card>
         )}
       </Main>
