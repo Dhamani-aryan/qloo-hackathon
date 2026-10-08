@@ -121,8 +121,8 @@ export function SupportBars({
 }) {
   const row = (v: number | null, tone: "a" | "b", label: string) => (
     <div className="flex items-center gap-2 text-xs">
-      <span className={cx("w-16 shrink-0 truncate font-medium", TONE_TEXT[tone])} title={label}>
-        {label}
+      <span className={cx("w-24 shrink-0 truncate font-medium", TONE_TEXT[tone])} title={label}>
+        {shortLabel(label)}
       </span>
       <span className="relative h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
         <span
@@ -143,6 +143,11 @@ export function SupportBars({
   );
 }
 
+/** First word of a community label ("University film & music club" → "University"). */
+export function shortLabel(label: string): string {
+  return label.trim().split(/\s+/)[0] ?? label;
+}
+
 export function ordinal(v: number): string {
   const n = Math.round(v * 100);
   const m = n % 100;
@@ -157,12 +162,15 @@ export function EntityTile({
   imageUrl,
   size = "md",
   tone = "neutral",
+  wrap = false,
 }: {
   name: string;
   type?: string | null;
   imageUrl?: string | null;
   size?: "sm" | "md" | "lg";
   tone?: Tone;
+  /** Let long names wrap onto two lines instead of truncating. */
+  wrap?: boolean;
 }) {
   const box = { sm: "h-9 w-9", md: "h-12 w-12", lg: "h-16 w-16" }[size];
   return (
@@ -189,7 +197,9 @@ export function EntityTile({
         </span>
       )}
       <div className="min-w-0">
-        <p className="truncate font-medium text-ink">{name}</p>
+        <p className={cx("font-medium text-ink", wrap ? "line-clamp-2" : "truncate")} title={name}>
+          {name}
+        </p>
         {type && <p className="truncate text-xs text-muted">{typeLabel(type)}</p>}
       </div>
     </div>
