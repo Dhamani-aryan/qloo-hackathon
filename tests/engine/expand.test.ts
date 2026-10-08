@@ -11,7 +11,7 @@ describe("expandDomain", () => {
         : [
             entity("C1", "Top pick", {
               popularity: 0.97,
-              explainability: { SA1: 0.08, SB2: 0.09, SB1: 0.01, OTHER: 0.5 },
+              explainability: { SA2: 0.06, SA1: 0.08, SB2: 0.09, SB1: 0.01, OTHER: 0.5 },
             }),
           ],
     );
@@ -30,8 +30,8 @@ describe("expandDomain", () => {
 
     expect(x.results["combined-top"].map((e) => e.id)).toEqual(["C1"]);
     expect(x.results["popularity-capped"].map((e) => e.id)).toEqual(["C2"]);
-    // Only known seeds above the threshold count as support.
-    expect(x.supportingSeeds.get("C1")).toEqual({ A: ["SA1"], B: ["SB2"] });
+    // Only known seeds above the threshold count as support, strongest first.
+    expect(x.supportingSeeds.get("C1")).toEqual({ A: ["SA1", "SA2"], B: ["SB2"] });
     expect(ctx.ledger.forCandidate("C1")[0]).toMatchObject({
       profile: "AB",
       purpose: "combined-top",

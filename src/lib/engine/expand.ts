@@ -88,7 +88,9 @@ export async function expandDomain(
 
 function record(ctx: EngineContext, x: DomainExpansion, rule: AdmissionRule, e: InsightsEntity) {
   const support: Record<Side, string[]> = x.supportingSeeds.get(e.id) ?? { A: [], B: [] };
-  for (const [seedId, score] of Object.entries(e.explainability ?? {})) {
+  // Strongest contributors first, so "supported by" lists lead with the most relevant seeds.
+  const ranked = Object.entries(e.explainability ?? {}).sort((p, q) => q[1] - p[1]);
+  for (const [seedId, score] of ranked) {
     const side = ctx.sideOf.get(seedId);
     if (side && score >= SUPPORT_THRESHOLD && !support[side].includes(seedId))
       support[side].push(seedId);
