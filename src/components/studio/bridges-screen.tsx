@@ -23,13 +23,18 @@ export function BridgesScreen({
   engine,
   notes,
   programReady,
+  programFailed = false,
   onContinue,
+  onRetry,
 }: {
   scenario: Scenario;
   engine: EngineResult;
   notes: BridgeNote[];
   programReady: boolean;
+  /** The run finished without a program (LLM failure); the bridges are still valid. */
+  programFailed?: boolean;
   onContinue: () => void;
+  onRetry?: () => void;
 }) {
   const seedName = new Map(
     [...scenario.a.seeds, ...scenario.b.seeds].map((s) => [s.entityId, s.name]),
@@ -128,18 +133,32 @@ export function BridgesScreen({
         <Rejections engine={engine} />
       </div>
 
-      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-bridge bg-bridge-soft p-5 sm:flex-row sm:items-center">
-        <p className="text-sm">
-          {programReady
-            ? `The program is built around ${top?.entity.name ?? "the top bridge"}.`
-            : "The agent is turning the top bridge into a recurring program…"}
-        </p>
-        {programReady ? (
-          <Button onClick={onContinue}>See the program →</Button>
-        ) : (
-          <Spinner label="Designing" />
-        )}
-      </div>
+      {programFailed ? (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-2xl bg-warn-soft p-5 text-warn sm:flex-row sm:items-center">
+          <p className="text-sm">
+            The agent couldn&apos;t design a program this time (the language model failed). The
+            bridges above are complete and come straight from Qloo.
+          </p>
+          {onRetry && (
+            <Button variant="secondary" onClick={onRetry}>
+              Run again
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-bridge bg-bridge-soft p-5 sm:flex-row sm:items-center">
+          <p className="text-sm">
+            {programReady
+              ? `The program is built around ${top?.entity.name ?? "the top bridge"}.`
+              : "The agent is turning the top bridge into a recurring program…"}
+          </p>
+          {programReady ? (
+            <Button onClick={onContinue}>See the program →</Button>
+          ) : (
+            <Spinner label="Designing" />
+          )}
+        </div>
+      )}
     </div>
   );
 }

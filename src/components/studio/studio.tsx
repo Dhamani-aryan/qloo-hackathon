@@ -75,7 +75,9 @@ export function Studio() {
             engine={view.engine}
             notes={view.notes}
             programReady={Boolean(view.program)}
+            programFailed={run.status !== "running" && !view.program}
             onContinue={() => go("program")}
+            onRetry={runAnalysis}
           />
         )}
         {step === "program" && view.program && view.engine && ranScenario && (
