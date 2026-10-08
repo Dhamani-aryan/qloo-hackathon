@@ -15,7 +15,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
-**Next:** **Track 5, step 5.1** (prebuilt scenarios and response caching), so the judge demo doesn't wait ~80 s.
+**Next:** **step 5.2b, the UI redesign.** The owner finds the current UI cluttered and generic (too many cards, pills and labels). Then 5.3 evaluation, 5.4 deploy, 5.5 docs and 5.6 submission.
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -44,8 +44,8 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
    - `spike/run-agent.ts [scenarioId]`
 
 **Known issues and to-dos:**
-- A full live run takes about 80 s, so prebuilt demo scenarios **must be cached** (step 5.1) and the UI must show live progress (step 4.4).
-- Disconnecting the client doesn't cancel a running analysis (fix in 5.2).
+- A full live run takes about 80 s. **Done in 5.1:** finished runs are cached server-side and replayed in about 3 s (the UI offers "Run it live instead"), and identical Qloo requests are cached for a day.
+- **Done in 5.2:** runs cancel on disconnect; per-IP rate limits apply (live analysis 5 per 10 min, and replays are free); "Qloo unavailable" is reported clearly.
 - Qloo rate-limits bursts (429). Searches are paced server-side (3 at a time); keep that in mind for caching and evaluation runs.
 - Intake needs an Upstash Redis database for deployment: the owner must create one (free tier) and set the two env vars.
 - Commit `1a2227f` imports a file added two commits later, so it doesn't build on its own (history only; `main` builds).
@@ -137,8 +137,9 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 4.6 | Screen 4: program lineup and provenance | ✅ done |
 | 4.7 | With/without-Qloo comparison view | ✅ done |
 | 4.8 | Empty, partial, error, and insufficient-evidence states | ✅ done |
-| 5.1 | Prebuilt scenarios and response caching | ⬜ |
-| 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ⬜ |
+| 5.1 | Prebuilt scenarios and response caching | ✅ done |
+| 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ✅ done |
+| 5.2b | UI redesign (less cluttered, editorial, no generic AI look) | ⬜ |
 | 5.3 | Evaluation run (6 cases + ablation) | ⬜ |
 | 5.4 | Deployment to Vercel | ⬜ |
 | 5.5 | README, architecture, limitations, responsible use | ⬜ |
@@ -417,6 +418,9 @@ Every screen handles: no seeds resolved, ambiguous seeds, Qloo timeout, partial 
 
 ### Step 5.2: Reliability
 Per-analysis Qloo call budget, per-IP rate limit on analysis and intake, global timeouts, and graceful degradation. Tested in incognito, on mobile, on a slow network, with an invalid key, and with empty results.
+
+### Step 5.2b: UI redesign
+The owner judged the Track 4 UI cluttered and generic ("AI slop"): stacked identical rounded cards, pill badges everywhere, too many labels. Redesign for an editorial, typography-led product: fewer containers, real hierarchy, whitespace, restrained colour (keep the A/B/bridge colour code), and one clear focal point per screen (the Obvious vs Discovered reveal). Keep all functionality and tests. Re-check desktop, phone and dark mode in the browser.
 
 ### Step 5.3: Evaluation run
 `eval/`: 6 fixed profile pairs (1 held out). Run three conditions (LLM-only, direct overlap, COMMON GROUND) and record the technical metrics (plan §14). Collect ~5 reviewer ratings. Write `docs/EVALUATION.md` honestly, as informal feedback.
