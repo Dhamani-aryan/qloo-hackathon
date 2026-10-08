@@ -2,6 +2,16 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-08: UI redesign (step 5.2b)
+
+The owner judged the Track 4 UI generic ("AI slop"): stacked identical rounded cards, pill badges on everything, and colour everywhere. The redesign:
+
+- **Editorial, typography-led.** Large Fraunces headlines, a plain-language pitch on the first screen, hairline rules and whitespace instead of containers.
+- **Colour only marks data:** cobalt for A, terracotta for B, plum for the bridge; amber for unverified or warnings. Everything else is ink on paper.
+- **Lists over grids.** Seeds are plain rows, the bridges are a ranked, expandable list, and the program is a numbered itinerary.
+- **One focal point per screen.** On the bridges screen, it's the Obvious vs Discovered spread with its conclusion set in serif.
+- **Honest comparison figures.** A model-only run once named 7 new titles. "3 with Qloo vs 7 without" would have read as a loss, so the figures now separate evidence-backed titles (3 vs 0) from unverified guesses (0 vs 7), and the headline states the finding.
+
 ## 2026-10-08: Web UI decisions (Track 4)
 
 - **One client "Studio"** holds the scenario draft (a reducer) and the run state built from the event stream. Later steps unlock as soon as their data arrives: bridges appear about 20 s in, before the LLM steps finish.

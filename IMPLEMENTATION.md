@@ -15,7 +15,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
-**Next:** **step 5.2b, the UI redesign.** The owner finds the current UI cluttered and generic (too many cards, pills and labels). Then 5.3 evaluation, 5.4 deploy, 5.5 docs and 5.6 submission.
+**Next:** **step 5.3, the evaluation** (6 cases plus the ablation). Then 5.4 deploy, 5.5 docs and 5.6 submission. The UI was redesigned in 5.2b; ask the owner for feedback on it.
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -25,7 +25,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
   - `POST /api/entities/resolve`
   - `POST /api/analysis` (streams server-sent events; the last event is `done` with the full result)
   - `POST /api/program` (regenerate for another bridge)
-- Web UI (`src/components/`, `src/app/page.tsx`), all verified live in the browser, including at phone width:
+- Web UI (`src/components/`, `src/app/page.tsx`), redesigned in 5.2b as an editorial report (ink on paper, colour only for data, rules instead of cards). Verified live on desktop, phone and dark mode:
   1. **Profiles:** prebuilt scenarios resolve through Qloo on load; add, confirm or change seeds; ambiguity flags; retry.
   2. **Investigate:** live stages, per-domain progress and an activity feed, from the event stream.
   3. **Bridges:** the Obvious vs Discovered centrepiece, three bridge cards (support bars, popularity, supporting seeds, interpretation notes, Qloo evidence), themes, runners-up and rejections.
@@ -139,7 +139,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 4.8 | Empty, partial, error, and insufficient-evidence states | ✅ done |
 | 5.1 | Prebuilt scenarios and response caching | ✅ done |
 | 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ✅ done |
-| 5.2b | UI redesign (less cluttered, editorial, no generic AI look) | ⬜ |
+| 5.2b | UI redesign (less cluttered, editorial, no generic AI look) | ✅ done |
 | 5.3 | Evaluation run (6 cases + ablation) | ⬜ |
 | 5.4 | Deployment to Vercel | ⬜ |
 | 5.5 | README, architecture, limitations, responsible use | ⬜ |
