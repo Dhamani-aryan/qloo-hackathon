@@ -85,12 +85,12 @@ export function useAgentRun() {
 // ---------- derived views ----------
 
 export const STAGES: { state: AgentState; label: string }[] = [
-  { state: "UNDERSTAND", label: "Read the brief and confirmed profiles" },
-  { state: "PLAN_DOMAINS", label: "Plan which cultural domains to explore" },
-  { state: "QUERY_QLOO", label: "Query Qloo and validate against both communities" },
-  { state: "DESIGN", label: "Design the program around the strongest bridge" },
-  { state: "CRITIQUE", label: "Critique and revise the program" },
-  { state: "EXPLAIN", label: "Wrap up and compare with the LLM-only version" },
+  { state: "UNDERSTAND", label: "Read both groups' favourites" },
+  { state: "PLAN_DOMAINS", label: "Choose what to explore" },
+  { state: "QUERY_QLOO", label: "Search Qloo for shared tastes" },
+  { state: "DESIGN", label: "Design the plan" },
+  { state: "CRITIQUE", label: "Review and improve it" },
+  { state: "EXPLAIN", label: "Compare with AI alone" },
 ];
 
 export type StageStatus = "pending" | "active" | "done" | "skipped";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Kicker, Note, Rule, Spinner, Title, cx, typeLabel } from "../ui";
+import { Button, Kicker, More, Note, Rule, Spinner, Title, cx, typeLabel } from "../ui";
 import {
   CALLS_PER_DOMAIN,
   STAGES,
@@ -55,12 +55,10 @@ export function InvestigateScreen({
   return (
     <div>
       <div className="grid gap-10 md:grid-cols-[1fr_auto] md:items-end">
-        <div className="max-w-2xl space-y-4">
-          <Title>{done ? "The investigation is done." : "Investigating."}</Title>
-          <p className="text-lg leading-relaxed text-ink-2">
-            The agent plans which cultural domains to explore, queries Qloo, tests every candidate
-            against each community separately, then designs and critiques a program. Nothing here is
-            simulated.
+        <div className="max-w-2xl space-y-3">
+          <Title>{done ? "Found it." : "Finding common ground…"}</Title>
+          <p className="text-lg text-ink-2">
+            {done ? "Your bridges and plan are ready." : "This takes about a minute."}
           </p>
         </div>
         <div className="flex items-end gap-8">
@@ -80,10 +78,9 @@ export function InvestigateScreen({
 
       {run.replay && (
         <p className="mt-8 text-sm text-muted">
-          Replaying a live run from {new Date(run.replay.recordedAt).toLocaleString()}, which took{" "}
-          {Math.round(run.replay.originalMs / 1000)}s. Cached on the server so demos are instant.{" "}
+          Shown instantly from a saved run ({Math.round(run.replay.originalMs / 1000)}s live).{" "}
           <Button variant="link" onClick={onRunLive} disabled={run.status === "running"}>
-            Run it live instead
+            Run it live
           </Button>
         </p>
       )}
@@ -148,7 +145,7 @@ export function InvestigateScreen({
 
       <div className="grid gap-12 py-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <section>
-          <Kicker>What the agent is doing</Kicker>
+          <Kicker>Progress</Kicker>
           <ol className="mt-5 space-y-4">
             {STAGES.map(({ state, label }, i) => {
               const s = stages[state];
@@ -182,11 +179,10 @@ export function InvestigateScreen({
               );
             })}
           </ol>
-          <p className="mt-8 text-sm leading-relaxed text-muted">
-            Meanwhile, the same brief goes to the same model <em>without</em> Qloo, for an honest
-            comparison at the end.{" "}
+          <p className="mt-8 text-sm text-muted">
+            Also writing a version without Qloo, to compare.{" "}
             {baselineDone ? (
-              <span className="text-ink-2">Ready.</span>
+              <span className="text-ink-2">Done.</span>
             ) : run.status === "running" ? (
               <Spinner />
             ) : null}
@@ -194,20 +190,19 @@ export function InvestigateScreen({
         </section>
 
         <section className="min-w-0">
-          <Kicker>Domains</Kicker>
+          <Kicker>What it&apos;s searching</Kicker>
           <table className="mt-4 w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted">
-                <th className="pb-2 font-normal">Domain</th>
-                <th className="pb-2 font-normal">Qloo queries</th>
-                <th className="pb-2 text-right font-normal">Candidates</th>
-                <th className="pb-2 text-right font-normal">Filtered</th>
+                <th className="pb-2 font-normal">Type</th>
+                <th className="pb-2 font-normal">Searches</th>
+                <th className="pb-2 text-right font-normal">Ideas found</th>
               </tr>
             </thead>
             <tbody>
               {domains.length === 0 && (
                 <tr className="border-t border-line">
-                  <td colSpan={4} className="py-3 text-muted">
+                  <td colSpan={3} className="py-3 text-muted">
                     {run.status === "running" ? "Planning…" : "—"}
                   </td>
                 </tr>
@@ -226,36 +221,34 @@ export function InvestigateScreen({
                     </span>
                   </td>
                   <td className="figures py-3 text-right">{d.found || "—"}</td>
-                  <td className="figures py-3 text-right text-muted">{d.rejected || "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="mt-10">
-            <Kicker>Log</Kicker>
-          </div>
-          <ul className="mt-3 space-y-1 font-mono text-xs" aria-live="polite">
-            {feed.length === 0 && <li className="text-muted">starting…</li>}
-            {feed.map((item, i) => (
-              <li
-                key={item.key}
-                title={item.text}
-                className={cx(
-                  "truncate",
-                  item.tone === "bridge"
-                    ? "text-bridge"
-                    : item.tone === "warn"
-                      ? "text-warn"
-                      : i === 0
-                        ? "text-ink-2"
-                        : "text-muted",
-                )}
-              >
-                {item.text}
-              </li>
-            ))}
-          </ul>
+          <More label="Show the agent's log" className="mt-8">
+            <ul className="space-y-1 font-mono text-xs" aria-live="polite">
+              {feed.length === 0 && <li className="text-muted">starting…</li>}
+              {feed.map((item, i) => (
+                <li
+                  key={item.key}
+                  title={item.text}
+                  className={cx(
+                    "truncate",
+                    item.tone === "bridge"
+                      ? "text-bridge"
+                      : item.tone === "warn"
+                        ? "text-warn"
+                        : i === 0
+                          ? "text-ink-2"
+                          : "text-muted",
+                  )}
+                >
+                  {item.text}
+                </li>
+              ))}
+            </ul>
+          </More>
         </section>
       </div>
 
@@ -275,11 +268,9 @@ export function InvestigateScreen({
       {ready && (
         <div className="mt-8 flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-ink-2">
-            {done
-              ? "The bridges and the program are ready."
-              : "The bridges are ready. The program is still being designed."}
+            {done ? "Everything is ready." : "Bridges are ready. The plan is still being written."}
           </p>
-          <Button onClick={onContinue}>See the bridges</Button>
+          <Button onClick={onContinue}>See the bridges →</Button>
         </div>
       )}
     </div>
