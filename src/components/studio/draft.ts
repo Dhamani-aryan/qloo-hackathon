@@ -155,13 +155,15 @@ export function readiness(draft: Draft): string[] {
   for (const side of ["a", "b"] as const) {
     const p = draft[side];
     const n = confirmedCount(p);
-    if (n < MIN_SEEDS)
-      problems.push(`${p.label} needs at least ${MIN_SEEDS} confirmed seeds (has ${n}).`);
-    if (p.seeds.some((s) => s.status === "resolving"))
-      problems.push(`${p.label} is still resolving seeds.`);
+    const name = p.label.trim() || (side === "a" ? "Group 1" : "Group 2");
+    if (p.seeds.some((s) => s.status === "resolving")) {
+      problems.push(`Looking up ${name}'s favourites…`);
+    } else if (n < MIN_SEEDS) {
+      const missing = MIN_SEEDS - n;
+      problems.push(`Add ${missing} more favourite${missing === 1 ? "" : "s"} for ${name}.`);
+    }
   }
-  if (!draft.location.trim())
-    problems.push("Add a location so the agent can suggest local places.");
+  if (!draft.location.trim()) problems.push("Add a city under \u201cWhere and why\u201d.");
   return problems;
 }
 

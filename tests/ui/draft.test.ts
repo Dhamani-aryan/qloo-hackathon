@@ -49,7 +49,7 @@ describe("draft model", () => {
     expect(readiness(d)).toHaveLength(3);
     d = withSeeds(withSeeds(d, "a", 3), "b", 2);
     d = draftReducer(d, { type: "set", patch: { location: "Test City" } });
-    expect(readiness(d)).toEqual(["Community B needs at least 3 confirmed seeds (has 2)."]);
+    expect(readiness(d)).toEqual(["Add 1 more favourite for Community B."]);
     d = withSeeds(d, "b", 1);
     expect(readiness(d)).toEqual([]);
   });

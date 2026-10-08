@@ -3,7 +3,19 @@
 import { useState, type Dispatch } from "react";
 import type { QlooTypeKey } from "@/lib/qloo/types";
 import { PREBUILT } from "@/scenarios";
-import { Button, Dot, Kicker, Lede, Rule, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
+import {
+  Button,
+  Dot,
+  HowItWorks,
+  Kicker,
+  Lede,
+  More,
+  Spinner,
+  Thumb,
+  Title,
+  cx,
+  typeLabel,
+} from "../ui";
 import {
   MAX_SEEDS,
   chosenMatch,
@@ -107,92 +119,101 @@ export function ProfilesScreen({
     );
   };
 
+  const total = confirmedCount(draft.a) + confirmedCount(draft.b);
+
   return (
     <div>
-      <section className="max-w-3xl space-y-6">
-        <Title>Find what two communities would genuinely want to do together.</Title>
+      <section className="max-w-3xl space-y-5">
+        <Title>What would two groups love doing together?</Title>
         <Lede>
-          Give each community&apos;s favourite artists, films, shows and books. Common Ground uses
-          Qloo&apos;s cultural intelligence to find what both groups love that isn&apos;t just what
-          everyone loves, then designs a recurring program around it.
+          Tell us what each group likes. We&apos;ll find what they share and plan around it.
         </Lede>
       </section>
 
+      <div className="mt-10">
+        <HowItWorks
+          steps={[
+            "Add a few things each group loves",
+            "Qloo finds tastes they share",
+            "Get a ready-to-run 4-session plan",
+          ]}
+        />
+      </div>
+
       <section className="mt-14 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
-        <span className="text-muted">Start from</span>
+        <span className="text-muted">Try an example:</span>
         {PREBUILT.map((p) => (
           <ScenarioTab key={p.id} active={draft.id === p.id} onClick={() => load(p.id)}>
             {p.title}
           </ScenarioTab>
         ))}
         <ScenarioTab active={draft.id.startsWith("custom")} onClick={() => load("custom")}>
-          Your own
+          Start blank
         </ScenarioTab>
       </section>
 
-      <Rule className="mt-4" />
-
-      <section className="grid gap-8 py-10 md:grid-cols-[1fr_16rem]">
-        <label className="block">
-          <Kicker>The brief</Kicker>
-          <textarea
-            value={draft.objective}
-            onChange={(e) => dispatch({ type: "set", patch: { objective: e.target.value } })}
-            rows={2}
-            placeholder="What should the program achieve? e.g. four sessions both groups keep coming back to"
-            className="mt-2 field-sizing-content w-full resize-none overflow-hidden bg-transparent font-display text-xl leading-snug outline-none"
-          />
-        </label>
-        <label className="block">
-          <Kicker>City</Kicker>
-          <input
-            value={draft.location}
-            onChange={(e) => dispatch({ type: "set", patch: { location: e.target.value } })}
-            placeholder="e.g. New York City"
-            className="mt-2 w-full border-b border-line bg-transparent pb-1 font-display text-xl outline-none focus:border-ink"
-          />
-          <span className="mt-2 block text-xs text-muted">For local venue suggestions.</span>
-        </label>
-      </section>
-
-      <Rule />
-
-      <section className="grid gap-x-16 gap-y-12 py-10 md:grid-cols-2">
+      <section className="mt-4 grid gap-x-16 gap-y-12 border-t border-line pt-10 md:grid-cols-2">
         <CommunityEditor side="a" profile={draft.a} dispatch={dispatch} resolve={resolve} />
         <CommunityEditor side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
       </section>
 
-      <div className="text-sm">
+      <section className="mt-10 space-y-4 text-sm">
+        <More
+          label={
+            <span>
+              Where and why:{" "}
+              <span className="text-ink">{draft.location.trim() || "no city yet"}</span>
+            </span>
+          }
+        >
+          <div className="grid gap-8 md:grid-cols-[16rem_1fr]">
+            <label className="block">
+              <Kicker>City</Kicker>
+              <input
+                value={draft.location}
+                onChange={(e) => dispatch({ type: "set", patch: { location: e.target.value } })}
+                placeholder="e.g. New York City"
+                className="mt-2 w-full border-b border-line bg-transparent pb-1 text-lg outline-none focus:border-ink"
+              />
+              <span className="mt-1.5 block text-xs text-muted">Used to suggest local places.</span>
+            </label>
+            <label className="block">
+              <Kicker>Goal (optional)</Kicker>
+              <textarea
+                value={draft.objective}
+                onChange={(e) => dispatch({ type: "set", patch: { objective: e.target.value } })}
+                rows={2}
+                placeholder="e.g. four sessions both groups keep coming back to"
+                className="mt-2 field-sizing-content w-full resize-none overflow-hidden border-b border-line bg-transparent pb-1 text-lg leading-snug outline-none focus:border-ink"
+              />
+            </label>
+          </div>
+        </More>
         {intakeOpen ? (
           <IntakePanel draft={draft} dispatch={dispatch} onClose={() => setIntakeOpen(false)} />
         ) : (
-          <p className="text-muted">
-            Rather ask the communities themselves?{" "}
-            <Button variant="link" onClick={() => setIntakeOpen(true)}>
-              Send each one a link
-            </Button>
-          </p>
+          <button
+            type="button"
+            onClick={() => setIntakeOpen(true)}
+            className="flex items-center gap-2 text-ink-2 hover:text-ink"
+          >
+            <span aria-hidden className="inline-block w-3 text-muted">
+              ›
+            </span>
+            Let each group fill in their own favourites
+          </button>
         )}
-      </div>
+      </section>
 
-      <div className="mt-12 flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm">
-          {problems.length ? (
-            <ul className="space-y-0.5 text-muted">
-              {problems.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-ink-2">
-              {confirmedCount(draft.a) + confirmedCount(draft.b)} confirmed favourites. The agent
-              takes about a minute, or a few seconds for a run it has seen before.
-            </p>
-          )}
+      <div className="sticky bottom-0 z-10 -mx-4 mt-12 border-t border-ink bg-paper/95 px-4 py-4 backdrop-blur sm:-mx-8 sm:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted">
+            {problems.length ? problems[0] : `${total} favourites added. Ready when you are.`}
+          </p>
+          <Button onClick={onRun} disabled={problems.length > 0} className="shrink-0">
+            Find common ground →
+          </Button>
         </div>
-        <Button onClick={onRun} disabled={problems.length > 0} className="shrink-0">
-          Find common ground
-        </Button>
       </div>
     </div>
   );
@@ -264,19 +285,25 @@ function CommunityEditor({
     <div>
       <div className="flex items-center gap-2">
         <Dot tone={side} />
-        <Kicker tone={side}>Community {side.toUpperCase()}</Kicker>
+        <Kicker tone={side}>Group {side === "a" ? 1 : 2}</Kicker>
+        {profile.source === "intake" && (
+          <span className="text-xs text-muted">
+            · from {profile.contributorCount ?? 0} participant
+            {profile.contributorCount === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
       <input
         value={profile.label}
         onChange={(e) => dispatch({ type: "profile", side, patch: { label: e.target.value } })}
-        aria-label={`Community ${side.toUpperCase()} name`}
+        aria-label={`Group ${side === "a" ? 1 : 2} name`}
+        placeholder="Name this group"
         className="mt-2 w-full bg-transparent font-display text-2xl outline-none"
       />
       <p className="mt-1 text-xs text-muted">
-        {confirmed} of {MAX_SEEDS} favourites ·{" "}
-        {profile.source === "intake"
-          ? `from ${profile.contributorCount ?? 0} participant${profile.contributorCount === 1 ? "" : "s"}`
-          : "supplied by the organizer"}
+        {profile.seeds.length === 0
+          ? "What does this group love? Add 3 to 8 favourites."
+          : `${confirmed} of ${MAX_SEEDS} added`}
       </p>
 
       <ul className="mt-5 border-t border-line">
@@ -285,7 +312,7 @@ function CommunityEditor({
         ))}
         {profile.seeds.length === 0 && (
           <li className="border-b border-line py-6 text-sm text-muted">
-            Add three to eight favourites this community actually named.
+            Artists, films, shows, books, podcasts or places they actually love.
           </li>
         )}
       </ul>
@@ -310,8 +337,8 @@ function CommunityEditor({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Add a favourite…"
-            aria-label={`Add a favourite to community ${side.toUpperCase()}`}
+            placeholder="+ Add a favourite (a band, film, book…)"
+            aria-label={`Add a favourite to group ${side === "a" ? 1 : 2}`}
             className="min-w-0 flex-1 border-b border-transparent bg-transparent py-1.5 text-sm outline-none focus:border-line"
           />
           <select
