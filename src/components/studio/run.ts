@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { AgentEvent, AgentResult, AgentState } from "@/lib/agent/orchestrator";
+import type { StreamEvent } from "@/lib/agent/replay";
 import type { DomainKey, Scenario } from "@/lib/engine/types";
 import { streamEvents } from "./api";
 
@@ -14,6 +15,8 @@ export interface RunState {
   error: string | null;
   startedAt: number | null;
   finishedAt: number | null;
+  /** Set when the server replayed a cached earlier run. */
+  replay: { recordedAt: number; originalMs: number } | null;
 }
 
 const IDLE: RunState = {
@@ -23,23 +26,31 @@ const IDLE: RunState = {
   error: null,
   startedAt: null,
   finishedAt: null,
+  replay: null,
 };
 
 export function useAgentRun() {
   const [run, setRun] = useState<RunState>(IDLE);
   const abort = useRef<AbortController | null>(null);
 
-  const start = useCallback(async (scenario: Scenario) => {
+  const start = useCallback(async (scenario: Scenario, { fresh = false } = {}) => {
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
     setRun({ ...IDLE, status: "running", startedAt: Date.now() });
     try {
-      for await (const event of streamEvents<AgentEvent>(
+      for await (const event of streamEvents<StreamEvent>(
         "/api/analysis",
-        { scenario },
+        { scenario, fresh },
         controller.signal,
       )) {
+        if (event.type === "replay") {
+          setRun((r) => ({
+            ...r,
+            replay: { recordedAt: event.recordedAt, originalMs: event.originalMs },
+          }));
+          continue;
+        }
         setRun((r) => ({
           ...r,
           events: [...r.events, event],

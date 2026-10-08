@@ -40,12 +40,12 @@ export function Studio() {
     setStep(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const runAnalysis = () => {
+  const runAnalysis = (fresh = false) => {
     const scenario = toScenario(draft);
     setRanScenario(scenario);
     setOverride(null);
     go("investigate");
-    void start(scenario);
+    void start(scenario, { fresh });
   };
 
   const reachable: StepKey[] = ["profiles"];
@@ -58,15 +58,16 @@ export function Studio() {
       <Stepper current={step} reachable={reachable} onSelect={go} />
       <Main>
         {step === "profiles" && (
-          <ProfilesScreen draft={draft} dispatch={dispatch} onRun={runAnalysis} />
+          <ProfilesScreen draft={draft} dispatch={dispatch} onRun={() => runAnalysis()} />
         )}
         {step === "investigate" && (
           <InvestigateScreen
             run={run}
             onStop={stop}
-            onRetry={runAnalysis}
+            onRetry={() => runAnalysis()}
             onBack={() => go("profiles")}
             onContinue={() => go("bridges")}
+            onRunLive={() => runAnalysis(true)}
           />
         )}
         {step === "bridges" && view.engine && ranScenario && (
@@ -77,7 +78,7 @@ export function Studio() {
             programReady={Boolean(view.program)}
             programFailed={run.status !== "running" && !view.program}
             onContinue={() => go("program")}
-            onRetry={runAnalysis}
+            onRetry={() => runAnalysis()}
           />
         )}
         {step === "program" && view.program && view.engine && ranScenario && (

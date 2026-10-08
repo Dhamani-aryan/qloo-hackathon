@@ -29,12 +29,15 @@ export function InvestigateScreen({
   onRetry,
   onBack,
   onContinue,
+  onRunLive,
 }: {
   run: RunState;
   onStop: () => void;
   onRetry: () => void;
   onBack: () => void;
   onContinue: () => void;
+  /** Re-run without the cache. */
+  onRunLive: () => void;
 }) {
   const elapsed = useElapsed(run);
   const stages = stageStatuses(run);
@@ -71,6 +74,18 @@ export function InvestigateScreen({
           )}
         </div>
       </div>
+
+      {run.replay && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-sm">
+          <p className="text-muted">
+            Replaying a live run from {new Date(run.replay.recordedAt).toLocaleString()} (originally{" "}
+            {Math.round(run.replay.originalMs / 1000)}s), cached on the server for speed.
+          </p>
+          <Button variant="secondary" onClick={onRunLive} disabled={run.status === "running"}>
+            Run it live instead
+          </Button>
+        </div>
+      )}
 
       {run.status === "error" && (
         <Notice tone="warn">
