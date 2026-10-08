@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
+/*
+ * COMMON GROUND design tokens.
+ * Community A = cobalt, community B = terracotta, the bridge between them = plum.
+ * The same three hues are used everywhere so a viewer always knows whose evidence they see.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --paper: #f8f6f2;
+  --surface: #ffffff;
+  --surface-2: #f2efe9;
+  --ink: #1d1c1a;
+  --muted: #6a665e;
+  --line: #e4dfd6;
+  --a: #2560a8;
+  --a-soft: #e5edf8;
+  --b: #b9502a;
+  --b-soft: #f8e9e2;
+  --bridge: #6b4aa6;
+  --bridge-soft: #efe9f8;
+  --ok: #2f7a4f;
+  --warn: #a8661c;
+  --warn-soft: #faf0e1;
+  --danger: #b3332f;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --paper: #131211;
+    --surface: #1c1b19;
+    --surface-2: #252320;
+    --ink: #eeeae3;
+    --muted: #a39e95;
+    --line: #34312c;
+    --a: #86b4ea;
+    --a-soft: #1d2a3b;
+    --b: #ee9471;
+    --b-soft: #3a241b;
+    --bridge: #bca2ee;
+    --bridge-soft: #2b2338;
+    --ok: #74c597;
+    --warn: #e4ae62;
+    --warn-soft: #33281a;
+    --danger: #f08a85;
   }
 }
 
+:root[data-theme="dark"] {
+  --paper: #131211;
+  --surface: #1c1b19;
+  --surface-2: #252320;
+  --ink: #eeeae3;
+  --muted: #a39e95;
+  --line: #34312c;
+  --a: #86b4ea;
+  --a-soft: #1d2a3b;
+  --b: #ee9471;
+  --b-soft: #3a241b;
+  --bridge: #bca2ee;
+  --bridge-soft: #2b2338;
+  --ok: #74c597;
+  --warn: #e4ae62;
+  --warn-soft: #33281a;
+  --danger: #f08a85;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-a: var(--a);
+  --color-a-soft: var(--a-soft);
+  --color-b: var(--b);
+  --color-b-soft: var(--b-soft);
+  --color-bridge: var(--bridge);
+  --color-bridge-soft: var(--bridge-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+}
+
+html {
+  background: var(--paper);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--bridge-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--bridge);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
