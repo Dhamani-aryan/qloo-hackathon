@@ -5,7 +5,7 @@ import type { EvidenceBrief } from "@/lib/agent/brief";
 import type { CritiqueIssue } from "@/lib/agent/critic";
 import type { Program } from "@/lib/agent/program";
 import type { EngineResult } from "@/lib/engine/types";
-import { Badge, Button, Card, EntityTile, Eyebrow, Heading, Notice, Spinner, cx } from "../ui";
+import { Button, Dot, Kicker, Lede, Note, Rule, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
 import { postJson } from "./api";
 
 export interface ProgramVersion {
@@ -39,7 +39,7 @@ export function ProgramScreen({
   brief: EvidenceBrief | null;
   labels: [string, string];
   onRegenerated: (v: ProgramVersion) => void;
-  /** The with/without-Qloo view, rendered under the program (step 4.7). */
+  /** The with/without-Qloo view, rendered under the program. */
   comparison?: React.ReactNode;
 }) {
   const { program, critique } = version;
@@ -70,7 +70,9 @@ export function ProgramScreen({
   };
 
   const exportMarkdown = () => {
-    const blob = new Blob([programMarkdown(program, critique, labels)], { type: "text/markdown" });
+    const blob = new Blob([programMarkdown(program, critique, labels)], {
+      type: "text/markdown",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -80,154 +82,165 @@ export function ProgramScreen({
   };
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-3xl space-y-3">
-          <Eyebrow tone="bridge">Step 4 · Program</Eyebrow>
-          <Heading level={1}>{program.title}</Heading>
-          <p className="text-muted">{program.objective}</p>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {main && (
-              <Badge tone="bridge">
-                Built on {main.name} · {main.supportA}th / {main.supportB}th
-              </Badge>
-            )}
-            <span className="text-muted">{program.format}</span>
-          </div>
-        </div>
-        <div className="flex gap-2 print:hidden">
-          <Button variant="secondary" onClick={exportMarkdown}>
-            Export
+    <div>
+      <section className="max-w-3xl space-y-5">
+        {main && <Kicker tone="bridge">A program built on {main.name}</Kicker>}
+        <Title>{program.title}</Title>
+        <Lede>{program.objective}</Lede>
+        <p className="text-sm text-muted">{program.format}</p>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm print:hidden">
+          <Button variant="link" onClick={exportMarkdown}>
+            Download as Markdown
           </Button>
-          <Button variant="secondary" onClick={() => window.print()}>
+          <Button variant="link" onClick={() => window.print()}>
             Print
           </Button>
+          <span className={cx("text-xs", removed ? "text-warn" : "text-muted")}>
+            {removed === 0
+              ? "✓ Every session anchor is a Qloo entity from the evidence."
+              : `The evidence guard removed ${removed} unverified reference${removed === 1 ? "" : "s"}${
+                  program.guard.removedTitles.length
+                    ? `: ${program.guard.removedTitles.join(", ")}`
+                    : ""
+                }.`}
+          </span>
         </div>
-      </div>
+      </section>
 
-      {removed === 0 ? (
-        <Notice tone="ok">
-          Every session anchor is a Qloo entity from the evidence; the guard found nothing invented.
-        </Notice>
-      ) : (
-        <Notice tone="warn">
-          The evidence guard removed {removed} item{removed === 1 ? "" : "s"} the model referenced
-          that aren&apos;t in Qloo&apos;s evidence
-          {program.guard.removedTitles.length ? `: ${program.guard.removedTitles.join(", ")}` : ""}.
-        </Notice>
-      )}
-
-      <ol className="space-y-4">
+      <ol className="mt-16 border-t border-ink">
         {program.sessions.map((s) => (
-          <li key={s.number}>
-            <Card className="grid gap-5 md:grid-cols-[220px_1fr]">
-              <div className="space-y-3">
-                <p className="font-display text-sm text-muted">Session {s.number}</p>
-                <Heading level={3}>{s.title}</Heading>
-                {s.entity ? (
-                  <div className="space-y-2">
-                    <EntityTile
-                      name={s.entity.name}
-                      type={s.entity.domain}
-                      imageUrl={engineImage(engine, s.entity.id)}
-                      tone="bridge"
-                      wrap
-                    />
-                    <Badge tone="bridge">Qloo anchor</Badge>
-                  </div>
-                ) : (
-                  <Badge>Co-creation · no Qloo anchor</Badge>
-                )}
-                {s.theme && <Badge tone="neutral">Theme: {s.theme.name}</Badge>}
-              </div>
-              <div className="space-y-4">
-                <p className="text-sm leading-relaxed">{s.activity}</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-a-soft p-3 text-sm">
-                    <p className="mb-1 text-xs font-semibold text-a">{labels[0]}</p>
-                    <p>{s.roles.A}</p>
-                  </div>
-                  <div className="rounded-xl bg-b-soft p-3 text-sm">
-                    <p className="mb-1 text-xs font-semibold text-b">{labels[1]}</p>
-                    <p>{s.roles.B}</p>
-                  </div>
+          <li
+            key={s.number}
+            className="grid gap-6 border-b border-line py-10 md:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.4fr)] md:gap-10"
+          >
+            <p className="figures font-display text-5xl leading-none text-muted/70">{s.number}</p>
+            <div className="space-y-4">
+              <Title level={3} className="text-2xl">
+                {s.title}
+              </Title>
+              {s.entity ? (
+                <div className="flex items-center gap-3">
+                  <Thumb
+                    src={engineImage(engine, s.entity.id)}
+                    name={s.entity.name}
+                    size={44}
+                    tone="bridge"
+                  />
+                  <p className="text-sm leading-snug">
+                    <span className="text-muted">Built around</span>
+                    <br />
+                    <span className="text-ink">{s.entity.name}</span>
+                    <span className="text-muted"> · {typeLabel(s.entity.domain)}</span>
+                  </p>
                 </div>
+              ) : (
+                <p className="text-sm text-muted">A making session, no Qloo anchor needed.</p>
+              )}
+              {s.theme && <p className="text-xs text-muted">Theme · {s.theme.name}</p>}
+            </div>
+            <div className="space-y-5">
+              <p className="leading-relaxed text-ink-2">{s.activity}</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(["A", "B"] as const).map((side, i) => (
+                  <div key={side} className="text-sm leading-relaxed">
+                    <p className="mb-1 flex items-center gap-2 text-xs text-muted">
+                      <Dot tone={side === "A" ? "a" : "b"} />
+                      {labels[i]}
+                    </p>
+                    <p>{s.roles[side]}</p>
+                  </div>
+                ))}
               </div>
-            </Card>
+            </div>
           </li>
         ))}
       </ol>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <ListCard title="Venue" items={[program.venueType]} />
-        <ListCard title="Partners" items={program.partnerTypes} />
-        <ListCard title="Accessibility" items={program.accessibility} />
-        <ListCard title="Friction mitigations" items={program.frictionMitigations} />
-        <ListCard title="Success measures" items={program.successMeasures} />
-        <ListCard title="Limitations" items={program.limitations} />
-      </div>
+      <section className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        <Detail title="Where" items={[program.venueType]} />
+        <Detail title="Partners" items={program.partnerTypes} />
+        <Detail title="Access" items={program.accessibility} />
+        <Detail title="Reducing friction" items={program.frictionMitigations} />
+        <Detail title="How we'd know it worked" items={program.successMeasures} />
+        <Detail title="Limits of this plan" items={program.limitations} />
+      </section>
 
       {critique.length > 0 && (
-        <Card className="space-y-3">
-          <Heading level={3}>
-            The critic&apos;s review: {critique.length} issue{critique.length === 1 ? "" : "s"}{" "}
-            fixed
-          </Heading>
-          <ul className="space-y-3">
-            {critique.map((c, i) => (
-              <li key={i} className="text-sm">
-                <Badge tone="warn">{CHECK_LABELS[c.check] ?? c.check}</Badge>
-                <p className="mt-1 text-muted">{c.problem}</p>
-                <p className="mt-0.5">
-                  <span className="font-medium">Fix: </span>
-                  {c.fix}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <section className="mt-16">
+          <Rule />
+          <div className="grid gap-8 pt-10 md:grid-cols-[16rem_1fr]">
+            <div>
+              <Kicker>The critic&apos;s pass</Kicker>
+              <p className="mt-2 text-sm text-muted">
+                A second model reviewed the first draft against ten checks. What it fixed:
+              </p>
+            </div>
+            <ul className="space-y-5">
+              {critique.map((c, i) => (
+                <li key={i} className="text-sm leading-relaxed">
+                  <p className="font-medium text-ink">{CHECK_LABELS[c.check] ?? c.check}</p>
+                  <p className="text-muted">{c.problem}</p>
+                  <p className="mt-1 text-ink-2">→ {c.fix}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
       )}
 
       {bridges.length > 1 && (
-        <Card className="space-y-3 print:hidden">
-          <Heading level={3}>Build on a different bridge</Heading>
-          <p className="text-sm text-muted">
-            The agent redesigns and re-critiques the program around another discovered bridge (about
-            a minute).
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {bridges.map((b) => (
-              <Button
-                key={b.ref}
-                variant={b.ref === program.bridgeRef ? "primary" : "secondary"}
-                disabled={Boolean(busy) || b.ref === program.bridgeRef}
-                onClick={() => rebuild(b.ref)}
-              >
-                {busy === b.ref ? <Spinner /> : null}
-                {b.name}
-              </Button>
-            ))}
+        <section className="mt-16 print:hidden">
+          <Rule />
+          <div className="flex flex-col gap-4 pt-8 sm:flex-row sm:items-baseline sm:justify-between">
+            <p className="text-sm text-muted">Build the program on a different bridge instead:</p>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {bridges.map((b) =>
+                b.ref === program.bridgeRef ? (
+                  <span key={b.ref} className="text-sm text-ink">
+                    {b.name} (current)
+                  </span>
+                ) : (
+                  <Button
+                    key={b.ref}
+                    variant="link"
+                    disabled={Boolean(busy)}
+                    onClick={() => rebuild(b.ref)}
+                  >
+                    {busy === b.ref ? <Spinner label={b.name} /> : b.name}
+                  </Button>
+                ),
+              )}
+            </div>
           </div>
-          {error && <Notice tone="warn">{error}</Notice>}
-        </Card>
+          {busy && (
+            <p className="mt-3 text-xs text-muted">
+              Redesigning and re-critiquing, about a minute.
+            </p>
+          )}
+          {error && (
+            <div className="mt-4">
+              <Note tone="warn">{error}</Note>
+            </div>
+          )}
+        </section>
       )}
 
-      {comparison}
+      {comparison && <div className="mt-24">{comparison}</div>}
     </div>
   );
 }
 
-function ListCard({ title, items }: { title: string; items: string[] }) {
+function Detail({ title, items }: { title: string; items: string[] }) {
   if (!items.length) return null;
   return (
-    <Card className="space-y-2">
-      <p className="text-xs font-semibold tracking-wide text-muted uppercase">{title}</p>
-      <ul className={cx("space-y-1.5 text-sm", items.length > 1 && "list-disc pl-4")}>
+    <div>
+      <Kicker>{title}</Kicker>
+      <ul className="mt-3 space-y-2 text-sm leading-relaxed text-ink-2">
         {items.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
       </ul>
-    </Card>
+    </div>
   );
 }
 
