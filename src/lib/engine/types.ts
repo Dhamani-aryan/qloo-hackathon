@@ -132,6 +132,8 @@ export interface EngineStats {
   ms: number;
   domains: DomainKey[];
   poolSize: number;
+  /** Size of the full ledger; `evidence` keeps only items cited by the returned results. */
+  evidenceTotal: number;
 }
 
 export interface EngineResult {
@@ -145,6 +147,7 @@ export interface EngineResult {
   runnersUp: ScoredCandidate[];
   themes: Theme[];
   rejections: Rejection[];
+  /** Evidence cited by the bridges, runners-up, obvious pick and themes. */
   evidence: Evidence[];
   warnings: string[];
   stats: EngineStats;

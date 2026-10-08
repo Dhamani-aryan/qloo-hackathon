@@ -54,5 +54,11 @@ export const RESULT: EngineResult = {
   rejections: [],
   evidence: [],
   warnings: [],
-  stats: { qlooCalls: 13, ms: 100, domains: ["tvShow", "place", "artist"], poolSize: 10 },
+  stats: {
+    qlooCalls: 13,
+    ms: 100,
+    domains: ["tvShow", "place", "artist"],
+    poolSize: 10,
+    evidenceTotal: 40,
+  },
 };

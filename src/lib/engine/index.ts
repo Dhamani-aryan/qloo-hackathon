@@ -15,6 +15,7 @@ import {
 import { scoreSides } from "./validate";
 
 export const MIN_SEEDS_PER_SIDE = 3;
+const MAX_TAGS = 12;
 
 /** Every Qloo call failed (bad key, outage, rate limit): not the same as "no bridge found". */
 export class QlooUnavailableError extends Error {
@@ -55,7 +56,13 @@ export async function runBridgeEngine(
     rejections: [],
     evidence: ctx.ledger.toJSON(),
     warnings: ctx.warnings,
-    stats: { qlooCalls: ctx.budget.spent, ms: Date.now() - started, domains, poolSize },
+    stats: {
+      qlooCalls: ctx.budget.spent,
+      ms: Date.now() - started,
+      domains,
+      poolSize,
+      evidenceTotal: ctx.ledger.size,
+    },
     ...partial,
   });
 
@@ -120,7 +127,33 @@ export async function runBridgeEngine(
     });
   }
 
-  return result({ ...selection, themes, rejections }, poolSize);
+  // Keep the payload small (the full ledger was ~430 KB for one NYC run): return only the
+  // evidence the results cite, and trim the long tag lists Qloo attaches to entities.
+  const shown = [
+    ...selection.bridges,
+    ...selection.runnersUp,
+    ...(selection.obvious ? [selection.obvious] : []),
+  ];
+  const cited = new Set([
+    ...shown.flatMap((c) => c.evidenceIds),
+    ...themes.map((t) => t.evidenceId),
+  ]);
+  const slim = (c: ScoredCandidate): ScoredCandidate => ({
+    ...c,
+    entity: { ...c.entity, tags: c.entity.tags.slice(0, MAX_TAGS) },
+  });
+  return result(
+    {
+      bridges: selection.bridges.map(slim),
+      runnersUp: selection.runnersUp.map(slim),
+      obvious: selection.obvious && slim(selection.obvious),
+      status: selection.status,
+      themes,
+      rejections,
+      evidence: ctx.ledger.toJSON().filter((e) => cited.has(e.evidenceId)),
+    },
+    poolSize,
+  );
 }
 
 export * from "./types";
