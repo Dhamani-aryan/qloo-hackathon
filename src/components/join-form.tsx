@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { Pick } from "@/lib/intake/store";
 import { resolveSeeds, postJson } from "./studio/api";
 import type { Match } from "./studio/draft";
-import { Button, Card, EntityTile, Eyebrow, Heading, Notice, Spinner, cx } from "./ui";
+import { Mark } from "./shell";
+import { Button, Dot, Kicker, Note, Spinner, Thumb, Title, typeLabel } from "./ui";
 
 const SLOTS = 3;
 
@@ -77,47 +78,52 @@ export function JoinForm({
 
   if (state === "sent") {
     return (
-      <Card tone={tone} className="space-y-3 text-center">
-        <Heading level={2}>Thank you!</Heading>
-        <p className="text-muted">
-          Your picks were added to <span className="font-medium text-ink">{label}</span>. Only the
-          titles are counted. Nothing identifies you.
+      <div className="space-y-4 pt-10">
+        <Mark size={40} />
+        <Title level={2}>Thank you.</Title>
+        <p className="text-ink-2">
+          Your favourites now count towards <span className="text-ink">{label}</span>. Only the
+          titles are counted, alongside everyone else&apos;s. Nothing identifies you.
         </p>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Eyebrow tone={tone}>{title}</Eyebrow>
-        <Heading level={1}>What do you love?</Heading>
-        <p className="text-muted">
-          You&apos;re helping <span className="font-medium text-ink">{label}</span> plan a program
-          with another community. Name up to three favourite artists, films, shows, books, podcasts
-          or places.
+    <div>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Dot tone={tone} />
+          <Kicker tone={tone}>{title}</Kicker>
+        </div>
+        <Title>What do you love?</Title>
+        <p className="leading-relaxed text-ink-2">
+          You&apos;re helping <span className="text-ink">{label}</span> plan a program with another
+          community. Name up to three favourite artists, films, shows, books, podcasts or places.
         </p>
       </div>
 
-      <ol className="space-y-3">
+      <ol className="mt-10 border-t border-ink">
         {slots.map((slot, i) => (
-          <li key={i}>
-            <Card className="space-y-3 p-4">
+          <li key={i} className="border-b border-line py-4">
+            <div className="flex items-center gap-3">
+              <span className="figures w-5 shrink-0 font-display text-lg text-muted">{i + 1}</span>
               {slot.pick ? (
-                <div className="flex items-center justify-between gap-3">
-                  <EntityTile
-                    name={slot.pick.name}
-                    type={slot.pick.type}
-                    imageUrl={slot.pick.imageUrl}
-                    tone={tone}
-                  />
-                  <Button variant="ghost" onClick={() => update(i, emptySlot())}>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Thumb src={slot.pick.imageUrl} name={slot.pick.name} size={40} tone={tone} />
+                  <p className="min-w-0 flex-1">
+                    <span className="block truncate">{slot.pick.name}</span>
+                    <span className="block text-xs text-muted">
+                      {slot.pick.type ? typeLabel(slot.pick.type) : ""}
+                    </span>
+                  </p>
+                  <Button variant="link" onClick={() => update(i, emptySlot())}>
                     Change
                   </Button>
                 </div>
               ) : (
                 <form
-                  className="flex gap-2"
+                  className="flex min-w-0 flex-1 items-center gap-3"
                   onSubmit={(e) => {
                     e.preventDefault();
                     void search(i);
@@ -127,62 +133,72 @@ export function JoinForm({
                     value={slot.query}
                     onChange={(e) => update(i, { query: e.target.value, status: "idle" })}
                     placeholder={
-                      ["e.g. Joni Mitchell", "e.g. Lady Bird", "e.g. your favourite café"][i]
+                      ["e.g. Joni Mitchell", "e.g. Lady Bird", "e.g. a café you love"][i]
                     }
                     aria-label={`Favourite ${i + 1}`}
-                    className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-3 py-2"
+                    className="min-w-0 flex-1 bg-transparent py-1 text-lg outline-none"
                   />
-                  <Button type="submit" variant="secondary" disabled={!slot.query.trim()}>
+                  <Button type="submit" variant="link" disabled={!slot.query.trim()}>
                     Find
                   </Button>
                 </form>
               )}
-              {slot.status === "searching" && <Spinner label="Looking it up…" />}
-              {slot.status === "none" && (
-                <p className="text-sm text-muted">No match found. Try another spelling.</p>
-              )}
-              {slot.status === "choosing" && !slot.pick && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted">Which one did you mean?</p>
+            </div>
+            {slot.status === "searching" && (
+              <div className="mt-2 pl-8">
+                <Spinner label="Looking it up…" />
+              </div>
+            )}
+            {slot.status === "none" && (
+              <p className="mt-2 pl-8 text-sm text-muted">No match. Try another spelling.</p>
+            )}
+            {slot.status === "choosing" && !slot.pick && (
+              <div className="mt-3 pl-8">
+                <p className="text-xs text-muted">Which one?</p>
+                <ul className="mt-1">
                   {slot.matches.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => update(i, { pick: m, status: "picked" })}
-                      className={cx(
-                        "flex w-full items-center rounded-xl border border-line px-3 py-2 text-left hover:border-bridge",
-                      )}
-                    >
-                      <EntityTile
-                        name={m.name}
-                        type={m.type}
-                        imageUrl={m.imageUrl}
-                        size="sm"
-                        tone={tone}
-                      />
-                    </button>
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => update(i, { pick: m, status: "picked" })}
+                        className="flex w-full items-center gap-3 py-2 text-left hover:text-ink"
+                      >
+                        <Thumb src={m.imageUrl} name={m.name} size={32} tone={tone} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm">{m.name}</span>
+                          <span className="block text-xs text-muted">
+                            {m.type ? typeLabel(m.type) : ""}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
                   ))}
-                </div>
-              )}
-            </Card>
+                </ul>
+              </div>
+            )}
           </li>
         ))}
       </ol>
 
-      {state === "error" && <Notice tone="warn">Couldn&apos;t send your picks: {error}</Notice>}
+      {state === "error" && (
+        <div className="mt-6">
+          <Note tone="warn">Couldn&apos;t send your picks: {error}</Note>
+        </div>
+      )}
 
       <Button
         onClick={submit}
         disabled={picks.length === 0 || state === "sending"}
-        className="w-full py-3"
+        className="mt-8 w-full py-3"
       >
         {state === "sending"
           ? "Sending…"
-          : `Share ${picks.length || ""} favourite${picks.length === 1 ? "" : "s"}`}
+          : picks.length
+            ? `Share ${picks.length} favourite${picks.length === 1 ? "" : "s"}`
+            : "Pick at least one"}
       </Button>
-      <p className="text-center text-xs text-muted">
-        No account, no names. Only the titles you pick are counted, together with everyone
-        else&apos;s.
+      <p className="mt-4 text-center text-xs text-muted">
+        No account and no names. Only the titles you pick are counted.
       </p>
     </div>
   );

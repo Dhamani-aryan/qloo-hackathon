@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JoinForm } from "@/components/join-form";
+import { TopBar } from "@/components/shell";
 import { getIntakeStore } from "@/lib/intake/server";
 
 export const metadata: Metadata = {
@@ -17,8 +18,11 @@ export default async function JoinPage({ params }: PageProps<"/join/[id]/[side]"
   if (!session) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-lg flex-1 px-4 py-10">
-      <JoinForm id={id} side={side} label={session.labels[side]} title={session.title} />
-    </main>
+    <>
+      <TopBar />
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pt-10 pb-16">
+        <JoinForm id={id} side={side} label={session.labels[side]} title={session.title} />
+      </main>
+    </>
   );
 }
