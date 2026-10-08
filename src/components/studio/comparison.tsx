@@ -3,11 +3,11 @@
 import type { BaselineProgram } from "@/lib/agent/baseline";
 import type { Program } from "@/lib/agent/program";
 import type { Scenario } from "@/lib/engine/types";
-import { Badge, Card, Eyebrow, Heading, Spinner, cx } from "../ui";
+import { Kicker, Rule, Spinner, Title, cx } from "../ui";
 
 /**
  * With vs without Qloo (plan §14 ablation, shown in the product). The LLM-only version got
- * the same objective and the same seed names but no Qloo evidence.
+ * the same objective and the same favourites, but no Qloo evidence.
  */
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -51,6 +51,17 @@ export function compareStats(
   };
 }
 
+function headline(stats: ComparisonStats): string {
+  const { baseline } = stats;
+  if (baseline.named > 0 && baseline.unverified === 0) {
+    return "Without Qloo, the model could only reuse the favourites it was given.";
+  }
+  if (baseline.unverified > baseline.reusedSeeds) {
+    return "Without Qloo, the model's new picks are guesses with no evidence behind them.";
+  }
+  return "Without Qloo, the program has nothing to stand on but the model's intuition.";
+}
+
 export function Comparison({
   program,
   baseline,
@@ -64,111 +75,105 @@ export function Comparison({
 }) {
   if (!baseline) {
     return (
-      <Card>
-        <Heading level={2}>With vs without Qloo</Heading>
-        <div className="mt-3">
-          {pending ? (
-            <Spinner label="The LLM-only version is still being written…" />
-          ) : (
-            <p className="text-sm text-muted">
-              The LLM-only comparison isn&apos;t available for this run.
-            </p>
-          )}
+      <section>
+        <Rule />
+        <div className="pt-8">
+          <Kicker>With and without Qloo</Kicker>
+          <div className="mt-3">
+            {pending ? (
+              <Spinner label="The model-only version is still being written…" />
+            ) : (
+              <p className="text-sm text-muted">
+                The model-only comparison isn&apos;t available for this run.
+              </p>
+            )}
+          </div>
         </div>
-      </Card>
+      </section>
     );
   }
   const seeds = new Set([...scenario.a.seeds, ...scenario.b.seeds].map((s) => norm(s.name)));
   const stats = compareStats(program, baseline, scenario);
 
   return (
-    <section className="space-y-5" aria-label="With versus without Qloo">
-      <div className="max-w-3xl space-y-2">
-        <Eyebrow tone="bridge">Proof of dependence</Eyebrow>
-        <Heading level={2}>With vs without Qloo</Heading>
-        <p className="text-muted">
-          The same objective and the same favourites went to the same LLM, once with Qloo&apos;s
-          evidence and once without.
+    <section aria-label="With versus without Qloo">
+      <div className="border-t-2 border-ink pt-10">
+        <Kicker>With and without Qloo</Kicker>
+        <Title level={2} className="mt-4 max-w-3xl">
+          {headline(stats)}
+        </Title>
+        <p className="mt-4 max-w-2xl text-ink-2">
+          Same brief, same favourites, same model. One version had Qloo&apos;s evidence; the other
+          didn&apos;t.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat
-          label="New entities found beyond the seeds"
+      <dl className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
+        <Figure
+          label="New titles backed by both groups' data"
           ours={stats.ours.discovered}
-          theirs={stats.baseline.unverified}
-          theirsNote="unverified guesses"
-        />
-        <Stat
-          label="Session anchors backed by both communities' Qloo data"
-          ours={stats.ours.anchored}
           theirs={0}
         />
-        <Stat label="Qloo evidence citations" ours={stats.ours.evidence} theirs={0} />
-      </div>
+        <Figure
+          label="Unverified guesses (lower is better)"
+          ours={0}
+          theirs={stats.baseline.unverified}
+          lowerIsBetter
+        />
+        <Figure label="Qloo evidence citations" ours={stats.ours.evidence} theirs={0} />
+      </dl>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card tone="bridge" className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <Heading level={3}>COMMON GROUND</Heading>
-            <Badge tone="bridge">Qloo evidence</Badge>
-          </div>
-          <p className="text-sm font-medium">{program.title}</p>
-          <ol className="space-y-2">
+      <div className="mt-14 grid gap-12 lg:grid-cols-2">
+        <div>
+          <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
+            <span className="font-display text-xl">With Qloo</span>
+            <span className="truncate text-xs text-muted">{program.title}</span>
+          </p>
+          <ol>
             {program.sessions.map((s) => (
-              <li key={s.number} className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
-                <p className="font-medium">
-                  {s.number}. {s.title}
+              <li key={s.number} className="border-b border-line py-3.5">
+                <p className="text-sm">
+                  <span className="figures text-muted">{s.number}.</span> {s.title}
                 </p>
-                <p className="mt-0.5 text-xs">
+                <p className="mt-1 text-xs">
                   {s.entity ? (
                     <>
-                      <span className="font-medium text-bridge">{s.entity.name}</span>{" "}
+                      <span className="text-bridge">{s.entity.name}</span>
                       <span className="text-muted">
+                        {" "}
                         ·{" "}
                         {seeds.has(norm(s.entity.name))
-                          ? "a seed"
-                          : "discovered by Qloo, supported by both sides"}
+                          ? "one of the favourites"
+                          : "found by Qloo, supported by both groups"}
                       </span>
                     </>
                   ) : (
-                    <span className="text-muted">Co-creation session</span>
+                    <span className="text-muted">Making session</span>
                   )}
                 </p>
               </li>
             ))}
           </ol>
-        </Card>
+        </div>
 
-        <Card className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <Heading level={3}>LLM only</Heading>
-            <Badge>No Qloo</Badge>
-          </div>
-          <p className="text-sm font-medium">{baseline.title}</p>
-          <p className="text-xs text-muted">Bridge chosen by the model: {baseline.bridge}</p>
-          <ol className="space-y-2">
+        <div>
+          <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
+            <span className="font-display text-xl text-ink-2">Model only</span>
+            <span className="truncate text-xs text-muted">{baseline.title}</span>
+          </p>
+          <ol>
             {baseline.sessions.map((s) => (
-              <li key={s.number} className="rounded-xl bg-surface-2 px-3 py-2 text-sm">
-                <p className="font-medium">
-                  {s.number}. {s.title}
+              <li key={s.number} className="border-b border-line py-3.5">
+                <p className="text-sm text-ink-2">
+                  <span className="figures text-muted">{s.number}.</span> {s.title}
                 </p>
-                <p className="mt-0.5 flex flex-wrap gap-1 text-xs">
-                  {splitAnchor(s.anchor).map((n) => (
-                    <span
-                      key={n}
-                      className={cx(
-                        "rounded px-1.5 py-0.5",
-                        seeds.has(norm(n)) ? "bg-paper text-muted" : "bg-warn-soft text-warn",
-                      )}
-                      title={
-                        seeds.has(norm(n))
-                          ? "One of the seeds it was given"
-                          : "Not checked against Qloo"
-                      }
-                    >
-                      {n}
-                      {seeds.has(norm(n)) ? " · seed" : " · unverified"}
+                <p className="mt-1 text-xs leading-relaxed">
+                  {splitAnchor(s.anchor).map((n, i, all) => (
+                    <span key={n}>
+                      <span className={cx(seeds.has(norm(n)) ? "text-muted" : "text-warn")}>
+                        {n}
+                      </span>
+                      {i < all.length - 1 && <span className="text-muted">, </span>}
                     </span>
                   ))}
                   {!s.anchor && <span className="text-muted">No anchor</span>}
@@ -176,40 +181,55 @@ export function Comparison({
               </li>
             ))}
           </ol>
-        </Card>
+          <p className="mt-3 text-xs text-muted">
+            Grey: a favourite it was given. <span className="text-warn">Amber</span>: named with no
+            evidence that both groups would want it.
+          </p>
+        </div>
       </div>
-      <p className="text-xs text-muted">
-        “Seed” means the model reused a favourite it was given; “unverified” means it named
-        something without any evidence that both communities would want it.
-      </p>
     </section>
   );
 }
 
-function Stat({
+function Figure({
   label,
   ours,
   theirs,
-  theirsNote,
+  lowerIsBetter = false,
 }: {
   label: string;
   ours: number;
   theirs: number;
-  theirsNote?: string;
+  lowerIsBetter?: boolean;
 }) {
+  const oursBetter = lowerIsBetter ? ours <= theirs : ours >= theirs;
   return (
-    <Card className="space-y-2 p-4">
-      <p className="text-xs text-muted">{label}</p>
-      <div className="flex items-end gap-4">
-        <div>
-          <p className="font-display text-3xl leading-none text-bridge">{ours}</p>
-          <p className="text-[11px] text-muted">with Qloo</p>
-        </div>
-        <div>
-          <p className="font-display text-3xl leading-none text-muted">{theirs}</p>
-          <p className="text-[11px] text-muted">without{theirsNote ? ` (${theirsNote})` : ""}</p>
-        </div>
-      </div>
-    </Card>
+    <div className="border-t border-line pt-4">
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-3 flex items-baseline gap-6">
+        <span>
+          <span
+            className={cx(
+              "figures font-display text-5xl leading-none",
+              oursBetter ? "text-bridge" : "text-ink-2",
+            )}
+          >
+            {ours}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted">with Qloo</span>
+        </span>
+        <span>
+          <span
+            className={cx(
+              "figures font-display text-5xl leading-none",
+              lowerIsBetter && theirs > 0 ? "text-warn" : "text-muted/70",
+            )}
+          >
+            {theirs}
+          </span>
+          <span className="mt-1 block text-[11px] text-muted">model only</span>
+        </span>
+      </dd>
+    </div>
   );
 }
