@@ -55,7 +55,7 @@ export function Studio() {
 
   return (
     <>
-      <TopBar current={step} reachable={reachable} onSelect={go} />
+      <TopBar current={step} reachable={reachable} onSelect={go} onHome={() => go("profiles")} />
       <Main>
         {step === "profiles" && (
           <ProfilesScreen draft={draft} dispatch={dispatch} onRun={() => runAnalysis()} />

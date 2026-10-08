@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 import { cx } from "./ui";
 
 export const STEPS = [
-  { key: "profiles", label: "Profiles" },
-  { key: "investigate", label: "Investigate" },
+  { key: "profiles", label: "Groups" },
+  { key: "investigate", label: "Search" },
   { key: "bridges", label: "Bridges" },
-  { key: "program", label: "Program" },
+  { key: "program", label: "Plan" },
 ] as const;
 export type StepKey = (typeof STEPS)[number]["key"];
 
@@ -25,15 +25,27 @@ export function TopBar({
   current,
   reachable,
   onSelect,
+  onHome,
 }: {
   current?: StepKey;
   reachable?: StepKey[];
   onSelect?: (step: StepKey) => void;
+  /** Inside the app the URL is already "/", so the logo needs an explicit way back to the start. */
+  onHome?: () => void;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur print:static">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link
+          href="/"
+          onClick={(e) => {
+            if (!onHome) return;
+            e.preventDefault();
+            onHome();
+          }}
+          className="flex items-center gap-2.5"
+          aria-label="Common Ground, back to the start"
+        >
           <Mark />
           <span className="font-display text-[1.05rem] tracking-tight whitespace-nowrap">
             Common Ground
@@ -86,16 +98,10 @@ export function Main({ children }: { children: ReactNode }) {
 export function Footer() {
   return (
     <footer className="border-t border-line print:hidden">
-      <div className="mx-auto grid max-w-6xl gap-2 px-4 py-8 text-xs leading-relaxed text-muted sm:grid-cols-2 sm:px-8">
-        <p>
-          Cultural evidence from Qloo. Profiles are aggregate, voluntarily supplied signals, not
-          descriptions of individuals; sensitive traits are never inferred.
-        </p>
-        <p className="sm:text-right">
-          Programs are drafts for co-design with both communities. They don&apos;t predict social
-          impact.
-        </p>
-      </div>
+      <p className="mx-auto max-w-6xl px-4 py-6 text-xs text-muted sm:px-8">
+        Cultural data from Qloo. Plans are drafts to shape with both groups; no personal or
+        sensitive traits are ever inferred.
+      </p>
     </footer>
   );
 }
