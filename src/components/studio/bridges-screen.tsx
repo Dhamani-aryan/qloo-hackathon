@@ -8,6 +8,7 @@ import {
   Dot,
   Kicker,
   Lede,
+  More,
   Note,
   Rule,
   Spinner,
@@ -51,12 +52,8 @@ export function BridgesScreen({
   return (
     <div>
       <section className="max-w-3xl space-y-5">
-        <Title>Where they meet.</Title>
-        <Lede>
-          A bridge is something both communities rank highly, scored separately for each, that
-          isn&apos;t simply what everyone likes. The numbers are Qloo&apos;s; the short notes are
-          the agent&apos;s reading of them.
-        </Lede>
+        <Title>Here&apos;s what they share.</Title>
+        <Lede>Things both groups rank highly that aren&apos;t just popular with everyone.</Lede>
       </section>
 
       {top && engine.obvious && (
@@ -65,9 +62,9 @@ export function BridgesScreen({
 
       <section className="mt-20">
         <div className="flex items-baseline justify-between gap-4">
-          <Title level={2}>The bridges</Title>
+          <Title level={2}>Top 3 bridges</Title>
           <p className="hidden text-xs text-muted sm:block">
-            Ranked by Bridge Potential, a transparent score, not a probability.
+            Score out of 100 · tap a row for details
           </p>
         </div>
         <ol className="mt-6 border-t border-ink">
@@ -86,50 +83,57 @@ export function BridgesScreen({
         </ol>
       </section>
 
-      <section className="mt-16 grid gap-12 md:grid-cols-2">
-        {engine.themes.length > 0 && (
-          <div>
-            <Kicker>Shared themes</Kicker>
-            <p className="mt-2 text-sm text-muted">
-              Found in both profiles by Qloo&apos;s Analysis Compare.
-            </p>
-            <ul className="mt-4">
-              {engine.themes.slice(0, 6).map((t) => (
-                <li key={t.tagId} className="border-t border-line py-2.5 text-sm">
-                  <span className="font-medium">{t.name}</span>
-                  <span className="mt-0.5 block text-xs text-muted">
-                    <span className="text-a">{names(t.supportingSeeds.A)[0]}</span>
-                    <span className="mx-1.5">↔</span>
-                    <span className="text-b">{names(t.supportingSeeds.B)[0]}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div>
-          {engine.runnersUp.length > 0 && (
-            <>
-              <Kicker>Also in the running</Kicker>
+      <More
+        className="mt-12"
+        label="More details: shared themes, other ideas and what was ruled out"
+      >
+        <section className="grid gap-12 md:grid-cols-2">
+          {engine.themes.length > 0 && (
+            <div>
+              <Kicker>Shared themes</Kicker>
+              <p className="mt-2 text-sm text-muted">
+                Found in both profiles by Qloo&apos;s Analysis Compare.
+              </p>
               <ul className="mt-4">
-                {engine.runnersUp.slice(0, 5).map((r) => (
-                  <li
-                    key={r.entity.id}
-                    className="flex items-baseline justify-between gap-3 border-t border-line py-2.5 text-sm"
-                  >
-                    <span className="truncate">
-                      {r.entity.name}{" "}
-                      <span className="text-xs text-muted">· {typeLabel(r.domain)}</span>
+                {engine.themes.slice(0, 6).map((t) => (
+                  <li key={t.tagId} className="border-t border-line py-2.5 text-sm">
+                    <span className="font-medium">{t.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted">
+                      <span className="text-a">{names(t.supportingSeeds.A)[0]}</span>
+                      <span className="mx-1.5">↔</span>
+                      <span className="text-b">{names(t.supportingSeeds.B)[0]}</span>
                     </span>
-                    <span className="figures shrink-0 text-xs text-muted">{r.bridgePotential}</span>
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
-          <Rejections engine={engine} />
-        </div>
-      </section>
+          <div>
+            {engine.runnersUp.length > 0 && (
+              <>
+                <Kicker>Also in the running</Kicker>
+                <ul className="mt-4">
+                  {engine.runnersUp.slice(0, 5).map((r) => (
+                    <li
+                      key={r.entity.id}
+                      className="flex items-baseline justify-between gap-3 border-t border-line py-2.5 text-sm"
+                    >
+                      <span className="truncate">
+                        {r.entity.name}{" "}
+                        <span className="text-xs text-muted">· {typeLabel(r.domain)}</span>
+                      </span>
+                      <span className="figures shrink-0 text-xs text-muted">
+                        {r.bridgePotential}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <Rejections engine={engine} />
+          </div>
+        </section>
+      </More>
 
       <div className="mt-16 flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
         {programFailed ? (
@@ -148,11 +152,11 @@ export function BridgesScreen({
           <>
             <p className="text-ink-2">
               {programReady
-                ? `The program is built around ${top?.entity.name ?? "the top bridge"}.`
-                : "The agent is turning the top bridge into a recurring program."}
+                ? `Your plan is built around ${top?.entity.name ?? "the top bridge"}.`
+                : "Writing a plan around the top bridge…"}
             </p>
             {programReady ? (
-              <Button onClick={onContinue}>See the program</Button>
+              <Button onClick={onContinue}>See the plan →</Button>
             ) : (
               <Spinner label="Designing" />
             )}
@@ -177,7 +181,9 @@ function Reveal({
     const isD = kind === "discovered";
     return (
       <div className={cx("space-y-6", !isD && "opacity-80")}>
-        <Kicker tone={isD ? "bridge" : "muted"}>{isD ? "Discovered" : "Obvious"}</Kicker>
+        <Kicker tone={isD ? "bridge" : "muted"}>
+          {isD ? "What these two groups share" : "What everyone likes"}
+        </Kicker>
         <div className="flex items-start gap-4">
           <Thumb
             src={c.entity.imageUrl}
@@ -198,11 +204,6 @@ function Reveal({
           </div>
         </div>
         <SupportBars a={c.pct.A} b={c.pct.B} popularity={c.popularity} labels={labels} />
-        <p className="text-sm text-muted">
-          {isD
-            ? "Strong with both groups, and specific to them."
-            : "Strong with both groups, because nearly everyone likes it."}
-        </p>
       </div>
     );
   };
@@ -218,11 +219,8 @@ function Reveal({
       </div>
       <Rule />
       <p className="mt-6 max-w-3xl font-display text-xl leading-snug text-ink-2 sm:text-2xl">
-        Both groups put <span className="text-ink">{discovered.entity.name}</span> in their{" "}
-        <span className="text-a">{pct(discovered.pct.A)}</span> and{" "}
-        <span className="text-b">{pct(discovered.pct.B)}</span> percentiles, while it sits at the{" "}
-        {pct(discovered.popularity)} percentile of general popularity. Rank by raw support alone and{" "}
-        {obvious.entity.name} wins every time.
+        Both groups rank <span className="text-ink">{discovered.entity.name}</span> highly, yet
+        it&apos;s far less mainstream than {obvious.entity.name}. That&apos;s a real bridge.
       </p>
     </section>
   );
@@ -274,7 +272,10 @@ function BridgeRow({
           className="hidden sm:block"
         />
         <span className="hidden text-right sm:block">
-          <span className="figures block font-display text-3xl text-bridge">
+          <span
+            className="figures block font-display text-3xl text-bridge"
+            title="Bridge Potential (0–100): how strongly both groups back it, adjusted for how mainstream it is"
+          >
             {bridge.bridgePotential}
           </span>
         </span>
@@ -293,7 +294,7 @@ function BridgeRow({
                 className="sm:hidden"
               />
               <div className="space-y-2 text-sm">
-                <p className="text-xs text-muted">Strongest supporting favourites</p>
+                <p className="text-xs text-muted">Linked to these favourites</p>
                 <p className="flex items-baseline gap-2">
                   <Dot tone="a" />
                   <span>{names(bridge.supportingSeeds.A).slice(0, 3).join(", ") || "—"}</span>
@@ -333,7 +334,7 @@ function BridgeRow({
             </div>
             {note ? (
               <div className="space-y-3 text-sm leading-relaxed">
-                <p className="text-xs text-muted">The agent&apos;s reading</p>
+                <p className="text-xs text-muted">How to use it</p>
                 <p>{note.activityFit}</p>
                 <Note tone="warn">
                   <span className="text-ink">Watch out:</span> {note.mainFriction}
