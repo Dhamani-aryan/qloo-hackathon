@@ -5,7 +5,7 @@ import type { EvidenceBrief } from "@/lib/agent/brief";
 import type { CritiqueIssue } from "@/lib/agent/critic";
 import type { Program } from "@/lib/agent/program";
 import type { EngineResult } from "@/lib/engine/types";
-import { Button, Dot, Kicker, Lede, Note, Rule, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
+import { Button, Dot, Kicker, Lede, More, Note, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
 import { postJson } from "./api";
 
 export interface ProgramVersion {
@@ -84,98 +84,54 @@ export function ProgramScreen({
   return (
     <div>
       <section className="max-w-3xl space-y-5">
-        {main && <Kicker tone="bridge">A program built on {main.name}</Kicker>}
+        {main && <Kicker tone="bridge">Your plan · built on {main.name}</Kicker>}
         <Title>{program.title}</Title>
         <Lede>{program.objective}</Lede>
-        <p className="text-sm text-muted">{program.format}</p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm print:hidden">
           <Button variant="link" onClick={exportMarkdown}>
-            Download as Markdown
+            Download
           </Button>
           <Button variant="link" onClick={() => window.print()}>
             Print
           </Button>
           <span className={cx("text-xs", removed ? "text-warn" : "text-muted")}>
             {removed === 0
-              ? "✓ Every session anchor is a Qloo entity from the evidence."
-              : `The evidence guard removed ${removed} unverified reference${removed === 1 ? "" : "s"}${
-                  program.guard.removedTitles.length
-                    ? `: ${program.guard.removedTitles.join(", ")}`
-                    : ""
-                }.`}
+              ? "✓ Every session is built on real Qloo data"
+              : `${removed} unverified reference${removed === 1 ? " was" : "s were"} removed`}
           </span>
         </div>
       </section>
 
-      <ol className="mt-16 border-t border-ink">
+      <ol className="mt-14 border-t border-ink">
         {program.sessions.map((s) => (
-          <li
+          <Session
             key={s.number}
-            className="grid gap-6 border-b border-line py-10 md:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1.4fr)] md:gap-10"
-          >
-            <p className="figures font-display text-5xl leading-none text-muted/70">{s.number}</p>
-            <div className="space-y-4">
-              <Title level={3} className="text-2xl">
-                {s.title}
-              </Title>
-              {s.entity ? (
-                <div className="flex items-center gap-3">
-                  <Thumb
-                    src={engineImage(engine, s.entity.id)}
-                    name={s.entity.name}
-                    size={44}
-                    tone="bridge"
-                  />
-                  <p className="text-sm leading-snug">
-                    <span className="text-muted">Built around</span>
-                    <br />
-                    <span className="text-ink">{s.entity.name}</span>
-                    <span className="text-muted"> · {typeLabel(s.entity.domain)}</span>
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted">A making session, no Qloo anchor needed.</p>
-              )}
-              {s.theme && <p className="text-xs text-muted">Theme · {s.theme.name}</p>}
-            </div>
-            <div className="space-y-5">
-              <p className="leading-relaxed text-ink-2">{s.activity}</p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {(["A", "B"] as const).map((side, i) => (
-                  <div key={side} className="text-sm leading-relaxed">
-                    <p className="mb-1 flex items-center gap-2 text-xs text-muted">
-                      <Dot tone={side === "A" ? "a" : "b"} />
-                      {labels[i]}
-                    </p>
-                    <p>{s.roles[side]}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </li>
+            session={s}
+            imageUrl={s.entity ? engineImage(engine, s.entity.id) : null}
+            labels={labels}
+          />
         ))}
       </ol>
 
-      <section className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-        <Detail title="Where" items={[program.venueType]} />
-        <Detail title="Partners" items={program.partnerTypes} />
-        <Detail title="Access" items={program.accessibility} />
-        <Detail title="Reducing friction" items={program.frictionMitigations} />
-        <Detail title="How we'd know it worked" items={program.successMeasures} />
-        <Detail title="Limits of this plan" items={program.limitations} />
-      </section>
+      <div className="mt-10 space-y-5">
+        <More label="Practical details: venue, access, partners and how to measure success">
+          <div className="grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <Detail title="Where" items={[program.venueType]} />
+            <Detail title="Partners" items={program.partnerTypes} />
+            <Detail title="Access" items={program.accessibility} />
+            <Detail title="Reducing friction" items={program.frictionMitigations} />
+            <Detail title="How you'll know it worked" items={program.successMeasures} />
+            <Detail title="Limits of this plan" items={program.limitations} />
+          </div>
+        </More>
 
-      {critique.length > 0 && (
-        <section className="mt-16">
-          <Rule />
-          <div className="grid gap-8 pt-10 md:grid-cols-[16rem_1fr]">
-            <div>
-              <Kicker>The critic&apos;s pass</Kicker>
-              <p className="mt-2 text-sm text-muted">
-                A second model reviewed the first draft against ten checks. What it fixed:
-              </p>
-            </div>
-            <ul className="space-y-5">
+        {critique.length > 0 && (
+          <More
+            label={`How the AI improved its first draft (${critique.length} fix${
+              critique.length === 1 ? "" : "es"
+            })`}
+          >
+            <ul className="max-w-3xl space-y-5">
               {critique.map((c, i) => (
                 <li key={i} className="text-sm leading-relaxed">
                   <p className="font-medium text-ink">{CHECK_LABELS[c.check] ?? c.check}</p>
@@ -184,49 +140,104 @@ export function ProgramScreen({
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
-      )}
+          </More>
+        )}
 
-      {bridges.length > 1 && (
-        <section className="mt-16 print:hidden">
-          <Rule />
-          <div className="flex flex-col gap-4 pt-8 sm:flex-row sm:items-baseline sm:justify-between">
-            <p className="text-sm text-muted">Build the program on a different bridge instead:</p>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {bridges.map((b) =>
-                b.ref === program.bridgeRef ? (
-                  <span key={b.ref} className="text-sm text-ink">
-                    {b.name} (current)
-                  </span>
-                ) : (
-                  <Button
-                    key={b.ref}
-                    variant="link"
-                    disabled={Boolean(busy)}
-                    onClick={() => rebuild(b.ref)}
-                  >
-                    {busy === b.ref ? <Spinner label={b.name} /> : b.name}
-                  </Button>
-                ),
+        {bridges.length > 1 && (
+          <div className="print:hidden">
+            <More label="Try a plan built on a different bridge">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                {bridges.map((b) =>
+                  b.ref === program.bridgeRef ? (
+                    <span key={b.ref} className="text-sm text-ink">
+                      {b.name} (current)
+                    </span>
+                  ) : (
+                    <Button
+                      key={b.ref}
+                      variant="link"
+                      disabled={Boolean(busy)}
+                      onClick={() => rebuild(b.ref)}
+                    >
+                      {busy === b.ref ? <Spinner label={b.name} /> : b.name}
+                    </Button>
+                  ),
+                )}
+              </div>
+              {busy && (
+                <p className="mt-3 text-xs text-muted">Rewriting the plan, about a minute.</p>
               )}
-            </div>
+              {error && (
+                <div className="mt-4">
+                  <Note tone="warn">{error}</Note>
+                </div>
+              )}
+            </More>
           </div>
-          {busy && (
-            <p className="mt-3 text-xs text-muted">
-              Redesigning and re-critiquing, about a minute.
-            </p>
-          )}
-          {error && (
-            <div className="mt-4">
-              <Note tone="warn">{error}</Note>
-            </div>
-          )}
-        </section>
-      )}
+        )}
+      </div>
 
       {comparison && <div className="mt-24">{comparison}</div>}
     </div>
+  );
+}
+
+function Session({
+  session: s,
+  imageUrl,
+  labels,
+}: {
+  session: Program["sessions"][number];
+  imageUrl: string | null;
+  labels: [string, string];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const long = s.activity.length > 220;
+  return (
+    <li className="grid gap-5 border-b border-line py-8 md:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.5fr)] md:gap-10">
+      <p className="figures font-display text-4xl leading-none text-muted/70">{s.number}</p>
+      <div className="space-y-3">
+        <Title level={3} className="text-2xl">
+          {s.title}
+        </Title>
+        {s.entity ? (
+          <div className="flex items-center gap-3">
+            <Thumb src={imageUrl} name={s.entity.name} size={40} tone="bridge" />
+            <p className="text-sm leading-snug">
+              <span className="text-ink">{s.entity.name}</span>
+              <span className="block text-xs text-muted">{typeLabel(s.entity.domain)}</span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">Both groups make something together</p>
+        )}
+      </div>
+      <div className="space-y-4">
+        <p className={cx("leading-relaxed text-ink-2", long && !expanded && "line-clamp-3")}>
+          {s.activity}
+        </p>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-sm text-ink underline decoration-line underline-offset-4 hover:decoration-ink print:hidden"
+        >
+          {expanded ? "Show less" : "Who does what"}
+        </button>
+        {expanded && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["A", "B"] as const).map((side, i) => (
+              <div key={side} className="text-sm leading-relaxed">
+                <p className="mb-1 flex items-center gap-2 text-xs text-muted">
+                  <Dot tone={side === "A" ? "a" : "b"} />
+                  {labels[i]}
+                </p>
+                <p>{s.roles[side]}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </li>
   );
 }
 

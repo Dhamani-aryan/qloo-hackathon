@@ -3,7 +3,7 @@
 import type { BaselineProgram } from "@/lib/agent/baseline";
 import type { Program } from "@/lib/agent/program";
 import type { Scenario } from "@/lib/engine/types";
-import { Kicker, Rule, Spinner, Title, cx } from "../ui";
+import { Kicker, More, Rule, Spinner, Title, cx } from "../ui";
 
 /**
  * With vs without Qloo (plan §14 ablation, shown in the product). The LLM-only version got
@@ -98,13 +98,12 @@ export function Comparison({
   return (
     <section aria-label="With versus without Qloo">
       <div className="border-t-2 border-ink pt-10">
-        <Kicker>With and without Qloo</Kicker>
+        <Kicker>Why Qloo matters</Kicker>
         <Title level={2} className="mt-4 max-w-3xl">
           {headline(stats)}
         </Title>
         <p className="mt-4 max-w-2xl text-ink-2">
-          Same brief, same favourites, same model. One version had Qloo&apos;s evidence; the other
-          didn&apos;t.
+          Same favourites, same AI, with and without Qloo.
         </p>
       </div>
 
@@ -123,70 +122,72 @@ export function Comparison({
         <Figure label="Qloo evidence citations" ours={stats.ours.evidence} theirs={0} />
       </dl>
 
-      <div className="mt-14 grid gap-12 lg:grid-cols-2">
-        <div>
-          <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
-            <span className="font-display text-xl">With Qloo</span>
-            <span className="truncate text-xs text-muted">{program.title}</span>
-          </p>
-          <ol>
-            {program.sessions.map((s) => (
-              <li key={s.number} className="border-b border-line py-3.5">
-                <p className="text-sm">
-                  <span className="figures text-muted">{s.number}.</span> {s.title}
-                </p>
-                <p className="mt-1 text-xs">
-                  {s.entity ? (
-                    <>
-                      <span className="text-bridge">{s.entity.name}</span>
-                      <span className="text-muted">
-                        {" "}
-                        ·{" "}
-                        {seeds.has(norm(s.entity.name))
-                          ? "one of the favourites"
-                          : "found by Qloo, supported by both groups"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-muted">Making session</span>
-                  )}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <More className="mt-12" label="Compare the two plans session by session">
+        <div className="grid gap-12 lg:grid-cols-2">
+          <div>
+            <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
+              <span className="font-display text-xl">With Qloo</span>
+              <span className="truncate text-xs text-muted">{program.title}</span>
+            </p>
+            <ol>
+              {program.sessions.map((s) => (
+                <li key={s.number} className="border-b border-line py-3.5">
+                  <p className="text-sm">
+                    <span className="figures text-muted">{s.number}.</span> {s.title}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    {s.entity ? (
+                      <>
+                        <span className="text-bridge">{s.entity.name}</span>
+                        <span className="text-muted">
+                          {" "}
+                          ·{" "}
+                          {seeds.has(norm(s.entity.name))
+                            ? "one of the favourites"
+                            : "found by Qloo, supported by both groups"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted">Making session</span>
+                    )}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-        <div>
-          <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
-            <span className="font-display text-xl text-ink-2">Model only</span>
-            <span className="truncate text-xs text-muted">{baseline.title}</span>
-          </p>
-          <ol>
-            {baseline.sessions.map((s) => (
-              <li key={s.number} className="border-b border-line py-3.5">
-                <p className="text-sm text-ink-2">
-                  <span className="figures text-muted">{s.number}.</span> {s.title}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed">
-                  {splitAnchor(s.anchor).map((n, i, all) => (
-                    <span key={n}>
-                      <span className={cx(seeds.has(norm(n)) ? "text-muted" : "text-warn")}>
-                        {n}
+          <div>
+            <p className="flex items-baseline justify-between gap-3 border-b border-ink pb-3">
+              <span className="font-display text-xl text-ink-2">Model only</span>
+              <span className="truncate text-xs text-muted">{baseline.title}</span>
+            </p>
+            <ol>
+              {baseline.sessions.map((s) => (
+                <li key={s.number} className="border-b border-line py-3.5">
+                  <p className="text-sm text-ink-2">
+                    <span className="figures text-muted">{s.number}.</span> {s.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed">
+                    {splitAnchor(s.anchor).map((n, i, all) => (
+                      <span key={n}>
+                        <span className={cx(seeds.has(norm(n)) ? "text-muted" : "text-warn")}>
+                          {n}
+                        </span>
+                        {i < all.length - 1 && <span className="text-muted">, </span>}
                       </span>
-                      {i < all.length - 1 && <span className="text-muted">, </span>}
-                    </span>
-                  ))}
-                  {!s.anchor && <span className="text-muted">No anchor</span>}
-                </p>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-3 text-xs text-muted">
-            Grey: a favourite it was given. <span className="text-warn">Amber</span>: named with no
-            evidence that both groups would want it.
-          </p>
+                    ))}
+                    {!s.anchor && <span className="text-muted">No anchor</span>}
+                  </p>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 text-xs text-muted">
+              Grey: a favourite it was given. <span className="text-warn">Amber</span>: named with
+              no evidence that both groups would want it.
+            </p>
+          </div>
         </div>
-      </div>
+      </More>
     </section>
   );
 }
