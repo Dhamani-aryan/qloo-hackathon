@@ -232,6 +232,19 @@ function CommunityEditor({
   const [type, setType] = useState<QlooTypeKey | "">("");
   const tone = side === "a" ? "a" : "b";
   const full = profile.seeds.length >= MAX_SEEDS;
+  const failed = profile.seeds.filter((s) => s.status === "error");
+
+  const retryFailed = () => {
+    for (const seed of failed) {
+      dispatch({
+        type: "updateSeed",
+        side,
+        key: seed.key,
+        patch: { status: "resolving", reasons: [] },
+      });
+    }
+    void resolve([{ side, seeds: failed }], false);
+  };
 
   const add = () => {
     const name = input.trim();
@@ -276,6 +289,18 @@ function CommunityEditor({
           </li>
         )}
       </ul>
+
+      {failed.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-warn-soft px-3 py-2 text-sm text-warn">
+          <span>
+            {failed.length} seed{failed.length === 1 ? "" : "s"} couldn&apos;t reach Qloo (
+            {failed[0].reasons[0] ?? "network error"}).
+          </span>
+          <Button variant="secondary" className="shrink-0 px-3 py-1" onClick={retryFailed}>
+            Retry
+          </Button>
+        </div>
+      )}
 
       <form
         className="flex flex-col gap-2 sm:flex-row"
