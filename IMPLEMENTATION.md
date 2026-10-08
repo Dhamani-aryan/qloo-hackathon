@@ -72,14 +72,14 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 2.6 | Normalization and popularity lift | ✅ done |
 | 2.7 | Bridge Potential scoring and diverse selection | ✅ done |
 | 2.8 | Engine CLI and fixture-based tests | ✅ done |
-| 3.1 | LLM client with structured (Zod) outputs | ⬜ |
-| 3.2 | Domain planner | ⬜ |
-| 3.3 | Bridge notes (activity fit, friction) | ⬜ |
-| 3.4 | Program generator: entity lineup | ⬜ |
-| 3.5 | Critic pass and evidence guard | ⬜ |
-| 3.6 | LLM-only baseline | ⬜ |
-| 3.7 | Orchestrator, state machine, and event stream | ⬜ |
-| 3.8 | Analysis API routes | ⬜ |
+| 3.1 | LLM client with structured (Zod) outputs | ✅ done |
+| 3.2 | Domain planner | ✅ done |
+| 3.3 | Bridge notes (activity fit, friction) | ✅ done |
+| 3.4 | Program generator: entity lineup | ✅ done |
+| 3.5 | Critic pass and evidence guard | ✅ done |
+| 3.6 | LLM-only baseline | ✅ done |
+| 3.7 | Orchestrator, state machine, and event stream | ✅ done |
+| 3.8 | Analysis API routes | ✅ done |
 | 4.1 | Design system and layout shell | ⬜ |
 | 4.2 | Screen 1: profiles and seed confirmation | ⬜ |
 | 4.3 | Participant intake page and KV store | ⬜ |
@@ -313,10 +313,13 @@ Write `docs/SPIKE_FINDINGS.md`: the answers to the 9 required questions in plan 
 ### Step 3.7: Orchestrator and event stream
 `src/lib/agent/orchestrator.ts`: the state machine from plan §9 (RESOLVE → … → EXPLAIN). It emits typed events (`domain_selected`, `qloo_query_done`, `candidate_found`, `candidate_rejected`, `bridge_ranked`, `program_ready`, `error`) through an async iterator. Only real actions are shown, with no fake chain-of-thought.
 
-### Step 3.8: Analysis API routes
-Route handlers from plan §13: `/api/entities/resolve`, `/api/analysis/start`, `/api/analysis/[id]/events` (SSE), `/api/analysis/[id]`, `/api/analysis/[id]/program`. Analysis state is kept in memory, with cache fallback for prebuilt scenarios.
+### Step 3.8: Analysis API routes ✅
+Built as (deviation from the plan's endpoint list, see `docs/DECISIONS.md`):
+- `POST /api/entities/resolve` resolves typed names to Qloo matches with ambiguity flags.
+- `POST /api/analysis` runs the whole agent **inside one request** and streams `AgentEvent`s as server-sent events. The last event is `done` with the full result.
+- `POST /api/program` is stateless: it takes `{ brief, bridgeRef }` and regenerates (and critiques) the program for another bridge.
 
-**Done when:** `curl` can run a full analysis and stream its events.
+Handlers live in `src/lib/server/handlers.ts` (testable with fakes), and route files in `src/app/api/**/route.ts`. A full live run takes about 80 s.
 
 ---
 
