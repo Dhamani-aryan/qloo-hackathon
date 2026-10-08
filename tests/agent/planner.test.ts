@@ -21,6 +21,27 @@ describe("planDomains", () => {
     expect(requests[0].prompt).toContain("Location: Test City");
   });
 
+  it("always adds the core domains the LLM left out", async () => {
+    const { llm } = scriptedLlm(
+      JSON.stringify({
+        domains: [
+          { domain: "artist", reason: "x" },
+          { domain: "book", reason: "x" },
+          { domain: "movie", reason: "x" },
+        ],
+      }),
+    );
+    const plan = await planDomains(llm, scenario());
+    expect(plan.domains.map((d) => d.domain)).toEqual([
+      "artist",
+      "book",
+      "movie",
+      "tvShow",
+      "place",
+    ]);
+    expect(plan.domains[3].reason).toMatch(/Core domain/);
+  });
+
   it("falls back to the validated defaults when the LLM fails", async () => {
     const plan = await planDomains(failingLlm, scenario());
     expect(plan.source).toBe("fallback");

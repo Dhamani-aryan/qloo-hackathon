@@ -17,6 +17,9 @@ const DOMAIN_LABELS: Record<DomainKey, string> = {
   movie: "films (screenings; slower and weaker in tests)",
 };
 
+/** Domains that always run when available (validated in the spike and the first agent runs). */
+export const CORE_DOMAINS: DomainKey[] = ["tvShow", "place"];
+
 export const DomainPlanSchema = z.object({
   domains: z
     .array(
@@ -65,6 +68,16 @@ export async function planDomains(llm: LlmClient, scenario: Scenario): Promise<D
         available.includes(d.domain) && all.findIndex((x) => x.domain === d.domain) === i,
     );
     if (domains.length < 3) return fallbackPlan(scenario);
+    // Core domains always run: in a live NYC run the planner dropped TV, the domain with the
+    // strongest bilateral evidence (docs/DECISIONS.md, 2026-10-08).
+    for (const core of CORE_DOMAINS) {
+      if (available.includes(core) && !domains.some((d) => d.domain === core)) {
+        domains.push({
+          domain: core,
+          reason: "Core domain: strongest bilateral evidence in testing",
+        });
+      }
+    }
     return { source: "llm", domains };
   } catch {
     return fallbackPlan(scenario);
