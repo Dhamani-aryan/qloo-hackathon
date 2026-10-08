@@ -19,6 +19,7 @@ import {
   type SideKey,
 } from "./draft";
 import { resolveSeeds } from "./api";
+import { IntakePanel } from "./intake-panel";
 
 const SEED_TYPES: { key: QlooTypeKey | ""; label: string }[] = [
   { key: "", label: "Any type" },
@@ -147,6 +148,8 @@ export function ProfilesScreen({
         </label>
       </Card>
 
+      <IntakePanel draft={draft} dispatch={dispatch} />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <CommunityEditor side="a" profile={draft.a} dispatch={dispatch} resolve={resolve} />
         <CommunityEditor side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
@@ -246,7 +249,7 @@ function CommunityEditor({
           </Badge>
           <span className="text-xs text-muted">
             {profile.source === "intake"
-              ? `From ${profile.contributorCount ?? 0} participants`
+              ? `From ${profile.contributorCount ?? 0} participant${profile.contributorCount === 1 ? "" : "s"}`
               : "Organizer-supplied"}
           </span>
         </div>
