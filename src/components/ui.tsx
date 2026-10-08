@@ -232,3 +232,43 @@ export function SupportBars({
     </div>
   );
 }
+
+/** Folds secondary content away behind a one-line toggle, so each screen shows only its essentials. */
+export function More({
+  label,
+  children,
+  className,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <details className={cx("group", className)}>
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
+        <span
+          aria-hidden
+          className="inline-block w-3 text-muted transition-transform group-open:rotate-90"
+        >
+          ›
+        </span>
+        {label}
+      </summary>
+      <div className="mt-5">{children}</div>
+    </details>
+  );
+}
+
+/** The three-step explainer shown on the first screen. */
+export function HowItWorks({ steps }: { steps: string[] }) {
+  return (
+    <ol className="grid gap-4 sm:grid-cols-3 sm:gap-8">
+      {steps.map((s, i) => (
+        <li key={s} className="flex items-baseline gap-3 border-t border-line pt-3">
+          <span className="figures font-display text-2xl leading-none text-bridge">{i + 1}</span>
+          <span className="text-sm text-ink-2">{s}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
