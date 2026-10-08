@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { EvidenceBrief } from "@/lib/agent/brief";
 import { critiqueProgram } from "@/lib/agent/critic";
 import { runAgent, type AgentDeps } from "@/lib/agent/orchestrator";
+import { loadRecording, recordRun, replayRun, runKey } from "@/lib/agent/replay";
+import type { Cache } from "@/lib/cache/cache";
 import { generateProgram } from "@/lib/agent/program";
 import { DOMAIN_KEYS, ScenarioSchema, resolveSeed } from "@/lib/engine";
 import { createLimiter } from "@/lib/engine/context";
@@ -80,21 +82,35 @@ export const AnalysisRequestSchema = z.object({
       critic: z.boolean().optional(),
     })
     .default({}),
+  /** Skip the run cache and analyse live. */
+  fresh: z.boolean().default(false),
 });
 
-export async function handleAnalysis(req: Request, deps: () => AgentDeps): Promise<Response> {
+export async function handleAnalysis(
+  req: Request,
+  deps: () => AgentDeps,
+  cache?: () => Cache,
+): Promise<Response> {
   let parsed;
-  let resolved: AgentDeps;
   try {
     parsed = AnalysisRequestSchema.parse(await req.json());
+  } catch (err) {
+    return errorResponse(err);
+  }
+  const store = cache?.();
+  const key = runKey(parsed.scenario, parsed.options);
+  if (store && !parsed.fresh) {
+    const recording = await loadRecording(store, key);
+    if (recording) return sseResponse(replayRun(recording), req.signal);
+  }
+  let resolved: AgentDeps;
+  try {
     resolved = deps();
   } catch (err) {
     return errorResponse(err);
   }
-  return sseResponse(
-    runAgent(resolved, parsed.scenario, { ...parsed.options, maxCalls: 40 }),
-    req.signal,
-  );
+  const live = runAgent(resolved, parsed.scenario, { ...parsed.options, maxCalls: 40 });
+  return sseResponse(store ? recordRun(live, store, key) : live, req.signal);
 }
 
 // ---------- POST /api/program (regenerate for another bridge; stateless) ----------
