@@ -1,153 +1,125 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-/** Small, dependency-free UI primitives built on the design tokens in globals.css. */
+/**
+ * Editorial primitives. Containers are rare: hierarchy comes from type, rules and space.
+ * Colour is used only to mark data (community A, community B, the bridge).
+ */
 
-export type Tone = "a" | "b" | "bridge" | "neutral" | "warn" | "ok";
+export type Side = "a" | "b";
+export type Tone = "a" | "b" | "bridge" | "muted" | "warn" | "ok";
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
 }
 
-const TONE_TEXT: Record<Tone, string> = {
+const TEXT: Record<Tone, string> = {
   a: "text-a",
   b: "text-b",
   bridge: "text-bridge",
-  neutral: "text-muted",
+  muted: "text-muted",
   warn: "text-warn",
   ok: "text-ok",
-};
-const TONE_BG: Record<Tone, string> = {
-  a: "bg-a-soft text-a",
-  b: "bg-b-soft text-b",
-  bridge: "bg-bridge-soft text-bridge",
-  neutral: "bg-surface-2 text-muted",
-  warn: "bg-warn-soft text-warn",
-  ok: "bg-surface-2 text-ok",
 };
 
 export function Button({
   variant = "primary",
   className,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "quiet" | "link" }) {
   return (
     <button
       {...props}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" && "bg-ink text-paper hover:opacity-90",
-        variant === "secondary" && "border border-line bg-surface text-ink hover:bg-surface-2",
-        variant === "ghost" && "text-muted hover:bg-surface-2 hover:text-ink",
+        "inline-flex items-center justify-center gap-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40",
+        variant === "primary" && "rounded-md bg-ink px-5 py-2.5 text-paper hover:bg-ink-2",
+        variant === "quiet" &&
+          "rounded-md border border-line px-3.5 py-2 text-ink hover:border-ink",
+        variant === "link" &&
+          "text-ink underline decoration-line underline-offset-4 hover:decoration-ink",
         className,
       )}
     />
   );
 }
 
-export function Card({
-  children,
-  className,
-  tone,
-}: {
-  children: ReactNode;
-  className?: string;
-  tone?: "a" | "b" | "bridge";
-}) {
+/** Small uppercase label above a section or value. */
+export function Kicker({ children, tone = "muted" }: { children: ReactNode; tone?: Tone }) {
   return (
-    <div
-      className={cx(
-        "rounded-2xl border border-line bg-surface p-5",
-        tone === "a" && "border-t-4 border-t-a",
-        tone === "b" && "border-t-4 border-t-b",
-        tone === "bridge" && "border-t-4 border-t-bridge",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-        TONE_BG[tone],
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-export function Eyebrow({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {
-  return (
-    <p className={cx("text-xs font-semibold tracking-[0.14em] uppercase", TONE_TEXT[tone])}>
+    <p className={cx("text-[11px] font-semibold tracking-[0.16em] uppercase", TEXT[tone])}>
       {children}
     </p>
   );
 }
 
-export function Heading({ children, level = 2 }: { children: ReactNode; level?: 1 | 2 | 3 }) {
-  const cls = {
-    1: "font-display text-4xl leading-tight sm:text-5xl",
-    2: "font-display text-2xl leading-snug sm:text-3xl",
-    3: "font-display text-lg leading-snug",
-  }[level];
+export function Title({
+  children,
+  level = 1,
+  className,
+}: {
+  children: ReactNode;
+  level?: 1 | 2 | 3;
+  className?: string;
+}) {
   const Tag = `h${level}` as const;
-  return <Tag className={cx(cls, "tracking-tight text-ink")}>{children}</Tag>;
+  const size = {
+    1: "text-[2.6rem] leading-[1.05] sm:text-6xl",
+    2: "text-3xl leading-tight sm:text-4xl",
+    3: "text-xl leading-snug",
+  }[level];
+  return <Tag className={cx("font-display text-ink", size, className)}>{children}</Tag>;
+}
+
+export function Lede({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={cx("max-w-2xl text-lg leading-relaxed text-ink-2", className)}>{children}</p>
+  );
+}
+
+export function Rule({ className }: { className?: string }) {
+  return <hr className={cx("border-0 border-t border-line", className)} />;
+}
+
+export function Dot({ tone, className }: { tone: Tone; className?: string }) {
+  const bg = {
+    a: "bg-a",
+    b: "bg-b",
+    bridge: "bg-bridge",
+    muted: "bg-muted",
+    warn: "bg-warn",
+    ok: "bg-ok",
+  }[tone];
+  return (
+    <span aria-hidden className={cx("inline-block h-2 w-2 shrink-0 rounded-full", bg, className)} />
+  );
 }
 
 export function Spinner({ label }: { label?: string }) {
   return (
     <span className="inline-flex items-center gap-2 text-sm text-muted" role="status">
-      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-line border-t-bridge" />
+      <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-bridge" />
       {label}
     </span>
   );
 }
 
-/** Two horizontal bars showing a candidate's percentile support in A and in B. */
-export function SupportBars({
-  a,
-  b,
-  labels = ["A", "B"],
-}: {
-  a: number | null;
-  b: number | null;
-  labels?: [string, string];
-}) {
-  const row = (v: number | null, tone: "a" | "b", label: string) => (
-    <div className="flex items-center gap-2 text-xs">
-      <span className={cx("w-24 shrink-0 truncate font-medium", TONE_TEXT[tone])} title={label}>
-        {shortLabel(label)}
-      </span>
-      <span className="relative h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-        <span
-          className={cx("absolute inset-y-0 left-0 rounded-full", tone === "a" ? "bg-a" : "bg-b")}
-          style={{ width: `${v === null ? 0 : Math.round(v * 100)}%` }}
-        />
-      </span>
-      <span className="w-10 shrink-0 text-right tabular-nums text-muted">
-        {v === null ? "—" : ordinal(v)}
-      </span>
-    </div>
-  );
+/** A quiet inline callout with a coloured rule on the left. */
+export function Note({ tone = "muted", children }: { tone?: Tone; children: ReactNode }) {
+  const border = {
+    a: "border-a",
+    b: "border-b",
+    bridge: "border-bridge",
+    muted: "border-line",
+    warn: "border-warn",
+    ok: "border-ok",
+  }[tone];
   return (
-    <div className="space-y-1.5" aria-label="Support from each community">
-      {row(a, "a", labels[0])}
-      {row(b, "b", labels[1])}
+    <div className={cx("border-l-2 py-1 pl-4 text-sm leading-relaxed text-ink-2", border)}>
+      {children}
     </div>
   );
 }
 
-/** First word of a community label ("University film & music club" → "University"). */
-export function shortLabel(label: string): string {
-  return label.trim().split(/\s+/)[0] ?? label;
-}
-
+/** Percentile (0–1) as "85th". */
 export function ordinal(v: number): string {
   const n = Math.round(v * 100);
   const m = n % 100;
@@ -155,55 +127,11 @@ export function ordinal(v: number): string {
   return `${n}${suffix}`;
 }
 
-/** Image + name + type for a Qloo entity. Falls back to an initial when there's no image. */
-export function EntityTile({
-  name,
-  type,
-  imageUrl,
-  size = "md",
-  tone = "neutral",
-  wrap = false,
-}: {
-  name: string;
-  type?: string | null;
-  imageUrl?: string | null;
-  size?: "sm" | "md" | "lg";
-  tone?: Tone;
-  /** Let long names wrap onto two lines instead of truncating. */
-  wrap?: boolean;
-}) {
-  const box = { sm: "h-9 w-9", md: "h-12 w-12", lg: "h-16 w-16" }[size];
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      {imageUrl ? (
-        // Qloo image hosts vary, so a plain img avoids next/image domain config.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          loading="lazy"
-          className={cx(box, "shrink-0 rounded-lg border border-line object-cover")}
-        />
-      ) : (
-        <span
-          className={cx(
-            box,
-            "flex shrink-0 items-center justify-center rounded-lg font-display text-lg",
-            TONE_BG[tone],
-          )}
-          aria-hidden
-        >
-          {name.slice(0, 1)}
-        </span>
-      )}
-      <div className="min-w-0">
-        <p className={cx("font-medium text-ink", wrap ? "line-clamp-2" : "truncate")} title={name}>
-          {name}
-        </p>
-        {type && <p className="truncate text-xs text-muted">{typeLabel(type)}</p>}
-      </div>
-    </div>
-  );
+export const pct = (v: number | null) => (v === null ? "—" : ordinal(v));
+
+/** First word of a community label ("University film & music club" → "University"). */
+export function shortLabel(label: string): string {
+  return label.trim().split(/\s+/)[0] ?? label;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -226,20 +154,81 @@ export function typeLabel(type: string): string {
   return TYPE_LABELS[key] ?? key;
 }
 
-/** A clickable evidence reference (ev_0012). */
-export function EvidenceChip({ id, onClick }: { id: string; onClick?: (id: string) => void }) {
+/** Square thumbnail for an entity; falls back to its initial. */
+export function Thumb({
+  src,
+  name,
+  size = 40,
+  tone,
+}: {
+  src?: string | null;
+  name: string;
+  size?: number;
+  tone?: Tone;
+}) {
+  const style = { width: size, height: size };
+  if (src) {
+    // Qloo image hosts vary, so a plain img avoids next/image domain configuration.
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        style={style}
+        className="shrink-0 rounded-[3px] bg-paper-2 object-cover"
+      />
+    );
+  }
   return (
-    <button
-      type="button"
-      onClick={() => onClick?.(id)}
-      className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-muted hover:border-bridge hover:text-bridge"
-      title="Show the Qloo evidence"
+    <span
+      aria-hidden
+      style={style}
+      className={cx(
+        "flex shrink-0 items-center justify-center rounded-[3px] bg-paper-2 font-display",
+        tone ? TEXT[tone] : "text-muted",
+      )}
     >
-      {id}
-    </button>
+      {name.slice(0, 1)}
+    </span>
   );
 }
 
-export function Notice({ tone = "warn", children }: { tone?: Tone; children: ReactNode }) {
-  return <div className={cx("rounded-xl px-4 py-3 text-sm", TONE_BG[tone])}>{children}</div>;
+/**
+ * Two thin horizontal bars: how strongly community A and community B support a candidate,
+ * as a percentile within the candidate pool. Optional third bar for general popularity.
+ */
+export function SupportBars({
+  a,
+  b,
+  popularity,
+  labels,
+  className,
+}: {
+  a: number | null;
+  b: number | null;
+  popularity?: number | null;
+  labels: [string, string];
+  className?: string;
+}) {
+  const row = (v: number | null, color: string, label: string, title: string) => (
+    <div className="grid grid-cols-[6.5rem_1fr_2.75rem] items-center gap-3 text-xs" title={title}>
+      <span className="truncate text-muted">{label}</span>
+      <span className="relative h-[3px] bg-line">
+        <span
+          className={cx("absolute inset-y-0 left-0", color)}
+          style={{ width: `${v === null ? 0 : Math.round(v * 100)}%` }}
+        />
+      </span>
+      <span className="figures text-right text-ink-2">{pct(v)}</span>
+    </div>
+  );
+  return (
+    <div className={cx("space-y-2", className)}>
+      {row(a, "bg-a", shortLabel(labels[0]), labels[0])}
+      {row(b, "bg-b", shortLabel(labels[1]), labels[1])}
+      {popularity !== undefined &&
+        row(popularity, "bg-muted", "Mainstream", "Percentile of general popularity")}
+    </div>
+  );
 }
