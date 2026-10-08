@@ -2,6 +2,15 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-08: Web UI decisions (Track 4)
+
+- **One client "Studio"** holds the scenario draft (a reducer) and the run state built from the event stream. Later steps unlock as soon as their data arrives: bridges appear about 20 s in, before the LLM steps finish.
+- **Prebuilt scenarios store names and types only** and are resolved through Qloo on load, so no Qloo data is committed.
+- **Qloo search pacing:** loading a scenario fired 16 parallel searches and Qloo returned 429. The client now sends one request, and the server allows 3 searches at a time across requests.
+- **Intake privacy:** only per-entity counts and a participant counter are stored, with no names, emails, IPs or free text. Without Upstash env vars the store is in-memory, and the UI labels it "dev storage".
+- **Colour code:** community A cobalt, community B terracotta, the bridge plum, used everywhere (bars, roles, chips) so viewers always know whose evidence they're looking at.
+- **With/without-Qloo view** counts discovered entities, two-sided anchors and evidence citations, and labels every baseline anchor as "seed" (reused) or "unverified". In live runs the LLM-only version reused only the seeds it was given.
+
 ## 2026-10-08: Agent and API decisions (Track 3)
 
 - **Core domains always run.** The LLM planner may add or reorder domains, but TV shows and places (when there's a location) are always included. In the first full live run the planner dropped TV, and the strongest bridge (Somebody Somewhere) disappeared.
