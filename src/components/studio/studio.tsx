@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { PREBUILT } from "@/scenarios";
-import { Main, Stepper, type StepKey } from "../shell";
+import { Main, TopBar, type StepKey } from "../shell";
 import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
 import type { Scenario } from "@/lib/engine/types";
 import { BridgesScreen } from "./bridges-screen";
@@ -55,7 +55,7 @@ export function Studio() {
 
   return (
     <>
-      <Stepper current={step} reachable={reachable} onSelect={go} />
+      <TopBar current={step} reachable={reachable} onSelect={go} />
       <Main>
         {step === "profiles" && (
           <ProfilesScreen draft={draft} dispatch={dispatch} onRun={() => runAnalysis()} />

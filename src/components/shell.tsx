@@ -1,116 +1,99 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { cx } from "./ui";
 
 export const STEPS = [
-  { key: "profiles", label: "Profiles", hint: "Who's coming together" },
-  { key: "investigate", label: "Investigate", hint: "The agent queries Qloo" },
-  { key: "bridges", label: "Bridges", hint: "Obvious vs discovered" },
-  { key: "program", label: "Program", hint: "A recurring plan" },
+  { key: "profiles", label: "Profiles" },
+  { key: "investigate", label: "Investigate" },
+  { key: "bridges", label: "Bridges" },
+  { key: "program", label: "Program" },
 ] as const;
 export type StepKey = (typeof STEPS)[number]["key"];
 
-export function Header() {
+/** Two overlapping circles: community A, community B, and the bridge where they meet. */
+export function Mark({ size = 28 }: { size?: number }) {
   return (
-    <header className="border-b border-line">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <div className="flex items-center gap-3">
-          <Logo />
-          <div>
-            <p className="font-display text-xl leading-none tracking-tight">COMMON GROUND</p>
-            <p className="mt-1 text-xs text-muted">
-              What two communities would genuinely want to do together
-            </p>
-          </div>
-        </div>
-        <p className="text-xs text-muted">
-          Cultural evidence by <span className="font-medium text-ink">Qloo</span>
-        </p>
+    <svg width={size} height={(size * 2) / 3} viewBox="0 0 36 24" aria-hidden className="shrink-0">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="var(--a)" strokeWidth="2" />
+      <circle cx="24" cy="12" r="10" fill="none" stroke="var(--b)" strokeWidth="2" />
+      <path d="M18 4a10 10 0 0 1 0 16a10 10 0 0 1 0-16z" fill="var(--bridge)" />
+    </svg>
+  );
+}
+
+export function TopBar({
+  current,
+  reachable,
+  onSelect,
+}: {
+  current?: StepKey;
+  reachable?: StepKey[];
+  onSelect?: (step: StepKey) => void;
+}) {
+  return (
+    <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur print:static">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-8">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Mark />
+          <span className="font-display text-[1.05rem] tracking-tight whitespace-nowrap">
+            Common Ground
+          </span>
+        </Link>
+        {current && (
+          <nav aria-label="Progress" className="print:hidden">
+            <ol className="flex items-center gap-1 sm:gap-5">
+              {STEPS.map((s, i) => {
+                const active = s.key === current;
+                const enabled = reachable?.includes(s.key) && !active;
+                return (
+                  <li key={s.key}>
+                    <button
+                      type="button"
+                      disabled={!enabled}
+                      onClick={() => onSelect?.(s.key)}
+                      aria-current={active ? "step" : undefined}
+                      className={cx(
+                        "flex items-baseline gap-1.5 px-1 py-4 text-sm transition",
+                        active
+                          ? "border-b-2 border-ink text-ink"
+                          : enabled
+                            ? "text-ink-2 hover:text-ink"
+                            : "text-muted/60",
+                      )}
+                    >
+                      <span className="figures text-[11px] text-muted">0{i + 1}</span>
+                      <span className={cx(!active && "hidden sm:inline")}>{s.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        )}
       </div>
     </header>
   );
 }
 
-/** Two overlapping circles: community A, community B, and the bridge where they meet. */
-function Logo() {
-  return (
-    <svg width="36" height="24" viewBox="0 0 36 24" aria-hidden className="shrink-0">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="var(--a)" strokeWidth="2.5" />
-      <circle cx="24" cy="12" r="10" fill="none" stroke="var(--b)" strokeWidth="2.5" />
-      <path
-        d="M18 4.2a10 10 0 0 1 0 15.6a10 10 0 0 1 0-15.6z"
-        fill="var(--bridge)"
-        opacity="0.85"
-      />
-    </svg>
-  );
-}
-
-export function Stepper({
-  current,
-  reachable,
-  onSelect,
-}: {
-  current: StepKey;
-  /** Steps the user can navigate back or forward to. */
-  reachable: StepKey[];
-  onSelect: (step: StepKey) => void;
-}) {
-  const currentIndex = STEPS.findIndex((s) => s.key === current);
-  return (
-    <nav aria-label="Progress" className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
-      <ol className="grid grid-cols-4 gap-2">
-        {STEPS.map((s, i) => {
-          const active = s.key === current;
-          const done = i < currentIndex;
-          const enabled = reachable.includes(s.key) && !active;
-          return (
-            <li key={s.key}>
-              <button
-                type="button"
-                disabled={!enabled}
-                onClick={() => onSelect(s.key)}
-                aria-current={active ? "step" : undefined}
-                className={cx(
-                  "w-full border-t-2 pt-2 text-left transition",
-                  active ? "border-bridge" : done ? "border-ink" : "border-line",
-                  enabled && "hover:border-bridge",
-                  !enabled && !active && "cursor-default",
-                )}
-              >
-                <span
-                  className={cx(
-                    "block text-xs font-semibold",
-                    active ? "text-bridge" : done ? "text-ink" : "text-muted",
-                  )}
-                >
-                  {i + 1}. {s.label}
-                </span>
-                <span className="hidden text-xs text-muted sm:block">{s.hint}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
-}
-
 export function Main({ children }: { children: ReactNode }) {
-  return <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>;
+  return (
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-12 pb-24 sm:px-8 sm:pt-16">
+      {children}
+    </main>
+  );
 }
 
 export function Footer() {
   return (
-    <footer className="border-t border-line">
-      <div className="mx-auto max-w-6xl space-y-1 px-4 py-6 text-xs text-muted sm:px-6">
+    <footer className="border-t border-line print:hidden">
+      <div className="mx-auto grid max-w-6xl gap-2 px-4 py-8 text-xs leading-relaxed text-muted sm:grid-cols-2 sm:px-8">
         <p>
-          Profiles are aggregate, voluntarily supplied cultural signals, not descriptions of
-          individuals. COMMON GROUND never infers religion, ethnicity, politics or other sensitive
-          traits.
+          Cultural evidence from Qloo. Profiles are aggregate, voluntarily supplied signals, not
+          descriptions of individuals; sensitive traits are never inferred.
         </p>
-        <p>
-          Programs are draft hypotheses for co-design with both communities. They don&apos;t predict
-          social impact.
+        <p className="sm:text-right">
+          Programs are drafts for co-design with both communities. They don&apos;t predict social
+          impact.
         </p>
       </div>
     </footer>
