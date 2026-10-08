@@ -223,6 +223,19 @@ export function InvestigateScreen({
         </div>
       </div>
 
+      {result && result.warnings.length > 0 && (
+        <details className="rounded-2xl bg-warn-soft px-4 py-3 text-sm text-warn">
+          <summary className="cursor-pointer font-medium">
+            {result.warnings.length} warning{result.warnings.length === 1 ? "" : "s"} during the run
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {result.warnings.map((w, i) => (
+              <li key={i}>• {w}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {(engineDone || run.status === "done") && result?.status !== "insufficient_evidence" && (
         <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-bridge bg-bridge-soft p-5 sm:flex-row sm:items-center">
           <p className="text-sm">
