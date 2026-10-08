@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch } from "react";
 import type { IntakeSideSummary } from "@/lib/intake/store";
-import { Badge, Button, Card, Eyebrow, Notice, cx } from "../ui";
+import { Button, Dot } from "../ui";
 import { postJson } from "./api";
 import {
   MAX_SEEDS,
@@ -26,9 +26,11 @@ interface Session {
 export function IntakePanel({
   draft,
   dispatch,
+  onClose,
 }: {
   draft: Draft;
   dispatch: Dispatch<DraftAction>;
+  onClose?: () => void;
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [busy, setBusy] = useState(false);
@@ -118,63 +120,57 @@ export function IntakePanel({
   };
 
   return (
-    <Card className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="max-w-2xl space-y-1">
-          <Eyebrow tone="bridge">Optional · Ask the communities</Eyebrow>
-          <p className="text-sm text-muted">
-            Instead of guessing what each group likes, send each community a link. Participants name
-            up to three favourites (no account, no names) and you import the totals.
-          </p>
-        </div>
-        {!session && (
-          <Button variant="secondary" onClick={create} disabled={busy}>
-            Create share links
+    <section className="border-y border-line py-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="max-w-xl text-sm text-ink-2">
+          Each community gets its own link. Participants name up to three favourites on their phone
+          (no account, no names) and you import the totals as the profiles.
+        </p>
+        {onClose && (
+          <Button variant="link" onClick={onClose}>
+            Close
           </Button>
         )}
       </div>
 
-      {session && (
-        <div className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(["a", "b"] as const).map((side) => (
-              <div
-                key={side}
-                className={cx(
-                  "flex items-center justify-between gap-2 rounded-xl px-3 py-2",
-                  side === "a" ? "bg-a-soft" : "bg-b-soft",
-                )}
+      {!session ? (
+        <Button variant="quiet" onClick={create} disabled={busy} className="mt-4">
+          Create the two links
+        </Button>
+      ) : (
+        <div className="mt-5 space-y-3">
+          {(["a", "b"] as const).map((side) => (
+            <div key={side} className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="flex w-56 items-center gap-2 text-sm">
+                <Dot tone={side} />
+                <span className="truncate">{draft[side].label}</span>
+              </span>
+              <a
+                href={session.links[side]}
+                target="_blank"
+                rel="noreferrer"
+                className="min-w-0 flex-1 truncate font-mono text-xs text-ink-2 hover:text-ink"
               >
-                <div className="min-w-0">
-                  <p className={cx("text-xs font-semibold", side === "a" ? "text-a" : "text-b")}>
-                    {draft[side].label}
-                  </p>
-                  <a
-                    href={session.links[side]}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block truncate font-mono text-xs text-ink underline-offset-2 hover:underline"
-                  >
-                    {origin + session.links[side]}
-                  </a>
-                </div>
-                <Button variant="ghost" className="shrink-0 px-2 py-1" onClick={() => copy(side)}>
-                  {copied === side ? "Copied" : "Copy"}
-                </Button>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={importResponses} disabled={busy}>
+                {origin + session.links[side]}
+              </a>
+              <Button variant="link" onClick={() => copy(side)}>
+                {copied === side ? "Copied" : "Copy"}
+              </Button>
+            </div>
+          ))}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <Button variant="quiet" onClick={importResponses} disabled={busy}>
               Import responses
             </Button>
             {session.storage === "memory" && (
-              <Badge tone="warn">Dev storage: responses reset when the server restarts</Badge>
+              <span className="text-xs text-warn">
+                Development storage: responses reset when the server restarts.
+              </span>
             )}
           </div>
         </div>
       )}
-      {message && <Notice tone="neutral">{message}</Notice>}
-    </Card>
+      {message && <p className="mt-4 text-sm text-ink-2">{message}</p>}
+    </section>
   );
 }

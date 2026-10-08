@@ -3,7 +3,7 @@
 import { useState, type Dispatch } from "react";
 import type { QlooTypeKey } from "@/lib/qloo/types";
 import { PREBUILT } from "@/scenarios";
-import { Badge, Button, Card, EntityTile, Eyebrow, Heading, Spinner, cx } from "../ui";
+import { Button, Dot, Kicker, Lede, Rule, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
 import {
   MAX_SEEDS,
   chosenMatch,
@@ -32,9 +32,9 @@ const SEED_TYPES: { key: QlooTypeKey | ""; label: string }[] = [
 ];
 
 const REASON_TEXT: Record<string, string> = {
-  no_exact_name_match: "No exact name match. Is this the one you meant?",
-  duplicate_exact_names: "Several entities share this name. Pick the right one.",
-  type_mismatch: "Qloo found a different type than requested.",
+  no_exact_name_match: "No exact match. Is this the one you meant?",
+  duplicate_exact_names: "Several titles share this name. Check it's the right one.",
+  type_mismatch: "Qloo found a different type than you asked for.",
   no_results: "Qloo found nothing for this name.",
 };
 
@@ -91,6 +91,7 @@ export function ProfilesScreen({
 }) {
   const resolve = useSeedResolver(dispatch);
   const problems = readiness(draft);
+  const [intakeOpen, setIntakeOpen] = useState(false);
 
   const load = (id: string) => {
     const preset = PREBUILT.find((p) => p.id === id);
@@ -107,99 +108,104 @@ export function ProfilesScreen({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="max-w-3xl space-y-3">
-        <Eyebrow tone="bridge">Step 1 · Profiles</Eyebrow>
-        <Heading level={1}>Who are you bringing together?</Heading>
-        <p className="text-muted">
-          Describe each community through cultural favourites its members actually named: artists,
-          films, shows, books, podcasts, places. Qloo resolves each one; you confirm the match. The
-          agent only ever works from confirmed entities.
-        </p>
-      </div>
-
-      <section aria-label="Choose a scenario" className="grid gap-3 sm:grid-cols-3">
-        {PREBUILT.map((p) => (
-          <ScenarioCard
-            key={p.id}
-            title={p.title}
-            summary={p.summary}
-            active={draft.id === p.id}
-            onClick={() => load(p.id)}
-          />
-        ))}
-        <ScenarioCard
-          title="Start from scratch"
-          summary="Enter your own two communities and their favourites."
-          active={draft.id.startsWith("custom")}
-          onClick={() => load("custom")}
-        />
+    <div>
+      <section className="max-w-3xl space-y-6">
+        <Title>Find what two communities would genuinely want to do together.</Title>
+        <Lede>
+          Give each community&apos;s favourite artists, films, shows and books. Common Ground uses
+          Qloo&apos;s cultural intelligence to find what both groups love that isn&apos;t just what
+          everyone loves, then designs a recurring program around it.
+        </Lede>
       </section>
 
-      <Card className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium">Program objective</span>
+      <section className="mt-14 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
+        <span className="text-muted">Start from</span>
+        {PREBUILT.map((p) => (
+          <ScenarioTab key={p.id} active={draft.id === p.id} onClick={() => load(p.id)}>
+            {p.title}
+          </ScenarioTab>
+        ))}
+        <ScenarioTab active={draft.id.startsWith("custom")} onClick={() => load("custom")}>
+          Your own
+        </ScenarioTab>
+      </section>
+
+      <Rule className="mt-4" />
+
+      <section className="grid gap-8 py-10 md:grid-cols-[1fr_16rem]">
+        <label className="block">
+          <Kicker>The brief</Kicker>
           <textarea
             value={draft.objective}
             onChange={(e) => dispatch({ type: "set", patch: { objective: e.target.value } })}
-            rows={3}
-            placeholder="e.g. A four-session program both groups keep coming back to"
-            className="w-full resize-y rounded-xl border border-line bg-paper px-3 py-2 text-sm"
+            rows={2}
+            placeholder="What should the program achieve? e.g. four sessions both groups keep coming back to"
+            className="mt-2 field-sizing-content w-full resize-none overflow-hidden bg-transparent font-display text-xl leading-snug outline-none"
           />
         </label>
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium">City</span>
+        <label className="block">
+          <Kicker>City</Kicker>
           <input
             value={draft.location}
             onChange={(e) => dispatch({ type: "set", patch: { location: e.target.value } })}
             placeholder="e.g. New York City"
-            className="w-full rounded-xl border border-line bg-paper px-3 py-2 text-sm"
+            className="mt-2 w-full border-b border-line bg-transparent pb-1 font-display text-xl outline-none focus:border-ink"
           />
-          <span className="block text-xs text-muted">Used for local venue suggestions.</span>
+          <span className="mt-2 block text-xs text-muted">For local venue suggestions.</span>
         </label>
-      </Card>
+      </section>
 
-      <IntakePanel draft={draft} dispatch={dispatch} />
+      <Rule />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-x-16 gap-y-12 py-10 md:grid-cols-2">
         <CommunityEditor side="a" profile={draft.a} dispatch={dispatch} resolve={resolve} />
         <CommunityEditor side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
-        {problems.length ? (
-          <ul className="space-y-1 text-sm text-muted">
-            {problems.map((p) => (
-              <li key={p}>• {p}</li>
-            ))}
-          </ul>
+      <div className="text-sm">
+        {intakeOpen ? (
+          <IntakePanel draft={draft} dispatch={dispatch} onClose={() => setIntakeOpen(false)} />
         ) : (
-          <p className="text-sm">
-            <span className="font-medium text-ok">Ready.</span>{" "}
-            <span className="text-muted">
-              {confirmedCount(draft.a) + confirmedCount(draft.b)} confirmed seeds. A full run takes
-              about a minute.
-            </span>
+          <p className="text-muted">
+            Rather ask the communities themselves?{" "}
+            <Button variant="link" onClick={() => setIntakeOpen(true)}>
+              Send each one a link
+            </Button>
           </p>
         )}
+      </div>
+
+      <div className="mt-12 flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm">
+          {problems.length ? (
+            <ul className="space-y-0.5 text-muted">
+              {problems.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-ink-2">
+              {confirmedCount(draft.a) + confirmedCount(draft.b)} confirmed favourites. The agent
+              takes about a minute, or a few seconds for a run it has seen before.
+            </p>
+          )}
+        </div>
         <Button onClick={onRun} disabled={problems.length > 0} className="shrink-0">
-          Find common ground →
+          Find common ground
         </Button>
       </div>
     </div>
   );
 }
 
-function ScenarioCard({
-  title,
-  summary,
+function ScenarioTab({
   active,
   onClick,
+  children,
 }: {
-  title: string;
-  summary: string;
   active: boolean;
   onClick: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
@@ -207,12 +213,11 @@ function ScenarioCard({
       onClick={onClick}
       aria-pressed={active}
       className={cx(
-        "rounded-2xl border p-4 text-left transition",
-        active ? "border-bridge bg-bridge-soft" : "border-line bg-surface hover:border-bridge",
+        "font-medium transition",
+        active ? "text-ink underline decoration-2 underline-offset-8" : "text-ink-2 hover:text-ink",
       )}
     >
-      <p className="font-display text-lg">{title}</p>
-      <p className="mt-1 text-sm text-muted">{summary}</p>
+      {children}
     </button>
   );
 }
@@ -230,9 +235,18 @@ function CommunityEditor({
 }) {
   const [input, setInput] = useState("");
   const [type, setType] = useState<QlooTypeKey | "">("");
-  const tone = side === "a" ? "a" : "b";
   const full = profile.seeds.length >= MAX_SEEDS;
   const failed = profile.seeds.filter((s) => s.status === "error");
+  const confirmed = confirmedCount(profile);
+
+  const add = () => {
+    const name = input.trim();
+    if (!name || full) return;
+    const seed = newSeed(name, type || undefined);
+    dispatch({ type: "addSeed", side, seed });
+    void resolve([{ side, seeds: [seed] }], false);
+    setInput("");
+  };
 
   const retryFailed = () => {
     for (const seed of failed) {
@@ -246,94 +260,78 @@ function CommunityEditor({
     void resolve([{ side, seeds: failed }], false);
   };
 
-  const add = () => {
-    const name = input.trim();
-    if (!name || full) return;
-    const seed = newSeed(name, type || undefined);
-    dispatch({ type: "addSeed", side, seed });
-    void resolve([{ side, seeds: [seed] }], false);
-    setInput("");
-  };
-
   return (
-    <Card tone={tone} className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-1">
-          <Eyebrow tone={tone}>Community {side.toUpperCase()}</Eyebrow>
-          <input
-            value={profile.label}
-            onChange={(e) => dispatch({ type: "profile", side, patch: { label: e.target.value } })}
-            aria-label={`Community ${side.toUpperCase()} name`}
-            className="w-full rounded-lg border border-transparent bg-transparent font-display text-xl hover:border-line focus:border-line"
-          />
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge tone={tone}>
-            {confirmedCount(profile)}/{MAX_SEEDS} confirmed
-          </Badge>
-          <span className="text-xs text-muted">
-            {profile.source === "intake"
-              ? `From ${profile.contributorCount ?? 0} participant${profile.contributorCount === 1 ? "" : "s"}`
-              : "Organizer-supplied"}
-          </span>
-        </div>
+    <div>
+      <div className="flex items-center gap-2">
+        <Dot tone={side} />
+        <Kicker tone={side}>Community {side.toUpperCase()}</Kicker>
       </div>
+      <input
+        value={profile.label}
+        onChange={(e) => dispatch({ type: "profile", side, patch: { label: e.target.value } })}
+        aria-label={`Community ${side.toUpperCase()} name`}
+        className="mt-2 w-full bg-transparent font-display text-2xl outline-none"
+      />
+      <p className="mt-1 text-xs text-muted">
+        {confirmed} of {MAX_SEEDS} favourites ·{" "}
+        {profile.source === "intake"
+          ? `from ${profile.contributorCount ?? 0} participant${profile.contributorCount === 1 ? "" : "s"}`
+          : "supplied by the organizer"}
+      </p>
 
-      <ul className="space-y-2">
+      <ul className="mt-5 border-t border-line">
         {profile.seeds.map((seed) => (
           <SeedRow key={seed.key} seed={seed} side={side} dispatch={dispatch} />
         ))}
         {profile.seeds.length === 0 && (
-          <li className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-            Add 3–8 favourites this community actually named.
+          <li className="border-b border-line py-6 text-sm text-muted">
+            Add three to eight favourites this community actually named.
           </li>
         )}
       </ul>
 
       {failed.length > 0 && (
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-warn-soft px-3 py-2 text-sm text-warn">
-          <span>
-            {failed.length} seed{failed.length === 1 ? "" : "s"} couldn&apos;t reach Qloo (
-            {failed[0].reasons[0] ?? "network error"}).
-          </span>
-          <Button variant="secondary" className="shrink-0 px-3 py-1" onClick={retryFailed}>
+        <p className="mt-3 text-sm text-warn">
+          {failed.length} couldn&apos;t reach Qloo.{" "}
+          <Button variant="link" onClick={retryFailed} className="text-warn">
             Retry
           </Button>
-        </div>
+        </p>
       )}
 
-      <form
-        className="flex flex-col gap-2 sm:flex-row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          add();
-        }}
-      >
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={full}
-          placeholder={full ? "Maximum of 8 seeds" : "Add an artist, film, show, book…"}
-          aria-label={`Add a seed to community ${side.toUpperCase()}`}
-          className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm"
-        />
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as QlooTypeKey | "")}
-          aria-label="Seed type"
-          className="rounded-xl border border-line bg-paper px-3 py-2 text-sm"
+      {!full && (
+        <form
+          className="mt-3 flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
         >
-          {SEED_TYPES.map((t) => (
-            <option key={t.key} value={t.key}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="secondary" disabled={full || !input.trim()}>
-          Add
-        </Button>
-      </form>
-    </Card>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Add a favourite…"
+            aria-label={`Add a favourite to community ${side.toUpperCase()}`}
+            className="min-w-0 flex-1 border-b border-transparent bg-transparent py-1.5 text-sm outline-none focus:border-line"
+          />
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as QlooTypeKey | "")}
+            aria-label="Type"
+            className="bg-transparent text-xs text-muted outline-none"
+          >
+            {SEED_TYPES.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="link" disabled={!input.trim()}>
+            Add
+          </Button>
+        </form>
+      )}
+    </div>
   );
 }
 
@@ -354,68 +352,74 @@ function SeedRow({
   const needsCheck = seed.status === "resolved" && !seed.confirmed;
 
   return (
-    <li
-      className={cx(
-        "rounded-xl border px-3 py-2",
-        needsCheck ? "border-warn bg-warn-soft" : "border-line bg-paper",
-      )}
-    >
-      <div className="flex items-center justify-between gap-3">
+    <li className="group border-b border-line py-2.5">
+      <div className="flex items-center gap-3">
+        {match ? (
+          <Thumb src={match.imageUrl} name={match.name} size={36} tone={side} />
+        ) : (
+          <span className="h-9 w-9 shrink-0 rounded-[3px] bg-paper-2" />
+        )}
         <div className="min-w-0 flex-1">
-          {seed.status === "resolving" && <Spinner label={`Resolving “${seed.input}”…`} />}
+          {seed.status === "resolving" && <Spinner label={seed.input} />}
           {(seed.status === "unresolved" || seed.status === "error") && (
             <p className="text-sm">
-              <span className="font-medium">{seed.input}</span>{" "}
-              <span className="text-danger">
-                {seed.status === "error" ? "couldn't be resolved" : "has no Qloo match"}
+              {seed.input}{" "}
+              <span className="text-warn">
+                · {seed.status === "error" ? "couldn't reach Qloo" : "no Qloo match"}
               </span>
             </p>
           )}
           {match && (
-            <EntityTile
-              name={match.name}
-              type={match.type}
-              imageUrl={match.imageUrl}
-              size="sm"
-              tone={side}
-            />
+            <>
+              <p className="truncate text-sm text-ink" title={match.name}>
+                {match.name}
+              </p>
+              <p className="truncate text-xs text-muted">
+                {match.type ? typeLabel(match.type) : ""}
+                {match.disambiguation && match.disambiguation !== match.name
+                  ? ` · ${match.disambiguation}`
+                  : ""}
+                {seed.weight > 1 ? ` · named by ${seed.weight}` : ""}
+              </p>
+            </>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {seed.confirmed && match && (
-            <span className="px-1 text-sm text-ok" title="Confirmed Qloo match">
-              ✓<span className="sr-only">Confirmed</span>
-            </span>
-          )}
+        <div className="flex shrink-0 items-center gap-3 text-xs">
           {needsCheck && (
             <Button
-              variant="secondary"
-              className="px-3 py-1"
+              variant="link"
+              className="text-warn"
               onClick={() => update({ confirmed: true })}
             >
               Confirm
             </Button>
           )}
           {seed.matches.length > 1 && (
-            <Button variant="ghost" className="px-2 py-1" onClick={() => setChoosing((v) => !v)}>
+            <button
+              type="button"
+              onClick={() => setChoosing((v) => !v)}
+              className="text-muted opacity-100 hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+            >
               {choosing ? "Done" : "Change"}
-            </Button>
+            </button>
           )}
-          <Button
-            variant="ghost"
-            className="px-2 py-1"
+          <button
+            type="button"
             onClick={remove}
             aria-label={`Remove ${seed.input}`}
+            className="text-muted opacity-100 hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
           >
-            ✕
-          </Button>
+            Remove
+          </button>
         </div>
       </div>
       {needsCheck && seed.reasons[0] && (
-        <p className="mt-1 text-xs text-warn">{REASON_TEXT[seed.reasons[0]] ?? seed.reasons[0]}</p>
+        <p className="mt-1.5 pl-12 text-xs text-warn">
+          {REASON_TEXT[seed.reasons[0]] ?? seed.reasons[0]}
+        </p>
       )}
       {choosing && (
-        <ul className="mt-2 space-y-1 border-t border-line pt-2">
+        <ul className="mt-2 space-y-0.5 pl-12">
           {seed.matches.map((m) => (
             <li key={m.id}>
               <button
@@ -425,15 +429,16 @@ function SeedRow({
                   setChoosing(false);
                 }}
                 className={cx(
-                  "w-full rounded-lg px-2 py-1 text-left text-sm hover:bg-surface-2",
-                  m.id === seed.chosenId && "bg-surface-2",
+                  "w-full py-1 text-left text-sm hover:text-ink",
+                  m.id === seed.chosenId ? "text-ink" : "text-ink-2",
                 )}
               >
-                <span className="font-medium">{m.name}</span>
+                {m.id === seed.chosenId ? "● " : "○ "}
+                {m.name}
                 <span className="text-muted">
                   {" "}
-                  · {m.type?.split(":").pop()}
-                  {m.disambiguation ? ` · ${m.disambiguation}` : ""}
+                  · {m.type ? typeLabel(m.type) : "?"}
+                  {m.disambiguation && m.disambiguation !== m.name ? ` · ${m.disambiguation}` : ""}
                 </span>
               </button>
             </li>
