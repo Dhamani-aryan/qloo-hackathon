@@ -8,6 +8,46 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 ---
 
+## Current status (handoff for new sessions)
+
+> **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
+
+**Last updated:** 2026-10-08 · **Commits:** 109 · **Tests:** 101 passing · **Build:** passing
+
+**Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API).
+**Next:** **Track 4, step 4.1** (design system and layout shell). There is no UI yet beyond a placeholder home page.
+
+**What works today (all verified live):**
+- Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
+- Bridge engine (`src/lib/engine/`): `runBridgeEngine(client, scenario)` returns 3 bridges, the obvious contrast, runners-up, themes, rejections and the evidence ledger. About 21 Qloo calls and 8–9 s.
+- AI agent (`src/lib/agent/`): planner, bridge notes, entity-anchored program, critic, and an LLM-only baseline, run by `runAgent()` in `orchestrator.ts`. About 80 s live.
+- API (`src/app/api/`):
+  - `POST /api/entities/resolve`
+  - `POST /api/analysis` (streams server-sent events; the last event is `done` with the full result)
+  - `POST /api/program` (regenerate for another bridge)
+- Demo scenario: **Campus ↔ City, New York** (main) and Jaipur (backup). Seeds are in `spike/seeds.json`. They are *hypothetical test seeds*.
+
+**Environment setup on a new machine or session:**
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and set `QLOO_API_KEY` (the hackathon key; base URL `https://hackathon.api.qloo.com`).
+3. The LLM is OpenAI through the owner's **ChatGPT subscription**, with no API key. Run `npm run llm:login` once to sign in by device code; it saves `.secrets/chatgpt-auth.json` (git-ignored) and refreshes automatically.
+4. Verify: `npm run spike spike/00-ping.ts` (Qloo) and `npm run spike spike/00-llm-ping.ts` (LLM).
+5. Useful live scripts:
+   - `spike/01-resolve.ts` writes `spike/out/resolved.json`, which the other scripts need.
+   - `spike/run-engine.ts`
+   - `spike/run-agent.ts [scenarioId]`
+
+**Known issues and to-dos:**
+- A full live run takes about 80 s, so prebuilt demo scenarios **must be cached** (step 5.1) and the UI must show live progress (step 4.4).
+- Disconnecting the client doesn't cancel a running analysis (fix in 5.2).
+- The engine thresholds were tuned on one scenario; check them in the evaluation (5.3).
+- Bridge #3 is often weak (Bridge Potential ~35). Film and music rarely win.
+- Deployment: the ChatGPT credential file must be available to the server, and rotated refresh tokens persisted (decide in 5.4).
+
+**Where to look:** plan → `common_ground_research_and_plan.md` · decisions → `docs/DECISIONS.md` · spike results → `docs/SPIKE_FINDINGS.md`.
+
+---
+
 ## How an AI session should use this file
 
 When asked to implement a step or track:
@@ -17,10 +57,10 @@ When asked to implement a step or track:
 3. Implement the step exactly as specified. If reality differs from the spec (e.g. the Qloo API behaves differently), follow reality, note the difference in `docs/DECISIONS.md`, and update this file.
 4. **Commit in small, meaningful pieces while working** (see the commit rules). Don't wait until the end.
 5. Run the step's **Done when** checks.
-6. Tick the step in the progress tracker, commit that change, and `git push`.
+6. Tick the step in the progress tracker, **update the "Current status" section** (date, commit and test counts, what works, known issues, next step), commit that change, and `git push`.
 7. Reply with a short summary: what was built, which commits were made, and anything blocked.
 
-Never commit secrets. The Qloo key and LLM key live only in `.env.local`, which is git-ignored.
+Never commit secrets. The Qloo key lives only in `.env.local`, and the ChatGPT sign-in only in `.secrets/`. Both are git-ignored.
 
 Never commit real Qloo API responses. Qloo's hackathon terms prohibit storing them in a public repository. Use git-ignored `spike/out/` or `fixtures/local/`; committed fixtures must be synthetic.
 
