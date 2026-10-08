@@ -2,6 +2,14 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-08: Agent and API decisions (Track 3)
+
+- **Core domains always run.** The LLM planner may add or reorder domains, but TV shows and places (when there's a location) are always included. In the first full live run the planner dropped TV, and the strongest bridge (Somebody Somewhere) disappeared.
+- **The LLM references entities by brief ref** (B1, R2...), never by free text. A guard resolves refs to Qloo entities, drops the obvious contrast and unknown refs, removes uncited evidence IDs, and strips quoted titles that aren't in the evidence. Both the draft and the critic's revision are guarded.
+- **API shape:** analysis runs inside one streamed POST request instead of start + events endpoints, because serverless hosts kill background work after a response is sent. Program regeneration is stateless (`{ brief, bridgeRef }`).
+- **Timings (live, NYC):** plan ~7 s, Qloo engine ~8 s, notes and program in parallel ~37 s, critic ~26 s; ~80 s total. The baseline (~22 s) runs in parallel. Prebuilt demo scenarios must be cached (step 5.1).
+- **Observed quality:** every session is anchored to a Qloo entity, and the guard removed nothing. The critic flagged copy-pasted community roles and the revision made them distinct. The LLM-only baseline only reused the seeds it was given and discovered nothing new.
+
 ## 2026-10-08: Bridge engine tuning from the first live runs
 
 - **Filters read names and classifying tags only** (genre / subgenre / category). Incidental tags caused false rejections: Jazz at Lincoln Center was rejected for the amenity tag "wheelchair accessible parking lot", and Weyes Blood for the theme tag "spirituality". Places of worship are excluded as venues (religion is out of scope).
