@@ -64,6 +64,8 @@ export interface EngineContext {
   seedIds: Record<Side, string[]>;
   /** Seed entity ID → side, for attributing explainability. */
   sideOf: Map<string, Side>;
+  /** Qloo calls that succeeded; zero after a run means Qloo was unreachable. */
+  succeeded: number;
 }
 
 export function createContext(
@@ -94,6 +96,7 @@ export function createContext(
     warnings,
     seedIds,
     sideOf,
+    succeeded: 0,
   };
 }
 
@@ -109,6 +112,7 @@ export async function qlooCall<T>(
     ctx.budget.spend();
     const started = Date.now();
     const result = await call();
+    ctx.succeeded++;
     ctx.emit({
       type: "qloo_query_done",
       purpose,

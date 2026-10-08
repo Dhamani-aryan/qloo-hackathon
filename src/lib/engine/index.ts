@@ -16,6 +16,14 @@ import { scoreSides } from "./validate";
 
 export const MIN_SEEDS_PER_SIDE = 3;
 
+/** Every Qloo call failed (bad key, outage, rate limit): not the same as "no bridge found". */
+export class QlooUnavailableError extends Error {
+  constructor(detail: string) {
+    super(`Qloo is unavailable: ${detail}`);
+    this.name = "QlooUnavailableError";
+  }
+}
+
 export interface RunOptions extends EngineOptions {
   minSeedsPerSide?: number;
 }
@@ -71,6 +79,9 @@ export async function runBridgeEngine(
     }),
   );
   const themes = await themesPromise;
+  if (ctx.succeeded === 0) {
+    throw new QlooUnavailableError(ctx.warnings[0] ?? "no response from Qloo");
+  }
 
   const scored: ScoredCandidate[] = [];
   const rejections: Rejection[] = [];
