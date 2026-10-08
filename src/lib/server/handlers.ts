@@ -4,6 +4,7 @@ import { critiqueProgram } from "@/lib/agent/critic";
 import { runAgent, type AgentDeps } from "@/lib/agent/orchestrator";
 import { generateProgram } from "@/lib/agent/program";
 import { DOMAIN_KEYS, ScenarioSchema, resolveSeed } from "@/lib/engine";
+import { createLimiter } from "@/lib/engine/context";
 import { QLOO_TYPES, type QlooClient, type QlooTypeKey } from "@/lib/qloo";
 import { errorResponse } from "./errors";
 import { sseResponse } from "./sse";
@@ -20,6 +21,12 @@ const TYPE_KEYS = Object.keys(QLOO_TYPES).filter((k) => k !== "tag") as [
 
 // ---------- POST /api/entities/resolve ----------
 
+/**
+ * Shared across requests: Qloo rate-limits bursts (loading a scenario fired 16 parallel
+ * searches and got 429s), so at most a few searches run at once per server instance.
+ */
+const searchLimit = createLimiter(3);
+
 export const ResolveRequestSchema = z.object({
   queries: z
     .array(
@@ -33,7 +40,9 @@ export async function handleResolve(req: Request, qloo: () => QlooClient): Promi
   try {
     const body = ResolveRequestSchema.parse(await req.json());
     const client = qloo();
-    const results = await Promise.all(body.queries.map((q) => resolveSeed(client, q)));
+    const results = await Promise.all(
+      body.queries.map((q) => searchLimit(() => resolveSeed(client, q))),
+    );
     return Response.json({
       results: results.map((r) => ({
         input: r.input,

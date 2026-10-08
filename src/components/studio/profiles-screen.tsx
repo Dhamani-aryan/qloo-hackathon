@@ -38,14 +38,20 @@ const REASON_TEXT: Record<string, string> = {
   no_results: "Qloo found nothing for this name.",
 };
 
-/** Resolve seeds through Qloo and write the results into the draft. */
+/**
+ * Resolve seeds through Qloo and write the results into the draft. All seeds of a scenario
+ * go out in one request so the server can pace them (Qloo rate-limits bursts).
+ */
 export function useSeedResolver(dispatch: Dispatch<DraftAction>) {
-  return async (side: SideKey, seeds: DraftSeed[], autoConfirm: boolean) => {
-    if (seeds.length === 0) return;
+  return async (batch: { side: SideKey; seeds: DraftSeed[] }[], autoConfirm: boolean) => {
+    const items = batch.flatMap(({ side, seeds }) => seeds.map((seed) => ({ side, seed })));
+    if (items.length === 0) return;
     try {
-      const results = await resolveSeeds(seeds.map((s) => ({ input: s.input, type: s.type })));
+      const results = await resolveSeeds(
+        items.map(({ seed }) => ({ input: seed.input, type: seed.type })),
+      );
       results.forEach((r, i) => {
-        const seed = seeds[i];
+        const { side, seed } = items[i];
         dispatch({
           type: "updateSeed",
           side,
@@ -62,7 +68,7 @@ export function useSeedResolver(dispatch: Dispatch<DraftAction>) {
         });
       });
     } catch (err) {
-      for (const seed of seeds) {
+      for (const { side, seed } of items) {
         dispatch({
           type: "updateSeed",
           side,
@@ -91,8 +97,13 @@ export function ProfilesScreen({
     const next = preset ? draftFromPrebuilt(preset) : emptyDraft();
     dispatch({ type: "replace", draft: next });
     // Prebuilt seeds are curated, so they count as confirmed once Qloo resolves them.
-    void resolve("a", next.a.seeds, Boolean(preset));
-    void resolve("b", next.b.seeds, Boolean(preset));
+    void resolve(
+      [
+        { side: "a", seeds: next.a.seeds },
+        { side: "b", seeds: next.b.seeds },
+      ],
+      Boolean(preset),
+    );
   };
 
   return (
@@ -227,7 +238,7 @@ function CommunityEditor({
     if (!name || full) return;
     const seed = newSeed(name, type || undefined);
     dispatch({ type: "addSeed", side, seed });
-    void resolve(side, [seed], false);
+    void resolve([{ side, seeds: [seed] }], false);
     setInput("");
   };
 
