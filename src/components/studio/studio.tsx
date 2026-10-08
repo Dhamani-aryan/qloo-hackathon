@@ -3,12 +3,13 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { PREBUILT } from "@/scenarios";
 import { Main, Stepper, type StepKey } from "../shell";
-import { Card, Eyebrow, Heading } from "../ui";
 import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
 import type { Scenario } from "@/lib/engine/types";
 import { BridgesScreen } from "./bridges-screen";
+import { Comparison } from "./comparison";
 import { InvestigateScreen } from "./investigate-screen";
 import { ProfilesScreen, useSeedResolver } from "./profiles-screen";
+import { ProgramScreen, type ProgramVersion } from "./program-screen";
 import { artifacts, useAgentRun } from "./run";
 
 /** The four-step COMMON GROUND workflow. */
@@ -18,6 +19,7 @@ export function Studio() {
   const resolve = useSeedResolver(dispatch);
   const { run, start, stop } = useAgentRun();
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
+  const [override, setOverride] = useState<ProgramVersion | null>(null);
   const loaded = useRef(false);
   const view = artifacts(run);
 
@@ -41,6 +43,7 @@ export function Studio() {
   const runAnalysis = () => {
     const scenario = toScenario(draft);
     setRanScenario(scenario);
+    setOverride(null);
     go("investigate");
     void start(scenario);
   };
@@ -75,11 +78,22 @@ export function Studio() {
             onContinue={() => go("program")}
           />
         )}
-        {step === "program" && (
-          <Card>
-            <Eyebrow tone="bridge">Coming next</Eyebrow>
-            <Heading level={2}>The program</Heading>
-          </Card>
+        {step === "program" && view.program && view.engine && ranScenario && (
+          <ProgramScreen
+            version={override ?? { program: view.program, critique: view.critique }}
+            engine={view.engine}
+            brief={view.brief}
+            labels={[ranScenario.a.label, ranScenario.b.label]}
+            onRegenerated={setOverride}
+            comparison={
+              <Comparison
+                program={(override ?? { program: view.program }).program}
+                baseline={view.baseline}
+                scenario={ranScenario}
+                pending={run.status === "running"}
+              />
+            }
+          />
         )}
       </Main>
     </>
