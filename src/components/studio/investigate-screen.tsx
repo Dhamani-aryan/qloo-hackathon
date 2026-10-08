@@ -112,6 +112,18 @@ export function InvestigateScreen({
           .
         </Notice>
       )}
+      {result?.failure && !result.engine && (
+        <Notice tone="warn">
+          <p className="font-medium">The run stopped early.</p>
+          <p className="mt-1">{result.failure}</p>
+          <div className="mt-3 flex gap-2">
+            <Button onClick={onRetry}>Try again</Button>
+            <Button variant="secondary" onClick={onBack}>
+              Edit profiles
+            </Button>
+          </div>
+        </Notice>
+      )}
       {result?.status === "insufficient_evidence" && (
         <Notice tone="warn">
           <p className="font-medium">Not enough evidence for a bridge.</p>
