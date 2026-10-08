@@ -201,7 +201,7 @@ function ObviousVsDiscovered({
       />
       <SupportBars a={c.pct.A} b={c.pct.B} labels={labels} />
       <div className="flex items-center gap-2 text-xs">
-        <span className="w-16 shrink-0 font-medium text-muted">Mainstream</span>
+        <span className="w-24 shrink-0 font-medium text-muted">Mainstream</span>
         <span className="relative h-2 flex-1 overflow-hidden rounded-full bg-paper">
           <span
             className="absolute inset-y-0 left-0 rounded-full bg-muted"
