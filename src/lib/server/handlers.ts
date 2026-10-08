@@ -90,6 +90,8 @@ export async function handleAnalysis(
   req: Request,
   deps: () => AgentDeps,
   cache?: () => Cache,
+  /** Called only before a LIVE run (replays are free); return a Response to refuse it. */
+  beforeLive?: () => Promise<Response | null>,
 ): Promise<Response> {
   let parsed;
   try {
@@ -103,13 +105,19 @@ export async function handleAnalysis(
     const recording = await loadRecording(store, key);
     if (recording) return sseResponse(replayRun(recording), req.signal);
   }
+  const refused = await beforeLive?.();
+  if (refused) return refused;
   let resolved: AgentDeps;
   try {
     resolved = deps();
   } catch (err) {
     return errorResponse(err);
   }
-  const live = runAgent(resolved, parsed.scenario, { ...parsed.options, maxCalls: 40 });
+  const live = runAgent(resolved, parsed.scenario, {
+    ...parsed.options,
+    maxCalls: 40,
+    signal: req.signal,
+  });
   return sseResponse(store ? recordRun(live, store, key) : live, req.signal);
 }
 

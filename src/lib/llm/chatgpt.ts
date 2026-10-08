@@ -76,7 +76,7 @@ export function createChatGptLlm(opts: ChatGptLlmOptions): LlmClient {
     provider: "chatgpt",
     model: opts.model,
 
-    async generateText({ system, prompt }): Promise<LlmResponse> {
+    async generateText({ system, prompt, signal }): Promise<LlmResponse> {
       const credential = await getValidCredential(opts.authFile, doFetch);
       const started = Date.now();
 
@@ -103,7 +103,9 @@ export function createChatGptLlm(opts: ChatGptLlmOptions): LlmClient {
             "content-type": "application/json",
           },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(opts.timeoutMs ?? 120_000),
+          signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(opts.timeoutMs ?? 120_000)])
+            : AbortSignal.timeout(opts.timeoutMs ?? 120_000),
         });
       } catch (err) {
         throw new LlmError(`ChatGPT request failed: ${(err as Error).message}`);

@@ -38,6 +38,8 @@ export interface AgentResult {
   program: Program | null;
   baseline: BaselineProgram | null;
   warnings: string[];
+  /** Why the run stopped early (Qloo unavailable, cancelled...), or null. */
+  failure: string | null;
   timings: Partial<Record<AgentState | "BASELINE", number>>;
 }
 
@@ -65,6 +67,38 @@ export interface AgentOptions {
   baseline?: boolean;
   critic?: boolean;
   maxCalls?: number;
+  /** Abort the run (e.g. the browser disconnected). Stops further Qloo and LLM calls. */
+  signal?: AbortSignal;
+}
+
+class CancelledError extends Error {
+  constructor() {
+    super("The run was cancelled");
+    this.name = "CancelledError";
+  }
+}
+
+/** Clients that refuse new calls once the signal fires; LLM requests are also aborted mid-flight. */
+function abortable(deps: AgentDeps, signal?: AbortSignal): AgentDeps {
+  if (!signal) return deps;
+  const guard = <T>(fn: () => Promise<T>) => {
+    if (signal.aborted) return Promise.reject(new CancelledError());
+    return fn();
+  };
+  const { qloo, llm } = deps;
+  return {
+    qloo: {
+      searchEntities: (i) => guard(() => qloo.searchEntities(i)),
+      searchTags: (i) => guard(() => qloo.searchTags(i)),
+      getInsights: (i) => guard(() => qloo.getInsights(i)),
+      compareProfiles: (i) => guard(() => qloo.compareProfiles(i)),
+    },
+    llm: {
+      provider: llm.provider,
+      model: llm.model,
+      generateText: (req) => guard(() => llm.generateText({ ...req, signal })),
+    },
+  };
 }
 
 /** Push-based queue exposed as an async iterator. */
@@ -95,10 +129,14 @@ function channel<T>() {
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function runAgent(
-  deps: AgentDeps,
+  rawDeps: AgentDeps,
   scenario: Scenario,
   options: AgentOptions = {},
 ): AsyncGenerator<AgentEvent> {
+  const deps = abortable(rawDeps, options.signal);
+  const checkCancelled = () => {
+    if (options.signal?.aborted) throw new CancelledError();
+  };
   const out = channel<AgentEvent>();
   const result: AgentResult = {
     status: "ok",
@@ -112,6 +150,7 @@ export function runAgent(
     program: null,
     baseline: null,
     warnings: [],
+    failure: null,
     timings: {},
   };
   const warn = (m: string) => {
@@ -156,6 +195,7 @@ export function runAgent(
         : planDomains(deps.llm, scenario),
     );
     out.push({ type: "plan", plan: result.plan });
+    checkCancelled();
 
     const engine = await timed("QUERY_QLOO", () =>
       runBridgeEngine(deps.qloo, scenario, {
@@ -166,6 +206,7 @@ export function runAgent(
     );
     result.engine = engine;
     out.push({ type: "engine_result", result: engine });
+    checkCancelled();
 
     if (engine.status === "insufficient_evidence") {
       result.status = "insufficient_evidence";
@@ -192,6 +233,7 @@ export function runAgent(
         }
       });
 
+      checkCancelled();
       if (result.draft && options.critic !== false) {
         await timed("CRITIQUE", async () => {
           try {
@@ -216,6 +258,7 @@ export function runAgent(
   run()
     .catch((e) => {
       result.status = "partial";
+      result.failure = message(e);
       warn(`Agent stopped: ${message(e)}`);
       out.push({ type: "done", result });
     })

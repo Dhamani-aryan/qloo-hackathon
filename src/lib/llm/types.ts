@@ -3,6 +3,8 @@ export interface LlmRequest {
   system: string;
   /** The user message. */
   prompt: string;
+  /** Cancels the request (e.g. when the browser disconnects). */
+  signal?: AbortSignal;
 }
 
 export interface LlmUsage {
