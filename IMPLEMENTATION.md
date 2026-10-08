@@ -12,10 +12,10 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 > **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
 
-**Last updated:** 2026-10-08 · **Commits:** 109 · **Tests:** 101 passing · **Build:** passing
+**Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
 
-**Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API).
-**Next:** **Track 4, step 4.1** (design system and layout shell). There is no UI yet beyond a placeholder home page.
+**Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
+**Next:** **Track 5, step 5.1** (prebuilt scenarios and response caching), so the judge demo doesn't wait ~80 s.
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -25,7 +25,13 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
   - `POST /api/entities/resolve`
   - `POST /api/analysis` (streams server-sent events; the last event is `done` with the full result)
   - `POST /api/program` (regenerate for another bridge)
-- Demo scenario: **Campus ↔ City, New York** (main) and Jaipur (backup). Seeds are in `spike/seeds.json`. They are *hypothetical test seeds*.
+- Web UI (`src/components/`, `src/app/page.tsx`), all verified live in the browser, including at phone width:
+  1. **Profiles:** prebuilt scenarios resolve through Qloo on load; add, confirm or change seeds; ambiguity flags; retry.
+  2. **Investigate:** live stages, per-domain progress and an activity feed, from the event stream.
+  3. **Bridges:** the Obvious vs Discovered centrepiece, three bridge cards (support bars, popularity, supporting seeds, interpretation notes, Qloo evidence), themes, runners-up and rejections.
+  4. **Program:** Qloo-anchored sessions, community roles, the critic's review, export and print, rebuilding on another bridge, and the **with/without-Qloo comparison**.
+- Participant intake: `/join/[id]/[side]` (mobile-first). Organizers create the links and import the totals on screen 1. Storage is Upstash Redis when `UPSTASH_REDIS_REST_URL`/`TOKEN` are set, otherwise **in-memory (dev only)**.
+- Demo scenario: **Campus ↔ City, New York** (main) and Jaipur (backup). Prebuilt scenarios store names only (`src/scenarios/index.ts`). Seeds are in `spike/seeds.json`. They are *hypothetical test seeds*.
 
 **Environment setup on a new machine or session:**
 1. `npm install`
@@ -40,6 +46,9 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Known issues and to-dos:**
 - A full live run takes about 80 s, so prebuilt demo scenarios **must be cached** (step 5.1) and the UI must show live progress (step 4.4).
 - Disconnecting the client doesn't cancel a running analysis (fix in 5.2).
+- Qloo rate-limits bursts (429). Searches are paced server-side (3 at a time); keep that in mind for caching and evaluation runs.
+- Intake needs an Upstash Redis database for deployment: the owner must create one (free tier) and set the two env vars.
+- Commit `1a2227f` imports a file added two commits later, so it doesn't build on its own (history only; `main` builds).
 - The engine thresholds were tuned on one scenario; check them in the evaluation (5.3).
 - Bridge #3 is often weak (Bridge Potential ~35). Film and music rarely win.
 - Deployment: the ChatGPT credential file must be available to the server, and rotated refresh tokens persisted (decide in 5.4).
@@ -120,14 +129,14 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 3.6 | LLM-only baseline | ✅ done |
 | 3.7 | Orchestrator, state machine, and event stream | ✅ done |
 | 3.8 | Analysis API routes | ✅ done |
-| 4.1 | Design system and layout shell | ⬜ |
-| 4.2 | Screen 1: profiles and seed confirmation | ⬜ |
-| 4.3 | Participant intake page and KV store | ⬜ |
-| 4.4 | Screen 2: live agent investigation | ⬜ |
-| 4.5 | Screen 3: bridge comparison (Obvious vs Discovered) | ⬜ |
-| 4.6 | Screen 4: program lineup and provenance | ⬜ |
-| 4.7 | With/without-Qloo comparison view | ⬜ |
-| 4.8 | Empty, partial, error, and insufficient-evidence states | ⬜ |
+| 4.1 | Design system and layout shell | ✅ done |
+| 4.2 | Screen 1: profiles and seed confirmation | ✅ done |
+| 4.3 | Participant intake page and KV store | ✅ done |
+| 4.4 | Screen 2: live agent investigation | ✅ done |
+| 4.5 | Screen 3: bridge comparison (Obvious vs Discovered) | ✅ done |
+| 4.6 | Screen 4: program lineup and provenance | ✅ done |
+| 4.7 | With/without-Qloo comparison view | ✅ done |
+| 4.8 | Empty, partial, error, and insufficient-evidence states | ✅ done |
 | 5.1 | Prebuilt scenarios and response caching | ⬜ |
 | 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ⬜ |
 | 5.3 | Evaluation run (6 cases + ablation) | ⬜ |
