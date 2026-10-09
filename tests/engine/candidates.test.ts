@@ -67,6 +67,44 @@ describe("filters", () => {
   });
 });
 
+describe("filters added after the evaluation", () => {
+  it("rejects alcohol-centred venues and government buildings", () => {
+    expect(
+      rejectionReason(entity("w1", "IZUMI Brewery (Ontario Spring Water Sake Company)"), "place"),
+    ).toMatch(/brewery/);
+    expect(rejectionReason(entity("w2", "Palace of Westminster"), "place")).toMatch(/Unsuitable/);
+    expect(
+      rejectionReason(
+        entity("w3", "Night Owl", {
+          tags: [{ id: "urn:tag:category:place:night_club", name: "Night club", type: null }],
+        }),
+        "place",
+      ),
+    ).toMatch(/night club/);
+    expect(rejectionReason(entity("w4", "Barbican Centre"), "place")).toBeNull();
+  });
+
+  it("rejects bundles but keeps single works", () => {
+    expect(
+      rejectionReason(
+        entity("b1", "Alice Oseman Collection 6 Books Set (Solitaire, Loveless)"),
+        "book",
+      ),
+    ).toMatch(/bundle/);
+    expect(rejectionReason(entity("b2", "The Lord of the Rings Box Set"), "book")).toMatch(
+      /bundle/,
+    );
+    expect(rejectionReason(entity("b3", "Heartstopper"), "book")).toBeNull();
+  });
+
+  it("rejects places that share the city's name", () => {
+    expect(rejectionReason(entity("c1", "Chicago"), "place", "Chicago")).toMatch(/city/);
+    expect(rejectionReason(entity("c2", "New York"), "place", "New York City")).toMatch(/city/);
+    expect(rejectionReason(entity("c3", "Chicago Diner"), "place", "Chicago")).toBeNull();
+    expect(rejectionReason(entity("c4", "Chicago"), "movie", "Chicago")).toBeNull();
+  });
+});
+
 describe("buildPool", () => {
   it("dedupes across rules, keeps provenance and rejects filtered items", () => {
     const { client } = fakeClient(() => []);
