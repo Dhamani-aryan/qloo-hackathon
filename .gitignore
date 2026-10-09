@@ -32,3 +32,6 @@ fixtures/local/
 
 # local credentials (ChatGPT subscription sign-in)
 .secrets/
+
+# evaluation outputs (contain Qloo-derived results and review packets)
+eval/out/
