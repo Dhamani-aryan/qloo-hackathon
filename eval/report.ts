@@ -155,6 +155,7 @@ Running the evaluation writes one **blind packet** per case to \`eval/out/packet
 
 - The seeds are plausible but **hypothetical**. Real profiles would come from participant intake.
 - There are six cases, one run each. The LLM steps are non-deterministic; only the Qloo engine is reproducible.
+- Some third-ranked bridges pass the two-sided test only narrowly (around the 50th percentile for both groups, e.g. in the Toronto case). A stricter floor would make bridges stronger but would more often return \"no bridge\".
 - Bridge Potential is a transparent ranking score, not a probability, and **nothing here measures social cohesion**.
 - Thresholds (40th-percentile floor, popularity band 0.3–0.9) were set on the New York spike scenario. Five of these cases, including the held-out one, were not used for tuning.
 `;

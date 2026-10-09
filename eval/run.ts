@@ -79,6 +79,8 @@ function rejectionGroup(reason: string): string {
   if (reason.startsWith("Too niche")) return "too niche";
   if (reason.startsWith("Sensitive")) return "sensitive topic";
   if (reason.startsWith("Unsuitable venue")) return "unsuitable venue";
+  if (reason.startsWith("A bundle")) return "bundle or box set";
+  if (reason.startsWith("Shares its name")) return "named like the city";
   return "other";
 }
 
