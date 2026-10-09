@@ -15,7 +15,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
-**Next:** **step 5.4, deploying to Vercel.** It needs owner decisions: an Upstash Redis database for the cache and participant links, and how the ChatGPT credential reaches the server. Human ratings for 5.3 are pending: the review packets are in `eval/out/packets/`.
+**Next:** **finish step 5.4 by following `docs/DEPLOY.md`.** The code is ready: the credential store (file or Upstash), `npm run llm:push-credential` and `npm run warm`. The owner must create the Upstash database and the Vercel project. Then 5.5 (README) and 5.6 (submission).
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -53,7 +53,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 - Commit `1a2227f` imports a file added two commits later, so it doesn't build on its own (history only; `main` builds).
 - The engine thresholds were tuned on one scenario; check them in the evaluation (5.3).
 - Bridge #3 is often weak (Bridge Potential ~35). Film and music rarely win.
-- Deployment: the ChatGPT credential file must be available to the server, and rotated refresh tokens persisted (decide in 5.4).
+- Deployment (5.4): the ChatGPT credential lives in Upstash with a cross-instance refresh lock (`CHATGPT_AUTH_STORE=redis`); demo runs are pre-warmed with `npm run warm`. Steps are in `docs/DEPLOY.md`.
 
 **Where to look:** plan → `common_ground_research_and_plan.md` · decisions → `docs/DECISIONS.md` · spike results → `docs/SPIKE_FINDINGS.md`.
 
