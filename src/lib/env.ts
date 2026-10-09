@@ -36,6 +36,8 @@ const llmSchema = z.object({
   LLM_MODEL: z.string().trim().min(1).default("gpt-5.6-sol"),
   LLM_REASONING_EFFORT: z.enum(["minimal", "low", "medium", "high"]).default("low"),
   CHATGPT_AUTH_FILE: z.string().trim().min(1).default(".secrets/chatgpt-auth.json"),
+  /** "file" for local development, "redis" (Upstash) for deployments. */
+  CHATGPT_AUTH_STORE: z.enum(["file", "redis"]).default("file"),
 });
 
 const intakeSchema = z.object({
@@ -73,6 +75,7 @@ export function getLlmEnv(env: Env = process.env) {
     model: e.LLM_MODEL,
     reasoningEffort: e.LLM_REASONING_EFFORT,
     chatgptAuthFile: e.CHATGPT_AUTH_FILE,
+    chatgptAuthStore: e.CHATGPT_AUTH_STORE,
   };
 }
 

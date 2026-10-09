@@ -41,6 +41,7 @@ describe("other areas", () => {
       model: "gpt-5.6-sol",
       reasoningEffort: "low",
       chatgptAuthFile: ".secrets/chatgpt-auth.json",
+      chatgptAuthStore: "file",
     });
   });
 

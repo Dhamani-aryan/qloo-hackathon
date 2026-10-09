@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createChatGptLlm, parseSse } from "@/lib/llm/chatgpt";
 import {
   accountIdFromJwt,
-  getValidCredential,
   loadCredential,
   saveCredential,
   type ChatGptCredential,
 } from "@/lib/llm/chatgpt-auth";
+import { createFileStore, getValidCredentialFrom } from "@/lib/llm/credential-store";
 
 /** A fake JWT whose payload carries a made-up ChatGPT account ID. */
 function fakeJwt(accountId = "acct-test") {
@@ -67,13 +67,15 @@ describe("chatgpt-auth", () => {
   });
 
   it("asks the user to sign in when no credential exists", async () => {
-    await expect(getValidCredential(authFile)).rejects.toThrow(/npm run llm:login/);
+    await expect(getValidCredentialFrom(createFileStore(authFile))).rejects.toThrow(
+      /npm run llm:login/,
+    );
   });
 
   it("returns a fresh credential without refreshing", async () => {
     saveCredential(authFile, freshCredential());
     const doFetch = vi.fn();
-    await getValidCredential(authFile, doFetch as unknown as typeof fetch);
+    await getValidCredentialFrom(createFileStore(authFile), doFetch as unknown as typeof fetch);
     expect(doFetch).not.toHaveBeenCalled();
   });
 
@@ -85,7 +87,10 @@ describe("chatgpt-auth", () => {
           JSON.stringify({ access_token: fakeJwt(), refresh_token: "refresh-2", expires_in: 3600 }),
         ),
     );
-    const c = await getValidCredential(authFile, doFetch as unknown as typeof fetch);
+    const c = await getValidCredentialFrom(
+      createFileStore(authFile),
+      doFetch as unknown as typeof fetch,
+    );
     expect(c.refresh).toBe("refresh-2");
     expect(loadCredential(authFile)?.refresh).toBe("refresh-2");
   });

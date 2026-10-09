@@ -1,5 +1,6 @@
-import { getLlmEnv } from "@/lib/env";
+import { getIntakeEnv, getLlmEnv } from "@/lib/env";
 import { createChatGptLlm } from "./chatgpt";
+import { createFileStore, createRedisCredentialStore } from "./credential-store";
 import type { LlmClient } from "./types";
 
 export { createChatGptLlm } from "./chatgpt";
@@ -8,14 +9,18 @@ export type * from "./types";
 
 let client: LlmClient | null = null;
 
-/** The configured LLM client. Provider and model come from env (see .env.example). */
+/**
+ * The configured LLM client. Provider and model come from env (see .env.example).
+ * With CHATGPT_AUTH_STORE=redis the ChatGPT credential is read from (and refreshed in) Upstash,
+ * which is what a serverless deployment needs.
+ */
 export function getLlm(env: Record<string, string | undefined> = process.env): LlmClient {
   if (client) return client;
   const e = getLlmEnv(env);
-  client = createChatGptLlm({
-    authFile: e.chatgptAuthFile,
-    model: e.model,
-    reasoningEffort: e.reasoningEffort,
-  });
+  const store =
+    e.chatgptAuthStore === "redis"
+      ? createRedisCredentialStore(getIntakeEnv(env))
+      : createFileStore(e.chatgptAuthFile);
+  client = createChatGptLlm({ store, model: e.model, reasoningEffort: e.reasoningEffort });
   return client;
 }
