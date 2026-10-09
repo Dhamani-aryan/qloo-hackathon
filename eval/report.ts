@@ -3,7 +3,7 @@
  *
  *   npm run spike eval/report.ts
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { CaseResult } from "./run";
 
 const { ranAt, results } = JSON.parse(readFileSync("eval/out/summary.json", "utf8")) as {
@@ -44,6 +44,35 @@ const obviousPop = ok.flatMap((r) => (r.obvious?.popularity == null ? [] : [r.ob
 const bridgePop = ok.flatMap((r) =>
   r.bridges.flatMap((b) => (b.popularity == null ? [] : [b.popularity])),
 );
+
+// Optional earlier run (saved before a fix) to show what changed.
+const previous: CaseResult[] | null = existsSync("eval/out/summary-run1.json")
+  ? (JSON.parse(readFileSync("eval/out/summary-run1.json", "utf8")) as { results: CaseResult[] })
+      .results
+  : null;
+const beforeAfter = previous
+  ? `## What the first run found, and what changed
+
+The first full run surfaced four bridges that are unsuitable for a community program. They come from content rules, not score tuning, so they were fixed as responsible-use rules (\`src/lib/engine/filters.ts\`). One of them came from the held-out case, and the fix is a venue-type rule, not a threshold change.
+
+| Problem in run 1 | Case | Rule added |
+|---|---|---|
+| Palace of Westminster (Parliament) | London | Government buildings are not venues |
+| A café named "Chicago" | Chicago | Places named just like the city are skipped (confusing in a plan) |
+| A "Collection 6 Books Set" listing | Chicago | Bundles and box sets are not single works |
+| A sake brewery | Toronto *(held out)* | Alcohol-centred venues are excluded (mixed groups may include under-21s) |
+
+| Case | Run 1 bridges | Run 2 bridges (after the rules) |
+|---|---|---|
+${results
+  .map((r) => {
+    const before = previous.find((x) => x.id === r.id);
+    return `| ${r.context} | ${before?.bridges.map((b) => b.name).join("; ") ?? "—"} | ${r.bridges.map((b) => b.name).join("; ") || "—"} |`;
+  })
+  .join("\n")}
+
+`
+  : "";
 
 const md = `# Evaluation (step 5.3)
 
@@ -116,7 +145,7 @@ ${results
   )
   .join("\n")}
 
-## Human review
+${beforeAfter}## Human review
 
 Running the evaluation writes one **blind packet** per case to \`eval/out/packets/\`. Each has two unlabelled plans (Common Ground and LLM only, in random order), a 1–5 rating form on seven criteria (cultural specificity, authenticity, appeal to each group, actionability, novelty without forcedness, likelihood of repeat attendance), and "which would you fund or run, and why?". The answer key is in \`*.key.json\`.
 
