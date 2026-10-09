@@ -18,8 +18,6 @@ const DEVICE_TOKEN_URL = `${AUTH_BASE_URL}/api/accounts/deviceauth/token`;
 const DEVICE_REDIRECT_URI = `${AUTH_BASE_URL}/deviceauth/callback`;
 export const DEVICE_VERIFICATION_URL = `${AUTH_BASE_URL}/codex/device`;
 const JWT_CLAIM_PATH = "https://api.openai.com/auth";
-/** Refresh when the access token has less than this left. */
-const REFRESH_MARGIN_MS = 5 * 60_000;
 
 export interface ChatGptCredential {
   access: string;
@@ -107,33 +105,6 @@ export async function refreshCredential(
     }),
   });
   return readToken(res, "refresh");
-}
-
-let inflight: Promise<ChatGptCredential> | null = null;
-
-/** Returns a non-expired credential, refreshing and saving it when needed. */
-export async function getValidCredential(
-  file: string,
-  doFetch: typeof fetch = fetch,
-): Promise<ChatGptCredential> {
-  const current = loadCredential(file);
-  if (!current) {
-    throw new ChatGptAuthError(
-      `Not signed in to ChatGPT (no credential at ${file}). Run: npm run llm:login`,
-    );
-  }
-  if (current.expires - Date.now() > REFRESH_MARGIN_MS) return current;
-
-  // Share one refresh between concurrent callers so the rotating refresh token is used once.
-  inflight ??= refreshCredential(current, doFetch)
-    .then((fresh) => {
-      saveCredential(file, fresh);
-      return fresh;
-    })
-    .finally(() => {
-      inflight = null;
-    });
-  return inflight;
 }
 
 // ---------- device-code login (one-time, run by the user) ----------

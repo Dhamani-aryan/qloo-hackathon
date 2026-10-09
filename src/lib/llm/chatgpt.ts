@@ -1,4 +1,4 @@
-import { getValidCredential } from "./chatgpt-auth";
+import { createFileStore, getValidCredentialFrom, type CredentialStore } from "./credential-store";
 import { LlmError, type LlmClient, type LlmResponse } from "./types";
 
 /**
@@ -11,7 +11,10 @@ import { LlmError, type LlmClient, type LlmResponse } from "./types";
 const CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses";
 
 export interface ChatGptLlmOptions {
-  authFile: string;
+  /** Local credential file (development). Ignored when `store` is given. */
+  authFile?: string;
+  /** Where the credential lives; defaults to the file. */
+  store?: CredentialStore;
   model: string;
   reasoningEffort?: "minimal" | "low" | "medium" | "high";
   timeoutMs?: number;
@@ -71,13 +74,14 @@ function textFromOutput(output: NonNullable<SseEvent["response"]>["output"]): st
 
 export function createChatGptLlm(opts: ChatGptLlmOptions): LlmClient {
   const doFetch = opts.fetch ?? fetch;
+  const store = opts.store ?? createFileStore(opts.authFile ?? ".secrets/chatgpt-auth.json");
 
   return {
     provider: "chatgpt",
     model: opts.model,
 
     async generateText({ system, prompt, signal }): Promise<LlmResponse> {
-      const credential = await getValidCredential(opts.authFile, doFetch);
+      const credential = await getValidCredentialFrom(store, doFetch);
       const started = Date.now();
 
       const body = {
