@@ -15,7 +15,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
-**Next:** **step 5.3, the evaluation** (6 cases plus the ablation). Then 5.4 deploy, 5.5 docs and 5.6 submission. The UI was redesigned in 5.2b; ask the owner for feedback on it.
+**Next:** **step 5.4, deploying to Vercel.** It needs owner decisions: an Upstash Redis database for the cache and participant links, and how the ChatGPT credential reaches the server. Human ratings for 5.3 are pending: the review packets are in `eval/out/packets/`.
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -42,6 +42,8 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
    - `spike/01-resolve.ts` writes `spike/out/resolved.json`, which the other scripts need.
    - `spike/run-engine.ts`
    - `spike/run-agent.ts [scenarioId]`
+
+- Evaluation (5.3): `npm run spike eval/run.ts` then `npm run spike eval/report.ts` builds `docs/EVALUATION.md`. Latest results: 6/6 plans, 100% seed resolution, 6/6 reproducible, bridges at the 73rd popularity percentile vs 98th for the obvious pick. The LLM alone named 72 titles: 42 reused seeds, 30 unverified.
 
 **Known issues and to-dos:**
 - A full live run takes about 80 s. **Done in 5.1:** finished runs are cached server-side and replayed in about 3 s (the UI offers "Run it live instead"), and identical Qloo requests are cached for a day.
@@ -140,7 +142,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 5.1 | Prebuilt scenarios and response caching | ✅ done |
 | 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ✅ done |
 | 5.2b | UI redesign (less cluttered, editorial, no generic AI look) | ✅ done |
-| 5.3 | Evaluation run (6 cases + ablation) | ⬜ |
+| 5.3 | Evaluation run (6 cases + ablation) | ✅ done (human ratings pending) |
 | 5.4 | Deployment to Vercel | ⬜ |
 | 5.5 | README, architecture, limitations, responsible use | ⬜ |
 | 5.6 | Screenshots, submission copy, final checks | ⬜ |

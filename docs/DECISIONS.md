@@ -2,6 +2,12 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-09: Evaluation findings (step 5.3)
+
+- **Six fixed cases** (`eval/cases.ts`) in New York, London, Chicago, Mumbai, Berlin and Toronto. The Toronto case is held out from any tuning. Every case runs live, with a rerun of the engine to check reproducibility and blind review packets for human raters.
+- **Run 1 surfaced four unsuitable bridges:** the Palace of Westminster, a café named "Chicago", a book box-set listing, and a sake brewery (held-out case). They were fixed with content rules, not score tuning: no government buildings, no alcohol-centred venues, no bundles, and no places named like the city. Run 2 confirmed all four are gone and the other metrics held.
+- **Kept as is:** the 40th-percentile floor. Raising it would strengthen weak third bridges (around 50/50 in Toronto) but return "no bridge" more often. This is documented as a limitation instead.
+
 ## 2026-10-08: UI redesign (step 5.2b)
 
 The owner judged the Track 4 UI generic ("AI slop"): stacked identical rounded cards, pill badges on everything, and colour everywhere. The redesign:
