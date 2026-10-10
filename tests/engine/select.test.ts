@@ -72,4 +72,22 @@ describe("selectBridges", () => {
     expect(s.bridges).toEqual([]);
     expect(s.obvious).toBeNull();
   });
+
+  it("leaves out weakly supported bridges when strong ones exist", () => {
+    const s = selectBridges([
+      pick("strong", "tvShow", 0.6, 0.8, 0.8),
+      pick("weak", "artist", 0.6, 0.5, 0.5),
+    ]);
+    expect(s.bridges.map((b) => b.entity.id)).toEqual(["strong"]);
+    expect(s.runnersUp.map((b) => b.entity.id)).toEqual(["weak"]);
+  });
+
+  it("still shows the single best candidate when nothing is strong", () => {
+    const s = selectBridges([
+      pick("weak1", "tvShow", 0.6, 0.5, 0.5),
+      pick("weak2", "artist", 0.6, 0.45, 0.45),
+    ]);
+    expect(s.status).toBe("ok");
+    expect(s.bridges.map((b) => b.entity.id)).toEqual(["weak1"]);
+  });
 });

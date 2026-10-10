@@ -4,7 +4,6 @@ exports[`runBridgeEngine (synthetic world) > finds two-sided, non-mainstream bri
 {
   "bridges": [
     "Jazz Fusion Duo (artist) BP 68",
-    "Corner Café (place) BP 53",
     "Shared Comedy (tvShow) BP 47",
   ],
   "calls": 13,

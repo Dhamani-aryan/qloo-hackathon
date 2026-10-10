@@ -24,11 +24,7 @@ describe("runBridgeEngine (synthetic world)", () => {
     const s = summary(r);
 
     expect(s.status).toBe("ok");
-    expect(s.bridges.map((b) => b.split(" (")[0])).toEqual([
-      "Jazz Fusion Duo",
-      "Corner Café",
-      "Shared Comedy",
-    ]);
+    expect(s.bridges.map((b) => b.split(" (")[0])).toEqual(["Jazz Fusion Duo", "Shared Comedy"]);
     expect(["Famous Drama", "Famous Square", "Global Star"]).toContain(s.obvious);
     expect(s.themes).toEqual(["Personal growth"]);
     expect(s.rejections).toEqual(
