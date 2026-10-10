@@ -34,6 +34,9 @@ export const normalizeName = (s: string) =>
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]/g, "");
 
+/** Popularity gap below which two exact-name matches are treated as genuinely ambiguous. */
+export const DUPLICATE_MARGIN = 0.05;
+
 export function assessMatches(query: SeedQuery, matches: EntityMatch[]): SeedResolution {
   if (matches.length === 0) {
     return { input: query.input, matches, best: null, ambiguous: true, reasons: ["no_results"] };
@@ -48,8 +51,15 @@ export function assessMatches(query: SeedQuery, matches: EntityMatch[]): SeedRes
     reasons.push("no_exact_name_match");
     best = matches[0];
   } else {
-    best = [...exact].sort((x, y) => (y.popularity ?? 0) - (x.popularity ?? 0))[0];
-    if (exact.length > 1) reasons.push("duplicate_exact_names");
+    const ranked = [...exact].sort((x, y) => (y.popularity ?? 0) - (x.popularity ?? 0));
+    best = ranked[0];
+    // Several things share the name. Only ask the user when the runner-up is nearly as
+    // popular; otherwise the clearly more popular one (e.g. Skins the TV show at 0.98 vs a
+    // namesake at 0.59) is almost always what people mean.
+    const runnerUp = ranked[1];
+    if (runnerUp && (best.popularity ?? 0) - (runnerUp.popularity ?? 0) < DUPLICATE_MARGIN) {
+      reasons.push("duplicate_exact_names");
+    }
   }
 
   if (query.type && best.type && best.type !== QLOO_TYPES[query.type]) {

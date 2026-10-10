@@ -44,11 +44,20 @@ describe("assessMatches", () => {
 
   it("picks the most popular of duplicate exact names and flags it", () => {
     const r = assessMatches({ input: "Shogun" }, [
-      match("old", "Shogun", { popularity: 0.4 }),
+      match("old", "Shogun", { popularity: 0.93 }),
       match("new", "Shogun", { popularity: 0.95 }),
     ]);
     expect(r.best?.id).toBe("new");
     expect(r.reasons).toContain("duplicate_exact_names");
+  });
+
+  it("doesn't flag a namesake that is clearly less popular", () => {
+    const r = assessMatches({ input: "Skins" }, [
+      match("niche", "Skins", { popularity: 0.59 }),
+      match("main", "Skins", { popularity: 0.98 }),
+    ]);
+    expect(r.best?.id).toBe("main");
+    expect(r.ambiguous).toBe(false);
   });
 
   it("flags a type mismatch and an empty result", () => {
