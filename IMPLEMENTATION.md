@@ -12,9 +12,9 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 > **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
 
-**Last updated:** 2026-10-08 · **Commits:** ~145 · **Tests:** 112 passing · **Build:** passing
+**Last updated:** 2026-10-10 · **Commits:** ~210 · **Tests:** 136 passing · **Build:** passing
 
-**Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI).
+**Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI), 5.1–5.3 (caching, hardening, UI redesign, evaluation), plus an accuracy pass and a simpler two-page UI (2026-10-10).
 **Next:** **finish step 5.4 by following `docs/DEPLOY.md`.** The code is ready: the credential store (file or Upstash), `npm run llm:push-credential` and `npm run warm`. The owner must create the Upstash database and the Vercel project. Then 5.5 (README) and 5.6 (submission).
 
 **What works today (all verified live):**
@@ -25,12 +25,10 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
   - `POST /api/entities/resolve`
   - `POST /api/analysis` (streams server-sent events; the last event is `done` with the full result)
   - `POST /api/program` (regenerate for another bridge)
-- Web UI (`src/components/`, `src/app/page.tsx`), redesigned in 5.2b as an editorial report (ink on paper, colour only for data, rules instead of cards). Verified live on desktop, phone and dark mode:
-  1. **Profiles:** prebuilt scenarios resolve through Qloo on load; add, confirm or change seeds; ambiguity flags; retry.
-  2. **Investigate:** live stages, per-domain progress and an activity feed, from the event stream.
-  3. **Bridges:** the Obvious vs Discovered centrepiece, three bridge cards (support bars, popularity, supporting seeds, interpretation notes, Qloo evidence), themes, runners-up and rejections.
-  4. **Program:** Qloo-anchored sessions, community roles, the critic's review, export and print, rebuilding on another bridge, and the **with/without-Qloo comparison**.
-- Participant intake: `/join/[id]/[side]` (mobile-first). Organizers create the links and import the totals on screen 1. Storage is Upstash Redis when `UPSTASH_REDIS_REST_URL`/`TOKEN` are set, otherwise **in-memory (dev only)**.
+- Web UI (`src/components/`, `src/app/page.tsx`), simplified on 2026-10-10 to two views in `studio.tsx`:
+  1. **Home** (`home-screen.tsx`): Group 1 and Group 2 boxes with chip inputs (Enter to add; Qloo resolves each chip, a **?** marks an unsure match), a City field and **Find common ground →**. Example links and "Let each group add their own" (intake links) sit underneath.
+  2. **Results** (`results-screen.tsx`): a one-line progress bar (trace under "How it got here"), then `CommonGround` (Obvious vs Discovered, up to 3 bridges, more details folded), `PlanSection` (4 sessions, roles, critic, download, rebuild on another bridge), and `Comparison` (with/without Qloo).
+- Participant intake: `/join/[id]/[side]` (mobile-first). Organizers create the links and import the totals on the home page. Storage is Upstash Redis when `UPSTASH_REDIS_REST_URL`/`TOKEN` are set, otherwise **in-memory (dev only)**.
 - Demo scenario: **Campus ↔ City, New York** (main) and Jaipur (backup). Prebuilt scenarios store names only (`src/scenarios/index.ts`). Seeds are in `spike/seeds.json`. They are *hypothetical test seeds*.
 
 **Environment setup on a new machine or session:**
@@ -43,7 +41,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
    - `spike/run-engine.ts`
    - `spike/run-agent.ts [scenarioId]`
 
-- Evaluation (5.3): `npm run spike eval/run.ts` then `npm run spike eval/report.ts` builds `docs/EVALUATION.md`. Latest results: 6/6 plans, 100% seed resolution, 6/6 reproducible, bridges at the 73rd popularity percentile vs 98th for the obvious pick. The LLM alone named 72 titles: 42 reused seeds, 30 unverified.
+- Evaluation (5.3): `npm run spike eval/run.ts` then `npm run spike eval/report.ts` builds `docs/EVALUATION.md`. Latest results (run 3, after the accuracy pass): 6/6 plans, 100% seed resolution, 6/6 reproducible, bridges at the 73rd popularity percentile vs 99th for the obvious pick. The LLM alone named 71 titles: 49 reused seeds, 22 unverified. Raw summaries: `eval/out/summary-run{1,2,3}.json` (git-ignored).
 
 **Known issues and to-dos:**
 - A full live run takes about 80 s. **Done in 5.1:** finished runs are cached server-side and replayed in about 3 s (the UI offers "Run it live instead"), and identical Qloo requests are cached for a day.
