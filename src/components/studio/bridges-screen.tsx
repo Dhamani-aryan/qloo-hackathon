@@ -4,14 +4,11 @@ import { useState } from "react";
 import type { BridgeNote } from "@/lib/agent/notes";
 import type { EngineResult, Evidence, Scenario, ScoredCandidate } from "@/lib/engine/types";
 import {
-  Button,
   Dot,
   Kicker,
-  Lede,
   More,
   Note,
   Rule,
-  Spinner,
   SupportBars,
   Thumb,
   Title,
@@ -23,23 +20,14 @@ import {
 
 type Names = (ids: string[]) => string[];
 
-export function BridgesScreen({
+export function CommonGround({
   scenario,
   engine,
   notes,
-  programReady,
-  programFailed = false,
-  onContinue,
-  onRetry,
 }: {
   scenario: Scenario;
   engine: EngineResult;
   notes: BridgeNote[];
-  programReady: boolean;
-  /** The run finished without a program (LLM failure); the bridges are still valid. */
-  programFailed?: boolean;
-  onContinue: () => void;
-  onRetry?: () => void;
 }) {
   const seedName = new Map(
     [...scenario.a.seeds, ...scenario.b.seeds].map((s) => [s.entityId, s.name]),
@@ -48,52 +36,38 @@ export function BridgesScreen({
   const labels: [string, string] = [scenario.a.label, scenario.b.label];
   const evidence = new Map(engine.evidence.map((e) => [e.evidenceId, e]));
   const top = engine.bridges[0];
+  const count = engine.bridges.length;
 
   return (
-    <div>
-      <section className="max-w-3xl space-y-5">
-        <Title>Here&apos;s what they share.</Title>
-        <Lede>Things both groups rank highly that aren&apos;t just popular with everyone.</Lede>
-      </section>
-
+    <section aria-label="Common ground">
       {top && engine.obvious && (
         <Reveal obvious={engine.obvious} discovered={top} labels={labels} />
       )}
 
-      <section className="mt-20">
-        <div className="flex items-baseline justify-between gap-4">
-          <Title level={2}>Top 3 bridges</Title>
-          <p className="hidden text-xs text-muted sm:block">
-            Score out of 100 · tap a row for details
-          </p>
-        </div>
-        <ol className="mt-6 border-t border-ink">
-          {engine.bridges.map((b, i) => (
-            <BridgeRow
-              key={b.entity.id}
-              rank={i + 1}
-              bridge={b}
-              note={notes.find((n) => n.ref === `B${i + 1}`)}
-              labels={labels}
-              names={names}
-              evidence={evidence}
-              defaultOpen={i === 0}
-            />
-          ))}
-        </ol>
-      </section>
+      <div className="mt-14 flex items-baseline justify-between gap-4">
+        <Title level={2}>{count === 1 ? "The bridge" : `Top ${count} bridges`}</Title>
+        <p className="hidden text-xs text-muted sm:block">Tap a row for details</p>
+      </div>
+      <ol className="mt-5 border-t border-ink">
+        {engine.bridges.map((b, i) => (
+          <BridgeRow
+            key={b.entity.id}
+            rank={i + 1}
+            bridge={b}
+            note={notes.find((n) => n.ref === `B${i + 1}`)}
+            labels={labels}
+            names={names}
+            evidence={evidence}
+            defaultOpen={false}
+          />
+        ))}
+      </ol>
 
-      <More
-        className="mt-12"
-        label="More details: shared themes, other ideas and what was ruled out"
-      >
-        <section className="grid gap-12 md:grid-cols-2">
+      <More className="mt-8" label="More: shared themes, other ideas, what was ruled out">
+        <div className="grid gap-12 md:grid-cols-2">
           {engine.themes.length > 0 && (
             <div>
               <Kicker>Shared themes</Kicker>
-              <p className="mt-2 text-sm text-muted">
-                Found in both profiles by Qloo&apos;s Analysis Compare.
-              </p>
               <ul className="mt-4">
                 {engine.themes.slice(0, 6).map((t) => (
                   <li key={t.tagId} className="border-t border-line py-2.5 text-sm">
@@ -132,38 +106,9 @@ export function BridgesScreen({
             )}
             <Rejections engine={engine} />
           </div>
-        </section>
+        </div>
       </More>
-
-      <div className="mt-16 flex flex-col gap-4 border-t border-ink pt-6 sm:flex-row sm:items-center sm:justify-between">
-        {programFailed ? (
-          <>
-            <p className="text-warn">
-              The language model failed to design a program this time. The bridges above are
-              complete and come straight from Qloo.
-            </p>
-            {onRetry && (
-              <Button variant="quiet" onClick={onRetry}>
-                Run again
-              </Button>
-            )}
-          </>
-        ) : (
-          <>
-            <p className="text-ink-2">
-              {programReady
-                ? `Your plan is built around ${top?.entity.name ?? "the top bridge"}.`
-                : "Writing a plan around the top bridge…"}
-            </p>
-            {programReady ? (
-              <Button onClick={onContinue}>See the plan →</Button>
-            ) : (
-              <Spinner label="Designing" />
-            )}
-          </>
-        )}
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -209,7 +154,7 @@ function Reveal({
   };
 
   return (
-    <section aria-label="Obvious versus discovered bridge" className="mt-16">
+    <section aria-label="Obvious versus discovered bridge">
       <Rule />
       <div className="grid gap-10 py-10 md:grid-cols-2 md:gap-0">
         <div className="md:pr-12">{column(obvious, "obvious")}</div>
@@ -218,9 +163,9 @@ function Reveal({
         </div>
       </div>
       <Rule />
-      <p className="mt-6 max-w-3xl font-display text-xl leading-snug text-ink-2 sm:text-2xl">
-        Both groups rank <span className="text-ink">{discovered.entity.name}</span> highly, yet
-        it&apos;s far less mainstream than {obvious.entity.name}. That&apos;s a real bridge.
+      <p className="mt-6 max-w-3xl font-display text-xl leading-snug text-ink-2">
+        Both groups love <span className="text-ink">{discovered.entity.name}</span>, and it&apos;s
+        far less mainstream than {obvious.entity.name}.
       </p>
     </section>
   );

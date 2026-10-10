@@ -5,7 +5,7 @@ import type { EvidenceBrief } from "@/lib/agent/brief";
 import type { CritiqueIssue } from "@/lib/agent/critic";
 import type { Program } from "@/lib/agent/program";
 import type { EngineResult } from "@/lib/engine/types";
-import { Button, Dot, Kicker, Lede, More, Note, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
+import { Button, Dot, Kicker, More, Note, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
 import { postJson } from "./api";
 
 export interface ProgramVersion {
@@ -26,21 +26,18 @@ const CHECK_LABELS: Record<string, string> = {
   generic_roles: "Interchangeable roles",
 };
 
-export function ProgramScreen({
+export function PlanSection({
   version,
   engine,
   brief,
   labels,
   onRegenerated,
-  comparison,
 }: {
   version: ProgramVersion;
   engine: EngineResult;
   brief: EvidenceBrief | null;
   labels: [string, string];
   onRegenerated: (v: ProgramVersion) => void;
-  /** The with/without-Qloo view, rendered under the program. */
-  comparison?: React.ReactNode;
 }) {
   const { program, critique } = version;
   const [busy, setBusy] = useState<string | null>(null);
@@ -83,10 +80,10 @@ export function ProgramScreen({
 
   return (
     <div>
-      <section className="max-w-3xl space-y-5">
-        {main && <Kicker tone="bridge">Your plan · built on {main.name}</Kicker>}
-        <Title>{program.title}</Title>
-        <Lede>{program.objective}</Lede>
+      <section className="max-w-3xl space-y-3">
+        <Kicker tone="bridge">Your 4-session plan{main ? ` · built on ${main.name}` : ""}</Kicker>
+        <Title level={2}>{program.title}</Title>
+        <p className="text-ink-2">{program.objective}</p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm print:hidden">
           <Button variant="link" onClick={exportMarkdown}>
             Download
@@ -176,8 +173,6 @@ export function ProgramScreen({
           </div>
         )}
       </div>
-
-      {comparison && <div className="mt-24">{comparison}</div>}
     </div>
   );
 }
