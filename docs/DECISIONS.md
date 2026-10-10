@@ -2,6 +2,13 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-10: Accuracy pass and a simpler two-page UI
+
+- **Fixed search domains.** The LLM planner chose different kinds of things to search on different runs, so the same input could give different bridges. The planner now always runs TV shows, artists, books, podcasts and places (places only with a city), plus films only when a seed is a film. The LLM only writes the reasons. Result: same input, same bridges (run 3: 6/6 reproducible).
+- **Strength gate instead of a higher floor.** Bridges are shown only if their harmonic mean of both sides' percentiles is at least 0.55 (`MIN_BRIDGE_BILATERAL`); weaker ones stay in "also in the running". If none pass, the single best is still shown. This replaces raising the 40th-percentile floor (see 2026-10-09), which would have returned "no bridge" more often.
+- **Fewer false "unsure" flags.** A seed is flagged only when a runner-up match is nearly as popular (within 0.05). Curated examples are never flagged.
+- **UI:** the four-step flow is replaced by a home page (two group boxes, a city, one button) and one results page. The step nav, explainer copy and the separate Profiles/Investigate screens were removed; the trace is folded under "How it got here".
+
 ## 2026-10-09: Evaluation findings (step 5.3)
 
 - **Six fixed cases** (`eval/cases.ts`) in New York, London, Chicago, Mumbai, Berlin and Toronto. The Toronto case is held out from any tuning. Every case runs live, with a rerun of the engine to check reproducibility and blind review packets for human raters.
