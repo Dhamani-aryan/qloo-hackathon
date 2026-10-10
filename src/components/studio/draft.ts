@@ -77,10 +77,17 @@ export function emptyDraft(): Draft {
     title: "Custom scenario",
     objective: "",
     location: "",
-    a: profile("Community A"),
-    b: profile("Community B"),
+    a: profile(""),
+    b: profile(""),
   };
 }
+
+/** Used when the organizer gives no goal (the home screen doesn't ask for one). */
+export const DEFAULT_OBJECTIVE =
+  "Design a four-session recurring program both groups would choose to join and keep coming back to.";
+
+const groupName = (p: DraftProfile, side: SideKey) =>
+  p.label.trim() || (side === "a" ? "Group 1" : "Group 2");
 
 export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
   const profile = (side: PrebuiltScenario["a"]): DraftProfile => ({
@@ -155,7 +162,7 @@ export function readiness(draft: Draft): string[] {
   for (const side of ["a", "b"] as const) {
     const p = draft[side];
     const n = confirmedCount(p);
-    const name = p.label.trim() || (side === "a" ? "Group 1" : "Group 2");
+    const name = groupName(p, side);
     if (p.seeds.some((s) => s.status === "resolving")) {
       problems.push(`Looking up ${name}'s favourites…`);
     } else if (n < MIN_SEEDS) {
@@ -163,7 +170,7 @@ export function readiness(draft: Draft): string[] {
       problems.push(`Add ${missing} more favourite${missing === 1 ? "" : "s"} for ${name}.`);
     }
   }
-  if (!draft.location.trim()) problems.push("Add a city under \u201cWhere and why\u201d.");
+  if (!draft.location.trim()) problems.push("Add a city.");
   return problems;
 }
 
@@ -173,7 +180,7 @@ export function toScenario(draft: Draft): Scenario {
     const p = draft[side];
     return {
       side: side === "a" ? ("A" as const) : ("B" as const),
-      label: p.label,
+      label: groupName(p, side),
       source: p.source,
       contributorCount: p.contributorCount,
       seeds: p.seeds.flatMap((s) => {
@@ -198,7 +205,7 @@ export function toScenario(draft: Draft): Scenario {
   return {
     id: draft.id,
     title: draft.title,
-    objective: draft.objective,
+    objective: draft.objective.trim() || DEFAULT_OBJECTIVE,
     location: draft.location.trim() || null,
     a: profile("a"),
     b: profile("b"),
