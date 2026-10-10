@@ -6,6 +6,7 @@ import { Button, Dot } from "../ui";
 import { postJson } from "./api";
 import {
   MAX_SEEDS,
+  groupName,
   seedKey,
   type Draft,
   type DraftAction,
@@ -143,7 +144,7 @@ export function IntakePanel({
             <div key={side} className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span className="flex w-56 items-center gap-2 text-sm">
                 <Dot tone={side} />
-                <span className="truncate">{draft[side].label}</span>
+                <span className="truncate">{groupName(draft[side], side)}</span>
               </span>
               <a
                 href={session.links[side]}

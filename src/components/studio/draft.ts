@@ -86,7 +86,7 @@ export function emptyDraft(): Draft {
 export const DEFAULT_OBJECTIVE =
   "Design a four-session recurring program both groups would choose to join and keep coming back to.";
 
-const groupName = (p: DraftProfile, side: SideKey) =>
+export const groupName = (p: DraftProfile, side: SideKey) =>
   p.label.trim() || (side === "a" ? "Group 1" : "Group 2");
 
 export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
