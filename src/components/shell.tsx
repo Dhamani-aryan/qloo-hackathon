@@ -1,14 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { cx } from "./ui";
-
-export const STEPS = [
-  { key: "profiles", label: "Groups" },
-  { key: "investigate", label: "Search" },
-  { key: "bridges", label: "Bridges" },
-  { key: "program", label: "Plan" },
-] as const;
-export type StepKey = (typeof STEPS)[number]["key"];
 
 /** Two overlapping circles: community A, community B, and the bridge where they meet. */
 export function Mark({ size = 28 }: { size?: number }) {
@@ -22,16 +13,13 @@ export function Mark({ size = 28 }: { size?: number }) {
 }
 
 export function TopBar({
-  current,
-  reachable,
-  onSelect,
   onHome,
+  action,
 }: {
-  current?: StepKey;
-  reachable?: StepKey[];
-  onSelect?: (step: StepKey) => void;
   /** Inside the app the URL is already "/", so the logo needs an explicit way back to the start. */
   onHome?: () => void;
+  /** Optional control on the right (e.g. "New search"). */
+  action?: ReactNode;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur print:static">
@@ -51,37 +39,7 @@ export function TopBar({
             Common Ground
           </span>
         </Link>
-        {current && (
-          <nav aria-label="Progress" className="print:hidden">
-            <ol className="flex items-center gap-1 sm:gap-5">
-              {STEPS.map((s, i) => {
-                const active = s.key === current;
-                const enabled = reachable?.includes(s.key) && !active;
-                return (
-                  <li key={s.key}>
-                    <button
-                      type="button"
-                      disabled={!enabled}
-                      onClick={() => onSelect?.(s.key)}
-                      aria-current={active ? "step" : undefined}
-                      className={cx(
-                        "flex items-baseline gap-1.5 px-1 py-4 text-sm transition",
-                        active
-                          ? "border-b-2 border-ink text-ink"
-                          : enabled
-                            ? "text-ink-2 hover:text-ink"
-                            : "text-muted/60",
-                      )}
-                    >
-                      <span className="figures text-[11px] text-muted">0{i + 1}</span>
-                      <span className={cx(!active && "hidden sm:inline")}>{s.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          </nav>
-        )}
+        {action && <div className="print:hidden">{action}</div>}
       </div>
     </header>
   );

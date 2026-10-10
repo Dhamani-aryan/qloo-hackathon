@@ -1,29 +1,27 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
-import { PREBUILT } from "@/scenarios";
-import { Main, TopBar, type StepKey } from "../shell";
-import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
 import type { Scenario } from "@/lib/engine/types";
-import { BridgesScreen } from "./bridges-screen";
-import { Comparison } from "./comparison";
-import { InvestigateScreen } from "./investigate-screen";
-import { ProfilesScreen, useSeedResolver } from "./profiles-screen";
-import { ProgramScreen, type ProgramVersion } from "./program-screen";
+import { PREBUILT } from "@/scenarios";
+import { Main, TopBar } from "../shell";
+import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
+import { HomeScreen, useSeedResolver } from "./home-screen";
+import type { ProgramVersion } from "./program-screen";
+import { ResultsScreen } from "./results-screen";
 import { artifacts, useAgentRun } from "./run";
 
-/** The four-step COMMON GROUND workflow. */
+/** Two views: enter the two groups, then one results page. */
 export function Studio() {
-  const [step, setStep] = useState<StepKey>("profiles");
+  const [view, setView] = useState<"home" | "results">("home");
   const [draft, dispatch] = useReducer(draftReducer, PREBUILT[0], draftFromPrebuilt);
   const resolve = useSeedResolver(dispatch);
   const { run, start, stop } = useAgentRun();
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
   const [override, setOverride] = useState<ProgramVersion | null>(null);
   const loaded = useRef(false);
-  const view = artifacts(run);
+  const { program, critique } = artifacts(run);
 
-  // Resolve the default scenario once so a judge lands on a ready-to-run example.
+  // Resolve the default example once so a first-time visitor lands on something runnable.
   useEffect(() => {
     if (loaded.current) return;
     loaded.current = true;
@@ -36,66 +34,56 @@ export function Studio() {
     );
   }, [draft, resolve]);
 
-  const go = (next: StepKey) => {
-    setStep(next);
+  const show = (next: "home" | "results") => {
+    setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const runAnalysis = (fresh = false) => {
     const scenario = toScenario(draft);
     setRanScenario(scenario);
     setOverride(null);
-    go("investigate");
+    show("results");
     void start(scenario, { fresh });
   };
 
-  const reachable: StepKey[] = ["profiles"];
-  if (run.status !== "idle") reachable.push("investigate");
-  if (view.engine?.status === "ok") reachable.push("bridges");
-  if (view.program) reachable.push("program");
-
   return (
     <>
-      <TopBar current={step} reachable={reachable} onSelect={go} onHome={() => go("profiles")} />
+      <TopBar
+        onHome={() => show("home")}
+        action={
+          view === "results" ? (
+            <button
+              type="button"
+              onClick={() => show("home")}
+              className="text-sm text-ink-2 hover:text-ink"
+            >
+              ← New search
+            </button>
+          ) : ranScenario ? (
+            <button
+              type="button"
+              onClick={() => show("results")}
+              className="text-sm text-ink-2 hover:text-ink"
+            >
+              Last result →
+            </button>
+          ) : null
+        }
+      />
       <Main>
-        {step === "profiles" && (
-          <ProfilesScreen draft={draft} dispatch={dispatch} onRun={() => runAnalysis()} />
+        {view === "home" && (
+          <HomeScreen draft={draft} dispatch={dispatch} onRun={() => runAnalysis()} />
         )}
-        {step === "investigate" && (
-          <InvestigateScreen
+        {view === "results" && ranScenario && (
+          <ResultsScreen
             run={run}
-            onStop={stop}
-            onRetry={() => runAnalysis()}
-            onBack={() => go("profiles")}
-            onContinue={() => go("bridges")}
-            onRunLive={() => runAnalysis(true)}
-          />
-        )}
-        {step === "bridges" && view.engine && ranScenario && (
-          <BridgesScreen
             scenario={ranScenario}
-            engine={view.engine}
-            notes={view.notes}
-            programReady={Boolean(view.program)}
-            programFailed={run.status !== "running" && !view.program}
-            onContinue={() => go("program")}
-            onRetry={() => runAnalysis()}
-          />
-        )}
-        {step === "program" && view.program && view.engine && ranScenario && (
-          <ProgramScreen
-            version={override ?? { program: view.program, critique: view.critique }}
-            engine={view.engine}
-            brief={view.brief}
-            labels={[ranScenario.a.label, ranScenario.b.label]}
+            version={override ?? (program ? { program, critique } : null)}
             onRegenerated={setOverride}
-            comparison={
-              <Comparison
-                program={(override ?? { program: view.program }).program}
-                baseline={view.baseline}
-                scenario={ranScenario}
-                pending={run.status === "running"}
-              />
-            }
+            onEdit={() => show("home")}
+            onRetry={() => runAnalysis()}
+            onRunLive={() => runAnalysis(true)}
+            onStop={stop}
           />
         )}
       </Main>
