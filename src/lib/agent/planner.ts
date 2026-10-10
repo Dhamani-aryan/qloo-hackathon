@@ -17,8 +17,17 @@ const DOMAIN_LABELS: Record<DomainKey, string> = {
   movie: "films (screenings; slower and weaker in tests)",
 };
 
-/** Domains that always run when available (validated in the spike and the first agent runs). */
-export const CORE_DOMAINS: DomainKey[] = ["tvShow", "place"];
+/**
+ * Domains that always run when available. The evaluation showed that letting the LLM pick a
+ * subset made the same input yield different bridges between runs, so every validated domain
+ * runs and the LLM's role is to explain why each matters for this pair.
+ */
+export const CORE_DOMAINS: DomainKey[] = ["tvShow", "artist", "book", "podcast", "place"];
+
+/** Films are slower and weaker in tests, so they run only when either group named a film. */
+function wantsFilms(scenario: Scenario): boolean {
+  return [...scenario.a.seeds, ...scenario.b.seeds].some((s) => s.type === "urn:entity:movie");
+}
 
 export const DomainPlanSchema = z.object({
   domains: z
@@ -33,8 +42,16 @@ export const DomainPlanSchema = z.object({
 });
 export type DomainPlan = z.infer<typeof DomainPlanSchema> & { source: "llm" | "fallback" };
 
+/** Stable order so identical inputs produce identical runs. */
+function sortDomains<T extends { domain: DomainKey }>(list: T[]): T[] {
+  return [...list].sort((x, y) => DOMAIN_KEYS.indexOf(x.domain) - DOMAIN_KEYS.indexOf(y.domain));
+}
+
 export function fallbackPlan(scenario: Scenario): DomainPlan {
-  const domains = DEFAULT_DOMAINS.filter((d) => d !== "place" || scenario.location);
+  const domains = [
+    ...DEFAULT_DOMAINS.filter((d) => d !== "place" || scenario.location),
+    ...(wantsFilms(scenario) ? (["movie"] as DomainKey[]) : []),
+  ];
   return {
     source: "fallback",
     domains: domains.map((domain) => ({ domain, reason: "Default validated domain" })),
@@ -67,18 +84,22 @@ export async function planDomains(llm: LlmClient, scenario: Scenario): Promise<D
       (d, i, all) =>
         available.includes(d.domain) && all.findIndex((x) => x.domain === d.domain) === i,
     );
-    if (domains.length < 3) return fallbackPlan(scenario);
+    if (domains.length < 1) return fallbackPlan(scenario);
     // Core domains always run: in a live NYC run the planner dropped TV, the domain with the
     // strongest bilateral evidence (docs/DECISIONS.md, 2026-10-08).
     for (const core of CORE_DOMAINS) {
       if (available.includes(core) && !domains.some((d) => d.domain === core)) {
-        domains.push({
-          domain: core,
-          reason: "Core domain: strongest bilateral evidence in testing",
-        });
+        domains.push({ domain: core, reason: "Always searched: proven to surface shared tastes" });
       }
     }
-    return { source: "llm", domains };
+    // Films only when someone named a film; drop the LLM's film pick otherwise, so the set of
+    // domains depends only on the input.
+    const films = wantsFilms(scenario);
+    const final = domains.filter((d) => d.domain !== "movie" || films);
+    if (films && !final.some((d) => d.domain === "movie")) {
+      final.push({ domain: "movie", reason: "One of the groups named a film" });
+    }
+    return { source: "llm", domains: sortDomains(final) };
   } catch {
     return fallbackPlan(scenario);
   }

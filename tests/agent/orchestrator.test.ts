@@ -29,9 +29,16 @@ describe("runAgent", () => {
       "EXPLAIN",
       "DONE",
     ]);
-    expect(r.plan?.domains.map((d) => d.domain)).toEqual(["tvShow", "artist", "place"]);
-    expect(r.engine?.bridges).toHaveLength(3);
-    expect(r.notes).toHaveLength(3);
+    expect(r.plan?.domains.map((d) => d.domain)).toEqual([
+      "tvShow",
+      "artist",
+      "book",
+      "podcast",
+      "place",
+    ]);
+    // Only strongly two-sided candidates are shown (the synthetic world has two).
+    expect(r.engine?.bridges).toHaveLength(2);
+    expect(r.notes).toHaveLength(2);
     expect(r.program?.title).toBe("Shared Nights (revised)");
     expect(r.critique[0].check).toBe("generic_roles");
     expect(r.program?.sessions[0].entity?.name).toBe(r.engine?.bridges[0].entity.name);
