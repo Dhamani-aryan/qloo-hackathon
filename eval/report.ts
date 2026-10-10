@@ -51,9 +51,13 @@ const previous: CaseResult[] | null = existsSync("eval/out/summary-run1.json")
       .results
   : null;
 const beforeAfter = previous
-  ? `## What the first run found, and what changed
+  ? `## What earlier runs found, and what changed
 
-The first full run surfaced four bridges that are unsuitable for a community program. They come from content rules, not score tuning, so they were fixed as responsible-use rules (\`src/lib/engine/filters.ts\`). One of them came from the held-out case, and the fix is a venue-type rule, not a threshold change.
+**Run 1 → content rules.** Four bridges were unsuitable for a community program. They were fixed with responsible-use rules, not score tuning (\`src/lib/engine/filters.ts\`). One came from the held-out case; the fix is a venue-type rule, not a threshold change.
+
+**Run 2 → accuracy changes.** Two issues made results less trustworthy:
+- *Repeatability:* the LLM planner picked different categories on different runs, so the same input could give different bridges (Berlin). Every proven category now always runs, and films only when a group named a film.
+- *Weak third bridges:* some bridges passed at about the 51st percentile for both groups (Toronto). Only bridges with solid support from both groups (harmonic mean ≥ 0.55) are shown now; weaker ones move to "also in the running".
 
 | Problem in run 1 | Case | Rule added |
 |---|---|---|
@@ -62,7 +66,7 @@ The first full run surfaced four bridges that are unsuitable for a community pro
 | A "Collection 6 Books Set" listing | Chicago | Bundles and box sets are not single works |
 | A sake brewery | Toronto *(held out)* | Alcohol-centred venues are excluded (mixed groups may include under-21s) |
 
-| Case | Run 1 bridges | Run 2 bridges (after the rules) |
+| Case | Run 1 bridges | Latest bridges |
 |---|---|---|
 ${results
   .map((r) => {
@@ -155,7 +159,7 @@ Running the evaluation writes one **blind packet** per case to \`eval/out/packet
 
 - The seeds are plausible but **hypothetical**. Real profiles would come from participant intake.
 - There are six cases, one run each. The LLM steps are non-deterministic; only the Qloo engine is reproducible.
-- Some third-ranked bridges pass the two-sided test only narrowly (around the 50th percentile for both groups, e.g. in the Toronto case). A stricter floor would make bridges stronger but would more often return \"no bridge\".
+- Bridges are only as good as Qloo's data for each group. For example, Mumbai's profiles surface a self-help podcast as a bridge, which is supported by both sides but may not suit every organizer.
 - Bridge Potential is a transparent ranking score, not a probability, and **nothing here measures social cohesion**.
 - Thresholds (40th-percentile floor, popularity band 0.3–0.9) were set on the New York spike scenario. Five of these cases, including the held-out one, were not used for tuning.
 `;
