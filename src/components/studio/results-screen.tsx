@@ -120,6 +120,14 @@ export function ResultsScreen({
             </p>
           </Note>
         )}
+        {!running && view.engine?.warnings.some((w) => w.includes("failed")) && (
+          <Note tone="warn">
+            Qloo was busy for part of this search, so some kinds of ideas were skipped.{" "}
+            <Button variant="link" onClick={onRunLive}>
+              Run it again
+            </Button>
+          </Note>
+        )}
         {view.engine?.status === "insufficient_evidence" && (
           <Note tone="warn">
             <p className="font-medium text-ink">No strong common ground this time.</p>
