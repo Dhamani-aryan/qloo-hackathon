@@ -15,7 +15,8 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 **Last updated:** 2026-10-16 · **Commits:** ~220 · **Tests:** 142 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI), 5.1–5.3 (caching, hardening, UI redesign, evaluation), plus an accuracy pass and a simpler two-page UI (2026-10-10).
-**Next:** **finish step 5.4 by following `docs/DEPLOY.md`.** The code is ready: the credential store (file or Upstash), `npm run llm:push-credential` and `npm run warm`. The owner must create the Upstash database and the Vercel project. Then 5.5 (README) and 5.6 (submission).
+**Live:** https://qloo-hackathon-inky.vercel.app (Vercel, auto-deploys from `main`; Upstash holds the run cache, intake, rate limits and the ChatGPT credential, so `CHATGPT_AUTH_STORE=redis` locally too). Verified 2026-10-16: replay in 4 s, a full live run in 70 s, phone layout.
+**Next:** 5.5 (README for judges) and 5.6 (screenshots and submission). After any change to bridge selection, bump `run:v1` in `src/lib/agent/replay.ts` and rerun `npm run warm https://qloo-hackathon-inky.vercel.app`.
 
 **What works today (all verified live):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
@@ -141,7 +142,7 @@ The aim is a clean, honest history with many commits. Each commit should be one 
 | 5.2 | Reliability: budgets, timeouts, retries, rate limiting | ✅ done |
 | 5.2b | UI redesign (less cluttered, editorial, no generic AI look) | ✅ done |
 | 5.3 | Evaluation run (6 cases + ablation) | ✅ done (human ratings pending) |
-| 5.4 | Deployment to Vercel | ⬜ |
+| 5.4 | Deployment to Vercel | ✅ |
 | 5.5 | README, architecture, limitations, responsible use | ⬜ |
 | 5.6 | Screenshots, submission copy, final checks | ⬜ |
 
