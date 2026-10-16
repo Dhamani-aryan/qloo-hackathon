@@ -54,6 +54,19 @@ describe("draft model", () => {
     expect(readiness(d)).toEqual([]);
   });
 
+  it("blocks running while a favourite couldn't be checked", () => {
+    let d = withSeeds(withSeeds({ ...emptyDraft(), location: "Test City" }, "a", 3), "b", 3);
+    const seed = newSeed("Busy");
+    d = draftReducer(d, { type: "addSeed", side: "a", seed });
+    d = draftReducer(d, {
+      type: "updateSeed",
+      side: "a",
+      key: seed.key,
+      patch: { status: "error", reasons: ["Qloo is busy"] },
+    });
+    expect(readiness(d)[0]).toMatch(/couldn't be checked/);
+  });
+
   it("converts to a valid engine scenario using confirmed seeds only", () => {
     let d = withSeeds(withSeeds({ ...emptyDraft(), location: "Test City" }, "a", 3), "b", 3);
     d = withSeeds(d, "a", 1, false);

@@ -165,6 +165,8 @@ export function readiness(draft: Draft): string[] {
     const name = groupName(p, side);
     if (p.seeds.some((s) => s.status === "resolving")) {
       problems.push(`Looking up ${name}'s favourites…`);
+    } else if (p.seeds.some((s) => s.status === "error")) {
+      problems.push(`Some of ${name}'s favourites couldn't be checked. Tap retry or remove them.`);
     } else if (n < MIN_SEEDS) {
       const missing = MIN_SEEDS - n;
       problems.push(`Add ${missing} more favourite${missing === 1 ? "" : "s"} for ${name}.`);
