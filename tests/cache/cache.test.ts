@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { cacheKey, createMemoryCache, createRedisCache } from "@/lib/cache/cache";
 import { loadRecording, recordRun, replayRun, runKey } from "@/lib/agent/replay";
 import { runAgent, type AgentEvent } from "@/lib/agent/orchestrator";
+import { QlooError, type InsightsInput } from "@/lib/qloo";
 import { withCache } from "@/lib/qloo/cached";
 import { handleAnalysis } from "@/lib/server/handlers";
 import { fakeClient } from "../engine/helpers";
@@ -87,6 +88,24 @@ describe("run recording and replay", () => {
       llm: routerLlm({ program: () => "{}" }).llm,
     };
     for await (const e of recordRun(runAgent(broken, scenario), cache, key)) void e;
+    expect(await loadRecording(cache, key)).toBeNull();
+  });
+
+  it("does not record runs where some Qloo calls failed", async () => {
+    const cache = fresh();
+    const key = runKey(scenario, {});
+    const flaky = {
+      qloo: fakeClient((input: InsightsInput) => {
+        if (input.resultEntities?.length && input.filterType === "urn:entity:tv_show") {
+          throw new QlooError("unauthorized", "/v2/insights", 401);
+        }
+        return world(input);
+      }, compare).client,
+      llm: deps().llm,
+    };
+    let done: AgentEvent | undefined;
+    for await (const e of recordRun(runAgent(flaky, scenario), cache, key)) done = e;
+    expect(done).toMatchObject({ type: "done", result: { status: "ok" } });
     expect(await loadRecording(cache, key)).toBeNull();
   });
 
