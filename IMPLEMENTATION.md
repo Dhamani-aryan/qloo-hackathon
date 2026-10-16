@@ -12,7 +12,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 > **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
 
-**Last updated:** 2026-10-10 · **Commits:** ~210 · **Tests:** 136 passing · **Build:** passing
+**Last updated:** 2026-10-16 · **Commits:** ~220 · **Tests:** 142 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI), 5.1–5.3 (caching, hardening, UI redesign, evaluation), plus an accuracy pass and a simpler two-page UI (2026-10-10).
 **Next:** **finish step 5.4 by following `docs/DEPLOY.md`.** The code is ready: the credential store (file or Upstash), `npm run llm:push-credential` and `npm run warm`. The owner must create the Upstash database and the Vercel project. Then 5.5 (README) and 5.6 (submission).
@@ -41,7 +41,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
    - `spike/run-engine.ts`
    - `spike/run-agent.ts [scenarioId]`
 
-- Evaluation (5.3): `npm run spike eval/run.ts` then `npm run spike eval/report.ts` builds `docs/EVALUATION.md`. Latest results (run 3, after the accuracy pass): 6/6 plans, 100% seed resolution, 6/6 reproducible, bridges at the 73rd popularity percentile vs 99th for the obvious pick. The LLM alone named 71 titles: 49 reused seeds, 22 unverified. Raw summaries: `eval/out/summary-run{1,2,3}.json` (git-ignored).
+- Evaluation (5.3): `npm run spike eval/run.ts` then `npm run spike eval/report.ts` builds `docs/EVALUATION.md`. Latest results (run 3, after the accuracy pass): 6/6 plans, 100% seed resolution, 6/6 reproducible, bridges at the 73rd popularity percentile vs 99th for the obvious pick. The LLM alone named 71 titles: 49 reused seeds, 22 unverified. Run 4 (2026-10-16): all 6 cases gave the same bridges as run 3, 6/6 reproducible. It also found that a Qloo 429 mid-run could silently drop a whole domain; every engine Qloo call now retries busy errors, unscored domains are left out (not judged), such runs aren't cached, and the page shows a notice. Seed lookups retry the same way and show "couldn't check · retry" instead of "not found". Raw summaries: `eval/out/summary-run{1,2,3,4}.json` (git-ignored).
 
 **Known issues and to-dos:**
 - A full live run takes about 80 s. **Done in 5.1:** finished runs are cached server-side and replayed in about 3 s (the UI offers "Run it live instead"), and identical Qloo requests are cached for a day.
