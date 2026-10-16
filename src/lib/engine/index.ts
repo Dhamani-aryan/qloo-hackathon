@@ -96,6 +96,19 @@ export async function runBridgeEngine(
   for (const d of perDomain) {
     poolSize += d.candidates.length;
     rejections.push(...d.rejections);
+    if (d.scores.failed.length > 0) {
+      // Unscored is not the same as unsupported: leave the domain out rather than judge it.
+      const sides = d.scores.failed.join(" and ");
+      for (const c of d.candidates) {
+        rejections.push({
+          candidateId: c.entity.id,
+          name: c.entity.name,
+          domain: c.domain,
+          reason: `Not scored: Qloo was busy when checking community ${sides}`,
+        });
+      }
+      continue;
+    }
     for (const c of d.candidates) {
       const s = scoreCandidate(c, d.scores, themes);
       scored.push(s);

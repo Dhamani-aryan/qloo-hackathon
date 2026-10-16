@@ -49,6 +49,8 @@ export interface EngineOptions {
   maxCalls?: number;
   concurrency?: number;
   onEvent?: (event: EngineEvent) => void;
+  /** Pauses before re-asking Qloo after a 429 or timeout on a scoring call. */
+  retryDelaysMs?: number[];
 }
 
 /** Shared state for one engine run. */
@@ -66,6 +68,7 @@ export interface EngineContext {
   sideOf: Map<string, Side>;
   /** Qloo calls that succeeded; zero after a run means Qloo was unreachable. */
   succeeded: number;
+  retryDelaysMs: number[];
 }
 
 export function createContext(
@@ -97,6 +100,7 @@ export function createContext(
     seedIds,
     sideOf,
     succeeded: 0,
+    retryDelaysMs: options.retryDelaysMs ?? [2_000, 5_000],
   };
 }
 

@@ -23,7 +23,7 @@ function candidate(
 
 function scores(pcts: Record<string, [number, number]>): SideScores {
   const m = (i: 0 | 1) => new Map(Object.entries(pcts).map(([id, v]) => [id, v[i]]));
-  return { affinity: { A: m(0), B: m(1) }, pct: { A: m(0), B: m(1) } };
+  return { affinity: { A: m(0), B: m(1) }, pct: { A: m(0), B: m(1) }, failed: [] };
 }
 
 describe("scoreCandidate", () => {

@@ -1,4 +1,4 @@
-import { QLOO_TYPES } from "@/lib/qloo";
+import { QLOO_TYPES, QlooError } from "@/lib/qloo";
 import { qlooCall, type EngineContext } from "./context";
 import { ordinalPct, percentiles } from "./normalize";
 import { SIDES, type Candidate, type DomainKey, type Side } from "./types";
@@ -9,7 +9,11 @@ export const MIN_SIDE_PERCENTILE = 0.4;
 export interface SideScores {
   affinity: Record<Side, Map<string, number>>;
   pct: Record<Side, Map<string, number>>;
+  /** Sides Qloo couldn't score (after retries). Their candidates must not be judged. */
+  failed: Side[];
 }
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Bilateral validation: score the whole pool against A alone and B alone using
@@ -27,34 +31,47 @@ export async function scoreSides(
   const scores: SideScores = {
     affinity: { A: new Map(), B: new Map() },
     pct: { A: new Map(), B: new Map() },
+    failed: [],
   };
   if (ids.length === 0) return scores;
 
   await Promise.all(
     SIDES.map(async (side) => {
-      try {
-        const r = await qlooCall(
-          ctx,
-          `shortlist-${side}`,
-          domain,
-          () =>
-            ctx.client.getInsights({
-              filterType: QLOO_TYPES[domain],
-              signalEntities: ctx.seedIds[side],
-              resultEntities: ids,
-              filterLocationQuery: location,
-              take: ids.length,
-            }),
-          (x) => x.entities.length,
-        );
-        for (const e of r.entities) {
-          if (e.affinity !== null && byId.has(e.id)) scores.affinity[side].set(e.id, e.affinity);
+      // A missing score would read as "no support" and silently drop the whole domain, so
+      // a busy Qloo is asked again after a pause before giving up on this side.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const r = await qlooCall(
+            ctx,
+            `shortlist-${side}`,
+            domain,
+            () =>
+              ctx.client.getInsights({
+                filterType: QLOO_TYPES[domain],
+                signalEntities: ctx.seedIds[side],
+                resultEntities: ids,
+                filterLocationQuery: location,
+                take: ids.length,
+              }),
+            (x) => x.entities.length,
+          );
+          for (const e of r.entities) {
+            if (e.affinity !== null && byId.has(e.id)) scores.affinity[side].set(e.id, e.affinity);
+          }
+          return;
+        } catch (err) {
+          const retryable = err instanceof QlooError && err.retryable;
+          if (retryable && attempt < ctx.retryDelaysMs.length) {
+            await pause(ctx.retryDelaysMs[attempt]);
+            continue;
+          }
+          scores.failed.push(side);
+          ctx.emit({
+            type: "warning",
+            message: `${domain} scoring against ${side} failed: ${(err as Error).message}`,
+          });
+          return;
         }
-      } catch (err) {
-        ctx.emit({
-          type: "warning",
-          message: `${domain} scoring against ${side} failed: ${(err as Error).message}`,
-        });
       }
     }),
   );

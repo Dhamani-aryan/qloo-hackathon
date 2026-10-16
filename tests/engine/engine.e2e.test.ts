@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { runBridgeEngine, type EngineResult } from "@/lib/engine";
-import type { InsightsInput } from "@/lib/qloo";
+import { QlooError, type InsightsInput } from "@/lib/qloo";
 import { fakeClient } from "./helpers";
-import { B, compare, world, worldScenario as scenario } from "./world";
+import { A, B, compare, world, worldScenario as scenario } from "./world";
 
 function summary(r: EngineResult) {
   return {
@@ -39,6 +39,52 @@ describe("runBridgeEngine (synthetic world)", () => {
     // 3 domains × (2 discovery + 2 shortlist) + 1 compare
     expect(s.calls).toBe(13);
     expect(s).toMatchSnapshot();
+  });
+
+  describe("when Qloo is busy while scoring one side", () => {
+    const busyTvScoringForA = (failures: number) => {
+      let left = failures;
+      return (input: InsightsInput) => {
+        const scoringA =
+          input.resultEntities?.length &&
+          input.filterType === "urn:entity:tv_show" &&
+          input.signalEntities?.join() === A.join();
+        if (scoringA && left-- > 0) throw new QlooError("rate_limited", "/v2/insights", 429);
+        return world(input);
+      };
+    };
+    const opts = { domains: ["tvShow", "artist", "place"] as const, retryDelaysMs: [0, 0] };
+
+    it("asks again and gets the same bridges as an undisturbed run", async () => {
+      const r = await runBridgeEngine(
+        fakeClient(busyTvScoringForA(2), compare).client,
+        scenario(),
+        {
+          ...opts,
+          domains: [...opts.domains],
+        },
+      );
+      expect(r.bridges.map((b) => b.entity.name)).toEqual(["Jazz Fusion Duo", "Shared Comedy"]);
+      expect(r.warnings).toEqual([]);
+    });
+
+    it("leaves the domain out instead of calling it unsupported when retries run out", async () => {
+      const r = await runBridgeEngine(
+        fakeClient(busyTvScoringForA(9), compare).client,
+        scenario(),
+        {
+          ...opts,
+          domains: [...opts.domains],
+        },
+      );
+      expect(r.bridges.map((b) => b.entity.name)).not.toContain("Shared Comedy");
+      const tv = r.rejections.filter(
+        (x) => x.domain === "tvShow" && x.reason.startsWith("Not scored"),
+      );
+      expect(tv.length).toBeGreaterThan(0);
+      expect(r.rejections.some((x) => /No support measured/.test(x.reason))).toBe(false);
+      expect(r.warnings[0]).toMatch(/tvShow scoring against A failed/);
+    });
   });
 
   it("traces every bridge and theme to the evidence ledger", async () => {
