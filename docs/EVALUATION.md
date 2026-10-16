@@ -1,6 +1,6 @@
 # Evaluation (step 5.3)
 
-**Run:** 2026-10-10 · **Cases:** 6 (1 held out) · **Mode:** every case live (Qloo + LLM, no cache)
+**Run:** 2026-10-16 · **Cases:** 6 (1 held out) · **Mode:** every case live (Qloo + LLM, no cache)
 
 This is a **formative** evaluation: six fixed scenarios, technical metrics, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).
 
@@ -19,39 +19,39 @@ Reproduce it with `npm run spike eval/run.ts`, then `npm run spike eval/report.t
 | Metric | Result |
 |---|---|
 | Runs completing with a plan | 6 / 6 |
-| Seeds resolved to a Qloo entity | 100% (53 exact, 9 flagged for a human check, 0 not found) |
-| Mean end-to-end time (live) | 71 s |
+| Seeds resolved to a Qloo entity | 100% (59 exact, 3 flagged for a human check, 0 not found) |
+| Mean end-to-end time (live) | 74 s |
 | Mean Qloo calls per run | 25.0 |
 | Candidates considered per run (mean) | 238 |
 | Candidates failing the two-sided test | 67% of all candidates |
-| Plan sessions anchored to a Qloo entity | 83% (20 / 24; the rest are co-creation sessions) |
+| Plan sessions anchored to a Qloo entity | 79% (19 / 24; the rest are co-creation sessions) |
 | Unverified references removed by the evidence guard | 0 |
 | Same top-3 bridges on an immediate rerun of the engine | 6 / 6 |
 | Mean popularity of the obvious pick vs the chosen bridges | 99 vs 73 (percentile) |
 
 **Rejections across all runs:** 764 one-sided · 190 weak on both · 91 sensitive topic · 48 unsuitable venue · 3 too niche · 2 bundle or box set · 1 named like the city.
 
-**What the critic fixed most often:** generic roles (6), cost or access (2), expertise barrier (1).
+**What the critic fixed most often:** generic roles (6), decorative bridge (1).
 
 ## Ablation: with vs without Qloo
 
 | | Common Ground | LLM only |
 |---|---|---|
-| Plan anchors that are new titles **backed by both groups' Qloo data** | **20** | 0 |
-| Titles that just **reuse the favourites** it was given | — | 49 of 71 named |
-| **Unverified** titles (named without any evidence) | 0 | 22 of 71 named |
-| Evidence citations | 95 | 0 |
+| Plan anchors that are new titles **backed by both groups' Qloo data** | **19** | 0 |
+| Titles that just **reuse the favourites** it was given | — | 42 of 67 named |
+| **Unverified** titles (named without any evidence) | 0 | 25 of 67 named |
+| Evidence citations | 91 | 0 |
 
 ## Per case
 
 | Case | City | Status | Top bridges (support A / B · popularity) | Obvious pick (popularity) | Ablation: Qloo-found vs LLM reused / unverified |
 |---|---|---|---|---|---|
-| University ↔ neighbourhood | New York City | ok | Cannoli King (90/78 · 68); Somebody Somewhere (96/100 · 79); Yola (44/81 · 89) | Fleishman Is in Trouble (92) | 4 vs 5 / 5 |
-| Youth culture ↔ older enthusiasts | London | ok | Rain Dogs (69/100 · 49); 221B Baker St (79/68 · 79); High Fidelity (100/65 · 90) | Abbey Road Studios (100) | 4 vs 7 / 9 |
-| Hobby groups | Chicago | ok | Gallagher House (100/60 · 79); Norse Mythology (81/53 · 89); Watership Down (97/41 · 86) | Cloud Gate (100) | 3 vs 9 / 4 |
-| Contemporary ↔ classical | Mumbai | ok | Pearl Academy (96/83 · 77); The Mindvalley Podcast with Vishen (86/93 · 74); Jamtara: Sabka Number Ayega (77/85 · 81) | On Purpose with Jay Shetty (99) | 3 vs 9 / 1 |
-| Nightlife ↔ performing arts | Berlin | ok | Moab Is My Washpot (83/94 · 40); David Hasselhoff Museum (88/97 · 79); Here and Now (77/73 · 70) | East Side Gallery (100) | 3 vs 9 / 1 |
-| Dance crew ↔ community choir *(held out)* | Toronto | ok | The Beatles: Get Back (49/79 · 40); Over The Rainbow (55/90 · 77); Are You Human Too? (50/81 · 59) | Little Women (100) | 3 vs 10 / 2 |
+| University ↔ neighbourhood | New York City | ok | Cannoli King (90/78 · 68); Somebody Somewhere (96/100 · 79); Yola (44/81 · 89) | Fleishman Is in Trouble (92) | 4 vs 6 / 4 |
+| Youth culture ↔ older enthusiasts | London | ok | Rain Dogs (69/100 · 49); 221B Baker St (79/68 · 79); High Fidelity (100/65 · 90) | Abbey Road Studios (100) | 3 vs 2 / 8 |
+| Hobby groups | Chicago | ok | Gallagher House (100/60 · 79); Norse Mythology (81/53 · 89); Watership Down (97/41 · 86) | Cloud Gate (100) | 3 vs 9 / 2 |
+| Contemporary ↔ classical | Mumbai | ok | Pearl Academy (96/83 · 77); The Mindvalley Podcast with Vishen (86/93 · 74); Jamtara: Sabka Number Ayega (77/85 · 81) | On Purpose with Jay Shetty (99) | 3 vs 7 / 3 |
+| Nightlife ↔ performing arts | Berlin | ok | Moab Is My Washpot (83/94 · 40); David Hasselhoff Museum (88/97 · 79); Here and Now (77/73 · 70) | East Side Gallery (100) | 3 vs 8 / 1 |
+| Dance crew ↔ community choir *(held out)* | Toronto | ok | The Beatles: Get Back (49/79 · 40); Over The Rainbow (55/90 · 77); Are You Human Too? (50/81 · 59) | Little Women (100) | 3 vs 10 / 7 |
 
 ## What earlier runs found, and what changed
 
@@ -60,6 +60,8 @@ Reproduce it with `npm run spike eval/run.ts`, then `npm run spike eval/report.t
 **Run 2 → accuracy changes.** Two issues made results less trustworthy:
 - *Repeatability:* the LLM planner picked different categories on different runs, so the same input could give different bridges (Berlin). Every proven category now always runs, and films only when a group named a film.
 - *Weak third bridges:* some bridges passed at about the 51st percentile for both groups (Toronto). Only bridges with solid support from both groups (harmonic mean ≥ 0.55) are shown now; weaker ones move to "also in the running".
+
+**Run 4 → robustness.** Run 4 gave the same bridges as run 3 in every case but one. In New York, Qloo rate-limited (429) one scoring call while another client was using the key. The engine read the missing scores as "no support" and silently dropped every place, including the top bridge. Now every busy Qloo call is retried after a pause; a call that still fails leaves its domain out (marked "not scored") rather than misjudging it; such runs are never cached and the page says so. Rerun alone, New York gave its usual bridges again.
 
 | Problem in run 1 | Case | Rule added |
 |---|---|---|
