@@ -1,4 +1,4 @@
-import type { QlooClient } from "@/lib/qloo";
+import { QlooError, type QlooClient } from "@/lib/qloo";
 import { EvidenceLedger } from "./ledger";
 import type { DomainKey, EngineEvent, Scenario, Side } from "./types";
 
@@ -104,7 +104,13 @@ export function createContext(
   };
 }
 
-/** Run one Qloo call under the limiter and budget, reporting timing. */
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Run one Qloo call under the limiter and budget, reporting timing. A busy Qloo (429,
+ * timeout) is asked again after a pause: a missing answer would quietly shrink the pool or
+ * read as "no support", which changes the bridges. Each attempt counts against the budget.
+ */
 export async function qlooCall<T>(
   ctx: EngineContext,
   purpose: string,
@@ -112,18 +118,26 @@ export async function qlooCall<T>(
   call: () => Promise<T>,
   count: (r: T) => number,
 ): Promise<T> {
-  return ctx.limit(async () => {
-    ctx.budget.spend();
-    const started = Date.now();
-    const result = await call();
-    ctx.succeeded++;
-    ctx.emit({
-      type: "qloo_query_done",
-      purpose,
-      domain,
-      results: count(result),
-      ms: Date.now() - started,
-    });
-    return result;
-  });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await ctx.limit(async () => {
+        ctx.budget.spend();
+        const started = Date.now();
+        const result = await call();
+        ctx.succeeded++;
+        ctx.emit({
+          type: "qloo_query_done",
+          purpose,
+          domain,
+          results: count(result),
+          ms: Date.now() - started,
+        });
+        return result;
+      });
+    } catch (err) {
+      const retryable = err instanceof QlooError && err.retryable;
+      if (!retryable || attempt >= ctx.retryDelaysMs.length) throw err;
+      await pause(ctx.retryDelaysMs[attempt]);
+    }
+  }
 }

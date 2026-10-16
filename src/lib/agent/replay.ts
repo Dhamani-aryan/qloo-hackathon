@@ -70,7 +70,7 @@ export async function* recordRun(
     ) {
       if (e.result.status === "ok" && !e.result.program) continue;
       // A run where some Qloo calls failed is incomplete; don't replay it to others for a week.
-      if (e.result.engine?.warnings.length) continue;
+      if (e.result.engine?.warnings.some((w) => w.includes("failed"))) continue;
       const recording: Recording = {
         version: 1,
         recordedAt: Date.now(),
