@@ -19,46 +19,66 @@ import {
 import { resolveSeeds } from "./api";
 import { IntakePanel } from "./intake-panel";
 
+const RETRY_DELAYS_MS = [1500, 4000];
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /**
  * Resolve seeds through Qloo and write the results into the draft. All seeds of a scenario go
- * out in one request so the server can pace them (Qloo rate-limits bursts). The best match is
- * used straight away; unclear matches are flagged so the user can switch them with one tap.
+ * out in one request so the server can pace them (Qloo rate-limits bursts). Lookups Qloo was
+ * too busy for are retried a couple of times, then shown as "couldn't check" (never as "not
+ * found"). The best match is used straight away; unclear matches are flagged so the user can
+ * switch them with one tap.
  */
 export function useSeedResolver(dispatch: Dispatch<DraftAction>) {
   /** `trusted`: curated examples, so don't flag unsure matches. */
   return async (batch: { side: SideKey; seeds: DraftSeed[] }[], trusted = false) => {
-    const items = batch.flatMap(({ side, seeds }) => seeds.map((seed) => ({ side, seed })));
-    if (items.length === 0) return;
-    try {
-      const results = await resolveSeeds(
-        items.map(({ seed }) => ({ input: seed.input, type: seed.type })),
-      );
-      results.forEach((r, i) => {
-        const { side, seed } = items[i];
-        dispatch({
-          type: "updateSeed",
-          side,
-          key: seed.key,
-          patch: r.bestId
-            ? {
-                status: "resolved",
-                matches: r.matches,
-                chosenId: r.bestId,
-                reasons: r.ambiguous && !trusted ? r.reasons : [],
-                confirmed: true,
-              }
-            : { status: "unresolved", matches: [], reasons: r.reasons },
+    let pending = batch.flatMap(({ side, seeds }) => seeds.map((seed) => ({ side, seed })));
+    if (pending.length === 0) return;
+    for (const { side, seed } of pending) {
+      dispatch({ type: "updateSeed", side, key: seed.key, patch: { status: "resolving" } });
+    }
+    let lastError = "Qloo is busy right now.";
+    for (let attempt = 0; pending.length > 0 && attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      if (attempt > 0) await wait(RETRY_DELAYS_MS[attempt - 1]);
+      const items = pending;
+      pending = [];
+      try {
+        const results = await resolveSeeds(
+          items.map(({ seed }) => ({ input: seed.input, type: seed.type })),
+        );
+        results.forEach((r, i) => {
+          const { side, seed } = items[i];
+          if (r.retry) {
+            pending.push(items[i]);
+            return;
+          }
+          dispatch({
+            type: "updateSeed",
+            side,
+            key: seed.key,
+            patch: r.bestId
+              ? {
+                  status: "resolved",
+                  matches: r.matches,
+                  chosenId: r.bestId,
+                  reasons: r.ambiguous && !trusted ? r.reasons : [],
+                  confirmed: true,
+                }
+              : { status: "unresolved", matches: [], reasons: r.reasons },
+          });
         });
-      });
-    } catch (err) {
-      for (const { side, seed } of items) {
-        dispatch({
-          type: "updateSeed",
-          side,
-          key: seed.key,
-          patch: { status: "error", reasons: [(err as Error).message] },
-        });
+      } catch (err) {
+        lastError = (err as Error).message;
+        pending = items;
       }
+    }
+    for (const { side, seed } of pending) {
+      dispatch({
+        type: "updateSeed",
+        side,
+        key: seed.key,
+        patch: { status: "error", reasons: [lastError] },
+      });
     }
   };
 }
@@ -229,7 +249,13 @@ function GroupBox({
 
       <ul className="mt-4 flex flex-wrap gap-2">
         {profile.seeds.map((seed) => (
-          <Chip key={seed.key} seed={seed} side={side} dispatch={dispatch} />
+          <Chip
+            key={seed.key}
+            seed={seed}
+            side={side}
+            dispatch={dispatch}
+            onRetry={() => void resolve([{ side, seeds: [seed] }])}
+          />
         ))}
       </ul>
 
@@ -260,15 +286,18 @@ function Chip({
   seed,
   side,
   dispatch,
+  onRetry,
 }: {
   seed: DraftSeed;
   side: SideKey;
   dispatch: Dispatch<DraftAction>;
+  onRetry: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const match = chosenMatch(seed);
   const unsure = seed.status === "resolved" && seed.reasons.length > 0;
   const failed = seed.status === "unresolved" || seed.status === "error";
+  const unchecked = seed.status === "error";
   const remove = () => dispatch({ type: "removeSeed", side, key: seed.key });
 
   return (
@@ -294,17 +323,28 @@ function Chip({
               type="button"
               onClick={() => seed.matches.length > 1 && setOpen((v) => !v)}
               title={
-                failed
-                  ? "Not found in Qloo"
-                  : match
-                    ? `${match.name}${match.type ? ` · ${typeLabel(match.type)}` : ""}${seed.matches.length > 1 ? " · tap to change" : ""}`
-                    : undefined
+                unchecked
+                  ? `Couldn't check with Qloo: ${seed.reasons[0] ?? "try again"}`
+                  : failed
+                    ? "Not found in Qloo"
+                    : match
+                      ? `${match.name}${match.type ? ` · ${typeLabel(match.type)}` : ""}${seed.matches.length > 1 ? " · tap to change" : ""}`
+                      : undefined
               }
               className="max-w-44 truncate text-left"
             >
               {match?.name ?? seed.input}
-              {failed && " · not found"}
+              {failed && !unchecked && " · not found"}
             </button>
+            {unchecked && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-xs whitespace-nowrap underline underline-offset-2"
+              >
+                couldn&apos;t check · retry
+              </button>
+            )}
             {unsure && (
               <button
                 type="button"

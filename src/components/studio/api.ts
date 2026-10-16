@@ -9,6 +9,8 @@ export interface Resolution {
   reasons: string[];
   bestId: string | null;
   matches: Match[];
+  /** Qloo was busy for this query; ask again shortly. */
+  retry?: boolean;
 }
 
 export class ApiError extends Error {
