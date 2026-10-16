@@ -7,7 +7,7 @@ import type { Cache } from "@/lib/cache/cache";
 import { generateProgram } from "@/lib/agent/program";
 import { DOMAIN_KEYS, ScenarioSchema, resolveSeed } from "@/lib/engine";
 import { createLimiter } from "@/lib/engine/context";
-import { QLOO_TYPES, type QlooClient, type QlooTypeKey } from "@/lib/qloo";
+import { QLOO_TYPES, QlooError, type QlooClient, type QlooTypeKey } from "@/lib/qloo";
 import { errorResponse } from "./errors";
 import { sseResponse } from "./sse";
 
@@ -42,25 +42,45 @@ export async function handleResolve(req: Request, qloo: () => QlooClient): Promi
   try {
     const body = ResolveRequestSchema.parse(await req.json());
     const client = qloo();
+    // A busy Qloo (429, timeout) fails only that query, so the rest of the batch still
+    // resolves and the browser can retry just the ones marked `retry`.
     const results = await Promise.all(
-      body.queries.map((q) => searchLimit(() => resolveSeed(client, q))),
+      body.queries.map((q) =>
+        searchLimit(() =>
+          resolveSeed(client, q).catch((err) => {
+            if (err instanceof QlooError && err.retryable) return { input: q.input, retry: true };
+            throw err;
+          }),
+        ),
+      ),
     );
     return Response.json({
-      results: results.map((r) => ({
-        input: r.input,
-        ambiguous: r.ambiguous,
-        reasons: r.reasons,
-        bestId: r.best?.id ?? null,
-        matches: r.matches.map((m) => ({
-          id: m.id,
-          name: m.name,
-          type: m.type,
-          disambiguation: m.disambiguation,
-          imageUrl: m.imageUrl,
-          popularity: m.popularity,
-          description: m.description?.slice(0, 240) ?? null,
-        })),
-      })),
+      results: results.map((r) =>
+        "retry" in r
+          ? {
+              input: r.input,
+              retry: true,
+              ambiguous: false,
+              reasons: [],
+              bestId: null,
+              matches: [],
+            }
+          : {
+              input: r.input,
+              ambiguous: r.ambiguous,
+              reasons: r.reasons,
+              bestId: r.best?.id ?? null,
+              matches: r.matches.map((m) => ({
+                id: m.id,
+                name: m.name,
+                type: m.type,
+                disambiguation: m.disambiguation,
+                imageUrl: m.imageUrl,
+                popularity: m.popularity,
+                description: m.description?.slice(0, 240) ?? null,
+              })),
+            },
+      ),
     });
   } catch (err) {
     return errorResponse(err);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runAgentToCompletion } from "@/lib/agent/orchestrator";
 import { MissingEnvError } from "@/lib/env";
 import { handleAnalysis, handleProgram, handleResolve } from "@/lib/server/handlers";
-import type { EntityMatch, QlooClient } from "@/lib/qloo";
+import { QlooError, type EntityMatch, type QlooClient } from "@/lib/qloo";
 import { fakeClient } from "../engine/helpers";
 import { compare, world, worldScenario } from "../engine/world";
 import { routerLlm } from "../agent/router";
@@ -50,6 +50,35 @@ describe("handleResolve", () => {
     expect(res.status).toBe(200);
     expect(body.results[0]).toMatchObject({ input: "Atlanta", ambiguous: false, bestId: "E1" });
     expect(body.results[0].matches[0]).toMatchObject({ id: "E1", name: "Atlanta" });
+  });
+
+  it("marks only the rate-limited queries for retry", async () => {
+    const busy = {
+      ...qloo,
+      searchEntities: async ({ query }: { query: string }) => {
+        if (query === "Busy") throw new QlooError("rate_limited", "/search", 429);
+        return [match];
+      },
+    } as QlooClient;
+    const res = await handleResolve(
+      post({ queries: [{ input: "Atlanta" }, { input: "Busy" }] }),
+      () => busy,
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.results[0]).toMatchObject({ input: "Atlanta", bestId: "E1" });
+    expect(body.results[1]).toMatchObject({ input: "Busy", retry: true, bestId: null });
+  });
+
+  it("still fails the request on non-retryable Qloo errors", async () => {
+    const denied = {
+      ...qloo,
+      searchEntities: async () => {
+        throw new QlooError("unauthorized", "/search", 401);
+      },
+    } as QlooClient;
+    const res = await handleResolve(post({ queries: [{ input: "x" }] }), () => denied);
+    expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
   it("rejects invalid bodies and reports missing configuration", async () => {
