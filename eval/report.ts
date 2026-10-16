@@ -59,6 +59,8 @@ const beforeAfter = previous
 - *Repeatability:* the LLM planner picked different categories on different runs, so the same input could give different bridges (Berlin). Every proven category now always runs, and films only when a group named a film.
 - *Weak third bridges:* some bridges passed at about the 51st percentile for both groups (Toronto). Only bridges with solid support from both groups (harmonic mean ≥ 0.55) are shown now; weaker ones move to "also in the running".
 
+**Run 4 → robustness.** Run 4 gave the same bridges as run 3 in every case but one. In New York, Qloo rate-limited (429) one scoring call while another client was using the key. The engine read the missing scores as "no support" and silently dropped every place, including the top bridge. Now every busy Qloo call is retried after a pause; a call that still fails leaves its domain out (marked "not scored") rather than misjudging it; such runs are never cached and the page says so. Rerun alone, New York gave its usual bridges again.
+
 | Problem in run 1 | Case | Rule added |
 |---|---|---|
 | Palace of Westminster (Parliament) | London | Government buildings are not venues |
