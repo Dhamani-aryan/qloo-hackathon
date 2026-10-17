@@ -82,6 +82,18 @@ describe("selectBridges", () => {
     expect(s.runnersUp.map((b) => b.entity.id)).toEqual(["weak"]);
   });
 
+  it("replaces a lopsided third bridge with the next one both groups clearly support", () => {
+    const s = selectBridges([
+      pick("tv", "tvShow", 0.6, 0.9, 0.9),
+      pick("art", "artist", 0.6, 0.85, 0.85),
+      // Passes the harmonic-mean bar (0.58) but one group is at the 46th percentile.
+      pick("lopsided", "book", 0.4, 0.9, 0.46),
+      pick("balanced", "podcast", 0.6, 0.62, 0.6),
+    ]);
+    expect(s.bridges.map((b) => b.entity.id)).toEqual(["tv", "art", "balanced"]);
+    expect(s.runnersUp.map((b) => b.entity.id)).toContain("lopsided");
+  });
+
   it("still shows the single best candidate when nothing is strong", () => {
     const s = selectBridges([
       pick("weak1", "tvShow", 0.6, 0.5, 0.5),

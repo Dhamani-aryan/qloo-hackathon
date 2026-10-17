@@ -3,12 +3,21 @@ import type { ScoredCandidate } from "./types";
 export const MAX_BRIDGES = 3;
 export const MAX_RUNNERS_UP = 6;
 /**
- * A shown bridge needs solid support from BOTH groups (harmonic mean of the two percentiles).
- * The evaluation found third bridges at ~51st/51st percentile; showing two strong bridges is
- * better than padding with a weak third. If nothing clears the bar, the single best discovered
- * candidate is still shown so a run isn't empty.
+ * A shown bridge needs solid support from BOTH groups: a harmonic mean of the two percentiles
+ * of at least 0.55, and neither group below the 50th percentile. Evaluation runs found third
+ * bridges at the 41st–49th percentile for one group, which reads as "one group doesn't really
+ * like it". The next strong candidate takes the slot instead; if nothing clears the bar, the
+ * single best discovered candidate is still shown so a run isn't empty.
  */
 export const MIN_BRIDGE_BILATERAL = 0.55;
+export const MIN_BRIDGE_SIDE = 0.5;
+
+/** True when both groups clearly support the candidate. */
+export function isStrongBridge(c: ScoredCandidate): boolean {
+  return (
+    c.bilateral >= MIN_BRIDGE_BILATERAL && Math.min(c.pct.A ?? 0, c.pct.B ?? 0) >= MIN_BRIDGE_SIDE
+  );
+}
 
 export interface Selection {
   status: "ok" | "insufficient_evidence";
@@ -29,7 +38,7 @@ const byPotential = (x: ScoredCandidate, y: ScoredCandidate) =>
  */
 export function selectBridges(scored: ScoredCandidate[]): Selection {
   const discovered = scored.filter((c) => c.verdict === "discovered").sort(byPotential);
-  const strong = discovered.filter((c) => c.bilateral >= MIN_BRIDGE_BILATERAL);
+  const strong = discovered.filter(isStrongBridge);
   const eligible = strong.length > 0 ? strong : discovered.slice(0, 1);
   const picked: ScoredCandidate[] = [];
   const domains = new Set<string>();
