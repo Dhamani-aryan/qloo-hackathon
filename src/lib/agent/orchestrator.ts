@@ -330,6 +330,7 @@ export function runAgent(
         domains: [...domains],
         placeThemes: [...placeThemes],
         familyFriendly: directives.audience === "all_ages" || directives.audience === "teens",
+        adultsOnly: directives.audience === "adults",
         maxCalls: options.maxCalls,
         onEvent: (event) => {
           if (!forward || forward(event)) out.push({ type: "engine", event });

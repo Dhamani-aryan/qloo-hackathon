@@ -41,9 +41,9 @@ const SYSTEM =
   '"jazz club", "bookstore", "food", "park", "art gallery"); use them only when the organizer ' +
   "asks for a kind of place or activity. rules are short imperatives the program must follow " +
   "(budget, timing, accessibility, age, language). If anyone attending is under 18, audience " +
-  'is "teens" (only young people) or "all_ages" (a mix). Never add rules about identity, ' +
-  "religion, " +
-  "ethnicity or politics.";
+  'is "teens" (only young people) or "all_ages" (a mix); use "adults" only when the organizer ' +
+  "says everyone is an adult (it allows bars and clubs as venues). Never add rules about " +
+  "identity, religion, ethnicity or politics.";
 
 export async function interpretInstructions(
   llm: LlmClient,

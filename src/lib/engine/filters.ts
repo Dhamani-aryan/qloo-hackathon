@@ -25,7 +25,14 @@ const SENSITIVE =
  * - government buildings (evaluation: the Palace of Westminster in London).
  */
 const UNSUITABLE_VENUE =
-  /\b(hotels?|motels?|hostels?|lodging|resorts?|banquets?|wedding venues?|marriage hall|guest ?house|bed (and |& )?breakfast|condominium|serviced apartments?|extended stay|holiday home|hyatt|marriott|hilton|oyo|church|cathedral|chapel|mosque|masjid|temple|synagogue|gurdwara|place of worship|brewer(y|ies)|winer(y|ies)|distiller(y|ies)|brewpub|taproom|sake|beer garden|wine bar|cocktail bar|night ?clubs?|pubs?|bars?|liquor|parliament|palace of westminster|capitol|city hall|town hall|courthouse|embassy|consulate|government)\b/i;
+  /\b(hotels?|motels?|hostels?|lodging|resorts?|banquets?|wedding venues?|marriage hall|guest ?house|bed (and |& )?breakfast|condominium|serviced apartments?|extended stay|holiday home|hyatt|marriott|hilton|oyo|church|cathedral|chapel|mosque|masjid|temple|synagogue|gurdwara|place of worship|parliament|palace of westminster|capitol|city hall|town hall|courthouse|embassy|consulate|government)\b/i;
+
+/**
+ * Alcohol-centred venues. Excluded by default because mixed groups may include under-21s;
+ * allowed only when the organizer says the group is adults only (e.g. a jazz club request).
+ */
+const ALCOHOL_VENUE =
+  /\b(brewer(y|ies)|winer(y|ies)|distiller(y|ies)|brewpub|taproom|sake|beer garden|wine bar|cocktail bar|night ?clubs?|pubs?|bars?|liquor)\b/i;
 
 /** Retail bundles rather than single works (evaluation: "… Collection 6 Books Set (…)"). */
 const BUNDLE =
@@ -47,8 +54,9 @@ export function sensitiveReason(e: QlooEntity): string | null {
     : null;
 }
 
-export function venueReason(e: QlooEntity): string | null {
-  const match = haystack(e, /:(category|genre):place/).match(UNSUITABLE_VENUE);
+export function venueReason(e: QlooEntity, adultsOnly = false): string | null {
+  const text = haystack(e, /:(category|genre):place/);
+  const match = text.match(UNSUITABLE_VENUE) ?? (adultsOnly ? null : text.match(ALCOHOL_VENUE));
   return match ? `Unsuitable venue for a program (${match[0].toLowerCase()})` : null;
 }
 
@@ -78,17 +86,26 @@ function matureReason(e: QlooEntity): string | null {
     : null;
 }
 
+export interface AudienceRules {
+  /** Leave out anything tagged for mature audiences (under-18s attending). */
+  familyFriendly?: boolean;
+  /** The organizer said adults only, so bars and similar venues are acceptable. */
+  adultsOnly?: boolean;
+}
+
 export function rejectionReason(
   e: QlooEntity,
   domain: DomainKey,
   location?: string | null,
-  familyFriendly = false,
+  audience: AudienceRules = {},
 ): string | null {
   return (
-    (familyFriendly ? matureReason(e) : null) ??
+    (audience.familyFriendly ? matureReason(e) : null) ??
     sensitiveReason(e) ??
     bundleReason(e) ??
-    (domain === "place" ? (venueReason(e) ?? sameAsCityReason(e, location)) : null)
+    (domain === "place"
+      ? (venueReason(e, audience.adultsOnly) ?? sameAsCityReason(e, location))
+      : null)
   );
 }
 

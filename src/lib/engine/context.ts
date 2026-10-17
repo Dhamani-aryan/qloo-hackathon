@@ -55,6 +55,8 @@ export interface EngineOptions {
   placeThemes?: PlaceTheme[];
   /** Leave out anything Qloo tags for mature audiences (all-ages or teen groups). */
   familyFriendly?: boolean;
+  /** The organizer said adults only: alcohol-serving venues (jazz clubs, pubs) are allowed. */
+  adultsOnly?: boolean;
 }
 
 export interface PlaceTheme {
@@ -80,6 +82,7 @@ export interface EngineContext {
   retryDelaysMs: number[];
   placeThemes: PlaceTheme[];
   familyFriendly: boolean;
+  adultsOnly: boolean;
 }
 
 export function createContext(
@@ -114,6 +117,7 @@ export function createContext(
     retryDelaysMs: options.retryDelaysMs ?? [2_000, 5_000],
     placeThemes: options.placeThemes ?? [],
     familyFriendly: options.familyFriendly ?? false,
+    adultsOnly: options.adultsOnly ?? false,
   };
 }
 

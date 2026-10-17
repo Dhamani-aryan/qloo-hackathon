@@ -84,6 +84,18 @@ describe("filters added after the evaluation", () => {
     expect(rejectionReason(entity("w4", "Barbican Centre"), "place")).toBeNull();
   });
 
+  it("allows bars and clubs only when the organizer said adults only", () => {
+    const jazzBar = entity("j1", "Ronnie Scott's", {
+      tags: [{ id: "urn:tag:category:place:bar", name: "Bar", type: null }],
+    });
+    expect(rejectionReason(jazzBar, "place")).toMatch(/bar/);
+    expect(rejectionReason(jazzBar, "place", null, { adultsOnly: true })).toBeNull();
+    // Hotels, worship and government stay out even for adults.
+    expect(
+      rejectionReason(entity("h1", "Grand Hotel"), "place", null, { adultsOnly: true }),
+    ).toMatch(/hotel/);
+  });
+
   it("rejects bundles but keeps single works", () => {
     expect(
       rejectionReason(
@@ -108,8 +120,10 @@ describe("filters added after the evaluation", () => {
     const mature = entity("m1", "Late Night Show", {
       tags: [{ id: MATURE_TAG, name: "Mature", type: "urn:tag:audience:qloo" }],
     });
-    expect(rejectionReason(mature, "tvShow", null, true)).toMatch(/mature audiences/);
-    expect(rejectionReason(mature, "tvShow", null, false)).toBeNull();
+    expect(rejectionReason(mature, "tvShow", null, { familyFriendly: true })).toMatch(
+      /mature audiences/,
+    );
+    expect(rejectionReason(mature, "tvShow", null, {})).toBeNull();
   });
 });
 
