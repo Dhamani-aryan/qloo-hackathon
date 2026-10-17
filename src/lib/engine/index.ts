@@ -118,6 +118,7 @@ export async function runBridgeEngine(
           name: c.entity.name,
           domain: c.domain,
           reason: s.rejectionReason ?? "rejected",
+          ...(c.admittedBy.includes("theme-focused") ? { themed: true } : {}),
         });
       }
     }

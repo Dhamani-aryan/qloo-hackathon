@@ -137,6 +137,8 @@ export interface Rejection {
   name: string;
   domain: DomainKey;
   reason: string;
+  /** Found by an agent-chosen place theme, so the agent can report on its own search. */
+  themed?: boolean;
 }
 
 export interface EngineStats {

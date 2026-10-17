@@ -36,7 +36,13 @@ export function buildPool(
       });
       if (reason) {
         rejected.add(entity.id);
-        rejections.push({ candidateId: entity.id, name: entity.name, domain: x.domain, reason });
+        rejections.push({
+          candidateId: entity.id,
+          name: entity.name,
+          domain: x.domain,
+          reason,
+          ...(rule === "theme-focused" ? { themed: true } : {}),
+        });
         ctx.emit({ type: "candidate_rejected", domain: x.domain, name: entity.name, reason });
         continue;
       }

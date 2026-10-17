@@ -201,6 +201,34 @@ function describeDirectives(
   );
 }
 
+/**
+ * What the agent's own place-theme search turned up, in plain words: a bridge, a close call,
+ * or why nothing qualified (e.g. jazz clubs one group doesn't care for).
+ */
+export function themeReport(
+  engine: EngineResult,
+  scenario: Scenario,
+  themes: PlaceTheme[],
+): string {
+  const label = themes.map((t) => t.name.toLowerCase()).join(" / ");
+  const themed = (c: { admittedBy: string[] }) => c.admittedBy.includes("theme-focused");
+  const bridge = engine.bridges.find(themed);
+  if (bridge) return `${bridge.entity.name} (${label}) is one of the bridges.`;
+  const close = engine.runnersUp.find(themed);
+  const rejected = engine.rejections.filter((r) => r.themed);
+  const checked = rejected.length + engine.runnersUp.filter(themed).length;
+  if (close) {
+    return `${close.entity.name} (${label}) suits both groups but ranked just below the top bridges.`;
+  }
+  if (checked === 0) return `No ${label} places turned up in ${scenario.location ?? "the city"}.`;
+  const example = rejected.find((r) => /^(One-sided|Weak support)/.test(r.reason)) ?? rejected[0];
+  const why = example.reason
+    .replace(/community A/g, scenario.a.label)
+    .replace(/communities/g, "groups")
+    .replace(/community B/g, scenario.b.label);
+  return `Checked ${checked} ${label} place${checked === 1 ? "" : "s"}; none is shared by both groups. ${example.name}: ${why.charAt(0).toLowerCase()}${why.slice(1)}.`;
+}
+
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function runAgent(
@@ -339,6 +367,7 @@ export function runAgent(
 
     let engine = await timed("QUERY_QLOO", () => search());
     let rounds = 1;
+    if (placeThemes.length) decide("outcome", themeReport(engine, scenario, placeThemes));
     checkCancelled();
 
     // REVIEW: the agent decides whether the evidence is good enough or worth another search.
@@ -399,6 +428,7 @@ export function runAgent(
               : false,
           );
           rounds++;
+          if (newThemes) decide("outcome", themeReport(next, scenario, placeThemes));
           const kept = betterResult(engine, next);
           const [was, now] = [strongCount(engine), strongCount(next)];
           decide(

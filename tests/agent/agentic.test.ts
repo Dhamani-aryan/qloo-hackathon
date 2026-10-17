@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyDirectives, interpretInstructions, NO_DIRECTIVES } from "@/lib/agent/directives";
-import { runAgentToCompletion } from "@/lib/agent/orchestrator";
+import { runAgentToCompletion, themeReport } from "@/lib/agent/orchestrator";
 import { betterResult, validActions } from "@/lib/agent/review";
 import { findPlaceTheme } from "@/lib/agent/tools";
 import type { EngineResult } from "@/lib/engine";
@@ -142,5 +142,41 @@ describe("review and investigate", () => {
     ];
     const theme = await findPlaceTheme(withTags(fakeClient(() => []).client, tags), "food");
     expect(theme?.tagId).toBe("urn:tag:genre:place:food");
+  });
+});
+
+describe("themeReport", () => {
+  const scenario = { ...worldScenario(), a: { ...worldScenario().a, label: "Skaters" } };
+  const theme = [{ tagId: "urn:tag:genre:place:jazz_club", name: "Jazz club" }];
+  const base = { bridges: [], runnersUp: [], rejections: [] } as unknown as EngineResult;
+
+  it("explains, in the group's own name, why no themed place qualified", () => {
+    const text = themeReport(
+      {
+        ...base,
+        rejections: [
+          {
+            candidateId: "j1",
+            name: "Ronnie Scott's",
+            domain: "place",
+            themed: true,
+            reason: "One-sided: community A support is only at the 23rd percentile of the pool",
+          },
+          { candidateId: "x", name: "Other", domain: "place", reason: "Too niche" },
+        ],
+      },
+      scenario,
+      theme,
+    );
+    expect(text).toBe(
+      "Checked 1 jazz club place; none is shared by both groups. Ronnie Scott's: one-sided: Skaters support is only at the 23rd percentile of the pool.",
+    );
+  });
+
+  it("names a themed bridge when there is one", () => {
+    const bridge = { entity: { name: "Jazz Café" }, admittedBy: ["theme-focused"] };
+    expect(
+      themeReport({ ...base, bridges: [bridge] } as unknown as EngineResult, scenario, theme),
+    ).toBe("Jazz Café (jazz club) is one of the bridges.");
   });
 });
