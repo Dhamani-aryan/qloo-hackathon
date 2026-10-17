@@ -51,6 +51,13 @@ export interface EngineOptions {
   onEvent?: (event: EngineEvent) => void;
   /** Pauses before re-asking Qloo after a 429 or timeout on a scoring call. */
   retryDelaysMs?: number[];
+  /** Place tags (from `/v2/tags`) to search in addition to the usual place discovery. */
+  placeThemes?: PlaceTheme[];
+}
+
+export interface PlaceTheme {
+  tagId: string;
+  name: string;
 }
 
 /** Shared state for one engine run. */
@@ -69,6 +76,7 @@ export interface EngineContext {
   /** Qloo calls that succeeded; zero after a run means Qloo was unreachable. */
   succeeded: number;
   retryDelaysMs: number[];
+  placeThemes: PlaceTheme[];
 }
 
 export function createContext(
@@ -101,6 +109,7 @@ export function createContext(
     sideOf,
     succeeded: 0,
     retryDelaysMs: options.retryDelaysMs ?? [2_000, 5_000],
+    placeThemes: options.placeThemes ?? [],
   };
 }
 

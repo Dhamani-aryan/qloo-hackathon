@@ -41,6 +41,19 @@ describe("runBridgeEngine (synthetic world)", () => {
     expect(s).toMatchSnapshot();
   });
 
+  it("adds agent-chosen theme places to the place pool, first, with their own query", async () => {
+    const { client, calls } = fakeClient(world, compare);
+    const r = await runBridgeEngine(client, scenario(), {
+      domains: ["place"],
+      placeThemes: [{ tagId: "urn:tag:genre:place:jazz_club", name: "Jazz club" }],
+    });
+    const themed = calls.filter((c) => c.filterTags?.includes("urn:tag:genre:place:jazz_club"));
+    expect(themed).toHaveLength(1);
+    expect(themed[0]).toMatchObject({ explainability: true, filterLocationQuery: "Test City" });
+    // 3 discovery (top, capped, theme) + 2 shortlist + 1 compare
+    expect(r.stats.qlooCalls).toBe(6);
+  });
+
   describe("when Qloo is busy while scoring one side", () => {
     const busyTvScoringForA = (failures: number) => {
       let left = failures;

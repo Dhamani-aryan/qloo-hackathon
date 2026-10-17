@@ -6,7 +6,8 @@ import type { AdmissionRule, Candidate, Rejection } from "./types";
 /** Qloo shortlist scoring accepts at most this many entities per request. */
 export const MAX_POOL = 50;
 
-const RULE_ORDER: AdmissionRule[] = ["combined-top", "popularity-capped"];
+/** Agent-requested theme places first, so the pool cap never squeezes them out. */
+const RULE_ORDER: AdmissionRule[] = ["theme-focused", "combined-top", "popularity-capped"];
 
 /**
  * Merge a domain's discovery results into one de-duplicated candidate pool.

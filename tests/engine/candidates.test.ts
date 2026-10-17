@@ -13,7 +13,7 @@ function expansion(
 ): DomainExpansion {
   return {
     domain: "book",
-    results: { "combined-top": top, "popularity-capped": capped },
+    results: { "combined-top": top, "popularity-capped": capped, "theme-focused": [] },
     evidenceIds: new Map([["X1", ["ev_0001"]]]),
     supportingSeeds: new Map([["X1", { A: ["SA1"], B: [] }]]),
     locationConditioned: false,

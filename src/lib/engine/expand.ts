@@ -35,7 +35,7 @@ export async function expandDomain(
   const locationConditioned = domain === "place";
   const expansion: DomainExpansion = {
     domain,
-    results: { "combined-top": [], "popularity-capped": [] },
+    results: { "combined-top": [], "popularity-capped": [], "theme-focused": [] },
     evidenceIds: new Map(),
     supportingSeeds: new Map(),
     locationConditioned,
@@ -60,6 +60,14 @@ export async function expandDomain(
   const runs: [AdmissionRule, Parameters<typeof ctx.client.getInsights>[0]][] = [
     ["combined-top", { ...common, explainability: true }],
     ["popularity-capped", { ...common, popularityMax: POPULARITY_CAP }],
+    // Agent-chosen themes, e.g. "jazz club": the same joint signal, limited to places with the tag.
+    ...(locationConditioned ? ctx.placeThemes : []).map(
+      (t) =>
+        ["theme-focused", { ...common, filterTags: [t.tagId], explainability: true }] as [
+          AdmissionRule,
+          Parameters<typeof ctx.client.getInsights>[0],
+        ],
+    ),
   ];
 
   await Promise.all(
@@ -72,7 +80,7 @@ export async function expandDomain(
           () => ctx.client.getInsights(input),
           (x) => x.entities.length,
         );
-        expansion.results[rule] = r.entities;
+        expansion.results[rule] = [...expansion.results[rule], ...r.entities];
         for (const e of r.entities) record(ctx, expansion, rule, e);
       } catch (err) {
         expansion.error = (err as Error).message;
