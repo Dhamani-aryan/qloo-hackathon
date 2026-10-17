@@ -2,6 +2,19 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-17: A real agent loop, without giving up reproducibility
+
+The 2026-10-10 accuracy pass fixed the search plan, which left the LLM writing text but deciding nothing. The judging asks for agents, so the agent now decides and acts in three places, each bounded so accuracy stays measurable:
+
+- **Organizer notes** (free text on the home page) are turned into directives by the LLM, but only through a schema that code applies: kinds of culture to skip or add, place themes to search, audience, and plan rules. Notes can steer the search; they can't inject cultural content.
+- **Review and investigate.** After the first Qloo pass the agent reviews the evidence. With three strong bridges and no notes it stops (so the default flow stays fast and reproducible). Otherwise it may call two tools for up to two rounds: `explore_domain` (films, video games...) and `focus_places` (a Qloo place tag found via `/v2/tags`, searched with `filter.tags`). Everything found is scored by the same deterministic engine, and the extra results are kept only if they beat the earlier ones. The final domains and themes are recorded, so a rerun reproduces the result exactly.
+- **Invitations**, one per group, pitched in that group's own favourites and checked by the same title guard as the plan.
+
+Also:
+- **Shown bridges need ≥ 50th percentile from both groups** (plus the 0.55 harmonic-mean bar). Weak third bridges were replaced by stronger ones in all affected cases; every case still shows three.
+- **Mature-content filter:** when the notes say under-18s will attend, anything Qloo tags `urn:tag:audience:qloo:mature` is left out.
+- **MCP endpoint** (`/api/mcp`, one tool `find_common_ground`) so any agent can use Common Ground. Hand-written JSON-RPC rather than the SDK: four methods, no sessions, no server push, and it reuses the website's cache and rate limits.
+
 ## 2026-10-10: Accuracy pass and a simpler two-page UI
 
 - **Fixed search domains.** The LLM planner chose different kinds of things to search on different runs, so the same input could give different bridges. The planner now always runs TV shows, artists, books, podcasts and places (places only with a city), plus films only when a seed is a film. The LLM only writes the reasons. Result: same input, same bridges (run 3: 6/6 reproducible).
