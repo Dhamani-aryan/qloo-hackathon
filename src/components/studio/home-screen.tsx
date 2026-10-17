@@ -114,7 +114,8 @@ export function HomeScreen({
       <section className="space-y-3 text-center">
         <h1 className="font-display text-4xl leading-tight sm:text-5xl">Find common ground</h1>
         <p className="text-lg text-ink-2">
-          Add a few things each group loves. We&apos;ll find what they share.
+          Bringing two groups together? Add a few things each loves, and get a program both will
+          come back to.
         </p>
       </section>
 
