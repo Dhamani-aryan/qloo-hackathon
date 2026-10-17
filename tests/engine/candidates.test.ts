@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildPool, MAX_POOL } from "@/lib/engine/candidates";
 import { createContext } from "@/lib/engine/context";
 import type { DomainExpansion } from "@/lib/engine/expand";
-import { rejectionReason, sensitiveReason, venueReason } from "@/lib/engine/filters";
+import { MATURE_TAG, rejectionReason, sensitiveReason, venueReason } from "@/lib/engine/filters";
 import { findThemes } from "@/lib/engine/themes";
 import type { CompareTag } from "@/lib/qloo";
 import { entity, fakeClient, scenario } from "./helpers";
@@ -102,6 +102,14 @@ describe("filters added after the evaluation", () => {
     expect(rejectionReason(entity("c2", "New York"), "place", "New York City")).toMatch(/city/);
     expect(rejectionReason(entity("c3", "Chicago Diner"), "place", "Chicago")).toBeNull();
     expect(rejectionReason(entity("c4", "Chicago"), "movie", "Chicago")).toBeNull();
+  });
+
+  it("rejects mature-tagged works only for family-friendly groups", () => {
+    const mature = entity("m1", "Late Night Show", {
+      tags: [{ id: MATURE_TAG, name: "Mature", type: "urn:tag:audience:qloo" }],
+    });
+    expect(rejectionReason(mature, "tvShow", null, true)).toMatch(/mature audiences/);
+    expect(rejectionReason(mature, "tvShow", null, false)).toBeNull();
   });
 });
 

@@ -30,7 +30,7 @@ export function buildPool(
         if (!existing.admittedBy.includes(rule)) existing.admittedBy.push(rule);
         continue;
       }
-      const reason = rejectionReason(entity, x.domain, ctx.scenario.location);
+      const reason = rejectionReason(entity, x.domain, ctx.scenario.location, ctx.familyFriendly);
       if (reason) {
         rejected.add(entity.id);
         rejections.push({ candidateId: entity.id, name: entity.name, domain: x.domain, reason });

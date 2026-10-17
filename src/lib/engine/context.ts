@@ -53,6 +53,8 @@ export interface EngineOptions {
   retryDelaysMs?: number[];
   /** Place tags (from `/v2/tags`) to search in addition to the usual place discovery. */
   placeThemes?: PlaceTheme[];
+  /** Leave out anything Qloo tags for mature audiences (all-ages or teen groups). */
+  familyFriendly?: boolean;
 }
 
 export interface PlaceTheme {
@@ -77,6 +79,7 @@ export interface EngineContext {
   succeeded: number;
   retryDelaysMs: number[];
   placeThemes: PlaceTheme[];
+  familyFriendly: boolean;
 }
 
 export function createContext(
@@ -110,6 +113,7 @@ export function createContext(
     succeeded: 0,
     retryDelaysMs: options.retryDelaysMs ?? [2_000, 5_000],
     placeThemes: options.placeThemes ?? [],
+    familyFriendly: options.familyFriendly ?? false,
   };
 }
 

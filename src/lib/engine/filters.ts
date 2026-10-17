@@ -69,12 +69,23 @@ export function sameAsCityReason(
     : null;
 }
 
+/** Qloo's audience tag for adult content. */
+export const MATURE_TAG = "urn:tag:audience:qloo:mature";
+
+function matureReason(e: QlooEntity): string | null {
+  return e.tags.some((t) => t.id === MATURE_TAG)
+    ? "Tagged for mature audiences, and the organizer said the group includes young people"
+    : null;
+}
+
 export function rejectionReason(
   e: QlooEntity,
   domain: DomainKey,
   location?: string | null,
+  familyFriendly = false,
 ): string | null {
   return (
+    (familyFriendly ? matureReason(e) : null) ??
     sensitiveReason(e) ??
     bundleReason(e) ??
     (domain === "place" ? (venueReason(e) ?? sameAsCityReason(e, location)) : null)

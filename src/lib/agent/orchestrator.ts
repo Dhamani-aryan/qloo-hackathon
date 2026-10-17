@@ -315,6 +315,7 @@ export function runAgent(
       runBridgeEngine(deps.qloo, scenario, {
         domains: [...domains],
         placeThemes: [...placeThemes],
+        familyFriendly: directives.audience === "all_ages" || directives.audience === "teens",
         maxCalls: options.maxCalls,
         onEvent: (event) => {
           if (!forward || forward(event)) out.push({ type: "engine", event });
