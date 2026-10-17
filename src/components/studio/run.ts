@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { AgentEvent, AgentResult, AgentState } from "@/lib/agent/orchestrator";
+import type { AgentDecision, AgentEvent, AgentResult, AgentState } from "@/lib/agent/orchestrator";
 import type { StreamEvent } from "@/lib/agent/replay";
 import type { DomainKey, Scenario } from "@/lib/engine/types";
 import { streamEvents } from "./api";
@@ -88,6 +88,7 @@ export const STAGES: { state: AgentState; label: string }[] = [
   { state: "UNDERSTAND", label: "Read both groups' favourites" },
   { state: "PLAN_DOMAINS", label: "Choose what to explore" },
   { state: "QUERY_QLOO", label: "Search Qloo for shared tastes" },
+  { state: "REVIEW", label: "Check the evidence and dig deeper" },
   { state: "DESIGN", label: "Design the plan" },
   { state: "CRITIQUE", label: "Review and improve it" },
   { state: "EXPLAIN", label: "Compare with AI alone" },
@@ -128,7 +129,20 @@ export function domainProgress(run: RunState): DomainProgress[] {
   const plan = run.events.find((e) => e.type === "plan");
   if (!plan || plan.type !== "plan") return [];
   const engineDone = run.events.some((e) => e.type === "engine_result");
-  return plan.plan.domains.map(({ domain, reason }) => {
+  // Kinds the agent added while reviewing the evidence show up after the planned ones.
+  const planned = plan.plan.domains.map((d) => d.domain);
+  const added = [
+    ...new Set(
+      run.events.flatMap((e) =>
+        e.type === "engine" &&
+        e.event.type === "domain_started" &&
+        !planned.includes(e.event.domain)
+          ? [e.event.domain]
+          : [],
+      ),
+    ),
+  ].map((domain) => ({ domain, reason: "Added by the agent after reviewing the evidence" }));
+  return [...plan.plan.domains, ...added].map(({ domain, reason }) => {
     const p: DomainProgress = {
       domain,
       reason,
@@ -146,6 +160,11 @@ export function domainProgress(run: RunState): DomainProgress[] {
     }
     return p;
   });
+}
+
+/** What the agent decided and did, in order, for the decision log. */
+export function decisions(run: RunState): AgentDecision[] {
+  return run.events.flatMap((e) => (e.type === "decision" ? [e.decision] : []));
 }
 
 export interface ActivityItem {
