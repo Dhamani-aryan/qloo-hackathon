@@ -119,6 +119,24 @@ Click **Clear**, name the groups, add the favourites (3–8 each), set the city,
 
 ---
 
+### H. The agent: notes, decisions, invitations
+
+| ID | Do this | Expected |
+|---|---|---|
+| H1 | Run the main example with no notes. | Under the progress line, **What the agent did** shows what it searched and "Three bridges with strong support from both groups. No further search needed." |
+| H2 | In **Notes**, type *Some members are 15-17, sessions must be free, ideally around live music* and run. | The log starts with "From your instructions: look for live music places; audience: all ages; …". It looks up a Qloo place tag, then says what that search found. The plan mentions free, teen-suitable sessions. |
+| H3 | Change the city to **London**, notes to *Adults only. We'd love a live jazz venue*, and run the Skate/Jazz groups (D1). | The agent searches **Jazz club** places. If none becomes a bridge, the log says why in plain words (e.g. "Ronnie Scott's: one-sided: Skaters support is only at the 23rd percentile"). |
+| H4 | Add *No podcasts please* to the notes. | No podcast appears anywhere in the bridges or "also in the running". |
+| H5 | Scroll below the plan. | **Invite each group**: two short messages, each opening with that group's own favourites, with **Copy** buttons. |
+| H6 | Look at every bridge's two numbers. | Both are at least **50th**. A lopsided one (e.g. 90th / 40th) never appears as a bridge. |
+
+### I. Call it from another AI (MCP)
+
+| ID | Do this | Expected |
+|---|---|---|
+| I1 | In a terminal: `curl -s -X POST <site>/api/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'` | One tool, `find_common_ground`. |
+| I2 | Add the endpoint as a custom connector in Claude (see [MCP.md](MCP.md)) and ask it to find common ground between two groups. | Claude calls the tool and answers with the bridges, each group's support, the plan and the invitations. |
+
 ## 3. Automated and terminal checks (optional)
 
 All of these run from `G:\Quillo app`.
