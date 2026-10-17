@@ -91,7 +91,7 @@ export const STAGES: { state: AgentState; label: string }[] = [
   { state: "REVIEW", label: "Check the evidence and dig deeper" },
   { state: "DESIGN", label: "Design the plan" },
   { state: "CRITIQUE", label: "Review and improve it" },
-  { state: "EXPLAIN", label: "Compare with AI alone" },
+  { state: "EXPLAIN", label: "Write invitations and compare with AI alone" },
 ];
 
 export type StageStatus = "pending" | "active" | "done" | "skipped";
@@ -237,6 +237,7 @@ export function artifacts(run: RunState) {
   let program = run.result?.program ?? null;
   let critique = run.result?.critique ?? [];
   let baseline = run.result?.baseline ?? null;
+  let invitations = run.result?.invitations ?? null;
   for (const e of run.events) {
     if (e.type === "engine_result") engine = e.result;
     if (e.type === "notes") notes = e.notes;
@@ -246,6 +247,15 @@ export function artifacts(run: RunState) {
       critique = e.issues;
     }
     if (e.type === "baseline") baseline = e.baseline;
+    if (e.type === "invitations") invitations = e.invitations;
   }
-  return { engine, notes, program, critique, baseline, brief: run.result?.brief ?? null };
+  return {
+    engine,
+    notes,
+    program,
+    critique,
+    baseline,
+    invitations,
+    brief: run.result?.brief ?? null,
+  };
 }

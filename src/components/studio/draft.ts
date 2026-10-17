@@ -112,7 +112,10 @@ export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
 
 export type DraftAction =
   | { type: "replace"; draft: Draft }
-  | { type: "set"; patch: Partial<Pick<Draft, "title" | "objective" | "location" | "instructions">> }
+  | {
+      type: "set";
+      patch: Partial<Pick<Draft, "title" | "objective" | "location" | "instructions">>;
+    }
   | { type: "profile"; side: SideKey; patch: Partial<Omit<DraftProfile, "seeds">> }
   | { type: "addSeed"; side: SideKey; seed: DraftSeed }
   | { type: "updateSeed"; side: SideKey; key: string; patch: Partial<DraftSeed> }

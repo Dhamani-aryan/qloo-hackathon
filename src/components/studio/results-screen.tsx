@@ -5,6 +5,7 @@ import type { Scenario } from "@/lib/engine/types";
 import { Button, Dot, More, Note, Spinner, Title, cx, typeLabel } from "../ui";
 import { CommonGround } from "./bridges-screen";
 import { Comparison } from "./comparison";
+import { Invitations } from "./invitations";
 import { PlanSection, type ProgramVersion } from "./program-screen";
 import {
   CALLS_PER_DOMAIN,
@@ -169,6 +170,16 @@ export function ResultsScreen({
           ) : (
             <Spinner label="Writing a 4-session plan around the top bridge…" />
           )}
+        </div>
+      )}
+
+      {/* Invitations belong to the agent's own plan, not a plan rebuilt on another bridge. */}
+      {view.invitations && version?.program === view.program && (
+        <div className="mt-20">
+          <Invitations
+            invitations={view.invitations}
+            labels={[scenario.a.label, scenario.b.label]}
+          />
         </div>
       )}
 
