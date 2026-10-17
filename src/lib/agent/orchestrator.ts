@@ -10,19 +10,52 @@ import type { QlooClient } from "@/lib/qloo";
 import { generateBaseline, type BaselineProgram } from "./baseline";
 import { buildBrief, type EvidenceBrief } from "./brief";
 import { critiqueProgram, type CritiqueIssue } from "./critic";
+import {
+  applyDirectives,
+  interpretInstructions,
+  NO_DIRECTIVES,
+  type Directives,
+} from "./directives";
+import type { EngineOptions, PlaceTheme } from "@/lib/engine/context";
+import { isStrongBridge } from "@/lib/engine/select";
+import { betterResult, reviewEvidence } from "./review";
+import { findPlaceTheme } from "./tools";
 import { writeBridgeNotes, type BridgeNote } from "./notes";
 import { planDomains, type DomainPlan } from "./planner";
 import { generateProgram, type Program } from "./program";
 
 /**
- * The single agent orchestrator (plan §9). A fixed state machine:
- *   UNDERSTAND → PLAN_DOMAINS → QUERY_QLOO → DESIGN → CRITIQUE → EXPLAIN → DONE
- * Qloo work is deterministic (bridge engine); the LLM plans, explains, designs and critiques.
- * The LLM-only baseline runs in parallel from the start. Events report real actions only.
+ * The single agent orchestrator (plan §9):
+ *   UNDERSTAND → PLAN_DOMAINS → QUERY_QLOO → REVIEW (up to 2 rounds) → DESIGN → CRITIQUE →
+ *   EXPLAIN → DONE
+ * Qloo scoring is deterministic (bridge engine). The LLM reads the organizer's instructions,
+ * reviews the evidence and decides whether to investigate further with tools (another kind of
+ * culture, places on a theme), then designs, critiques and explains. Every decision is
+ * reported as an event. The LLM-only baseline runs in parallel from the start.
  */
 
 export type AgentState =
-  "UNDERSTAND" | "PLAN_DOMAINS" | "QUERY_QLOO" | "DESIGN" | "CRITIQUE" | "EXPLAIN" | "DONE";
+  | "UNDERSTAND"
+  | "PLAN_DOMAINS"
+  | "QUERY_QLOO"
+  | "REVIEW"
+  | "DESIGN"
+  | "CRITIQUE"
+  | "EXPLAIN"
+  | "DONE";
+
+/** One thing the agent decided or did, in plain words, for the decision log. */
+export interface AgentDecision {
+  step: "instructions" | "plan" | "review" | "tool" | "outcome";
+  text: string;
+}
+
+/** What the final Qloo search covered, so it can be reproduced exactly. */
+export interface Investigation {
+  domains: DomainKey[];
+  placeThemes: PlaceTheme[];
+  rounds: number;
+}
 
 export type AgentStatus = "ok" | "insufficient_evidence" | "partial";
 
@@ -30,6 +63,9 @@ export interface AgentResult {
   status: AgentStatus;
   scenario: Scenario;
   plan: DomainPlan | null;
+  directives: Directives;
+  investigation: Investigation | null;
+  decisions: AgentDecision[];
   engine: EngineResult | null;
   brief: EvidenceBrief | null;
   notes: BridgeNote[];
@@ -46,6 +82,7 @@ export interface AgentResult {
 export type AgentEvent =
   | { type: "state"; state: AgentState }
   | { type: "plan"; plan: DomainPlan }
+  | { type: "decision"; decision: AgentDecision }
   | { type: "engine"; event: EngineEvent }
   | { type: "engine_result"; result: EngineResult }
   | { type: "notes"; notes: BridgeNote[] }
@@ -66,6 +103,8 @@ export interface AgentOptions {
   bridgeRef?: string;
   baseline?: boolean;
   critic?: boolean;
+  /** Let the agent review the evidence and investigate further (default true). */
+  review?: boolean;
   maxCalls?: number;
   /** Abort the run (e.g. the browser disconnected). Stops further Qloo and LLM calls. */
   signal?: AbortSignal;
@@ -126,6 +165,38 @@ function channel<T>() {
   };
 }
 
+const MAX_REVIEW_ROUNDS = 2;
+
+const DOMAIN_NAMES: Record<DomainKey, string> = {
+  tvShow: "TV shows",
+  artist: "music",
+  book: "books",
+  podcast: "podcasts",
+  place: "local places",
+  movie: "films",
+  videoGame: "video games",
+};
+const domainName = (d: DomainKey) => DOMAIN_NAMES[d];
+
+function describeDirectives(
+  d: Directives,
+  decide: (step: AgentDecision["step"], text: string) => void,
+) {
+  const parts = [
+    d.skipDomains.length ? `skip ${d.skipDomains.map(domainName).join(", ")}` : "",
+    d.addDomains.length ? `add ${d.addDomains.map(domainName).join(", ")}` : "",
+    d.placeThemes.length ? `look for ${d.placeThemes.join(" and ")} places` : "",
+    d.audience ? `audience: ${d.audience.replace("_", " ")}` : "",
+    ...d.rules,
+  ].filter(Boolean);
+  decide(
+    "instructions",
+    parts.length
+      ? `From your instructions: ${parts.join("; ")}.`
+      : "Read your instructions; nothing in them changes the search.",
+  );
+}
+
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function runAgent(
@@ -142,6 +213,9 @@ export function runAgent(
     status: "ok",
     scenario,
     plan: null,
+    directives: NO_DIRECTIVES,
+    investigation: null,
+    decisions: [],
     engine: null,
     brief: null,
     notes: [],
@@ -156,6 +230,11 @@ export function runAgent(
   const warn = (m: string) => {
     result.warnings.push(m);
     out.push({ type: "warning", message: m });
+  };
+  const decide = (step: AgentDecision["step"], text: string) => {
+    const decision = { step, text };
+    result.decisions.push(decision);
+    out.push({ type: "decision", decision });
   };
   const timed = async <T>(state: AgentState, fn: () => Promise<T>): Promise<T> => {
     out.push({ type: "state", state });
@@ -186,24 +265,137 @@ export function runAgent(
               return b;
             });
 
-    result.plan = await timed("PLAN_DOMAINS", async () =>
-      options.domains
-        ? {
-            source: "fallback" as const,
-            domains: options.domains.map((domain) => ({ domain, reason: "Chosen by caller" })),
-          }
-        : planDomains(deps.llm, scenario),
+    const [plan, directives] = await timed("PLAN_DOMAINS", () =>
+      Promise.all([
+        options.domains
+          ? {
+              source: "fallback" as const,
+              domains: options.domains.map((domain) => ({ domain, reason: "Chosen by caller" })),
+            }
+          : planDomains(deps.llm, scenario),
+        interpretInstructions(deps.llm, scenario).catch((e) => {
+          warn(`Couldn't read the instructions: ${message(e)}`);
+          return NO_DIRECTIVES;
+        }),
+      ]),
     );
-    out.push({ type: "plan", plan: result.plan });
+    result.plan = plan;
+    result.directives = directives;
+    out.push({ type: "plan", plan });
+    if (scenario.instructions.trim()) describeDirectives(directives, decide);
     checkCancelled();
 
-    const engine = await timed("QUERY_QLOO", () =>
-      runBridgeEngine(deps.qloo, scenario, {
-        domains: result.plan!.domains.map((d) => d.domain),
-        maxCalls: options.maxCalls,
-        onEvent: (event) => out.push({ type: "engine", event }),
-      }),
+    const domains = applyDirectives(
+      plan.domains.map((d) => d.domain),
+      directives,
     );
+    const placeThemes: PlaceTheme[] = [];
+    const triedThemes: string[] = [];
+    const addTheme = async (query: string) => {
+      triedThemes.push(query.toLowerCase());
+      const theme = await findPlaceTheme(deps.qloo, query).catch(() => null);
+      if (theme && !placeThemes.some((t) => t.tagId === theme.tagId)) {
+        placeThemes.push(theme);
+        decide("tool", `Looked up the Qloo place tag “${theme.name}” for “${query}”.`);
+        return;
+      }
+      decide("tool", `Qloo has no new place tag for “${query}”, so it was skipped.`);
+    };
+    for (const t of directives.placeThemes) await addTheme(t);
+    decide(
+      "plan",
+      `Searching ${domains.map(domainName).join(", ")}${
+        placeThemes.length
+          ? `, plus ${placeThemes.map((t) => t.name.toLowerCase()).join(" and ")} places`
+          : ""
+      }.`,
+    );
+
+    const search = (forward?: (e: EngineEvent) => boolean) =>
+      runBridgeEngine(deps.qloo, scenario, {
+        domains: [...domains],
+        placeThemes: [...placeThemes],
+        maxCalls: options.maxCalls,
+        onEvent: (event) => {
+          if (!forward || forward(event)) out.push({ type: "engine", event });
+        },
+      } satisfies EngineOptions);
+
+    let engine = await timed("QUERY_QLOO", () => search());
+    let rounds = 1;
+    checkCancelled();
+
+    // REVIEW: the agent decides whether the evidence is good enough or worth another search.
+    const reviewable =
+      options.review !== false &&
+      !engine.warnings.some((w) => w.includes("failed") || w.includes("confirmed seeds"));
+    const strongCount = (r: EngineResult) => r.bridges.filter(isStrongBridge).length;
+    if (reviewable) {
+      await timed("REVIEW", async () => {
+        for (let round = 0; round < MAX_REVIEW_ROUNDS; round++) {
+          if (strongCount(engine) >= 3 && !scenario.instructions.trim()) {
+            decide(
+              "review",
+              "Three bridges with strong support from both groups. No further search needed.",
+            );
+            return;
+          }
+          let review;
+          try {
+            review = await reviewEvidence(
+              deps.llm,
+              scenario,
+              engine,
+              domains,
+              directives,
+              triedThemes,
+            );
+          } catch (e) {
+            warn(`Review failed; keeping the current evidence: ${message(e)}`);
+            return;
+          }
+          decide("review", review.assessment);
+          if (review.actions.length === 0) return;
+
+          const before = { domains: domains.length, themes: placeThemes.length };
+          for (const a of review.actions) {
+            if (a.tool === "explore_domain") {
+              domains.push(a.domain);
+              decide("tool", `Searching ${domainName(a.domain)} too: ${a.reason}`);
+            } else {
+              await addTheme(a.theme);
+            }
+          }
+          if (domains.length === before.domains && placeThemes.length === before.themes) return;
+          checkCancelled();
+
+          // Only progress for the new searches; repeated queries come from the request cache.
+          const newDomains = domains.slice(before.domains);
+          const newThemes = placeThemes.length > before.themes;
+          const next = await search((e) =>
+            "domain" in e && e.domain
+              ? newDomains.includes(e.domain) || (e.domain === "place" && newThemes)
+              : false,
+          );
+          rounds++;
+          const kept = betterResult(engine, next);
+          decide(
+            "outcome",
+            kept === next
+              ? `Now ${strongCount(next)} strong bridge${strongCount(next) === 1 ? "" : "s"} (was ${strongCount(engine)}).`
+              : "The extra search didn't beat the earlier bridges, so they stay.",
+          );
+          if (kept !== next) {
+            // Reproduce exactly what produced the kept result.
+            domains.splice(before.domains);
+            placeThemes.splice(before.themes);
+            return;
+          }
+          engine = next;
+        }
+      });
+    }
+    result.investigation = { domains: [...domains], placeThemes: [...placeThemes], rounds };
     result.engine = engine;
     out.push({ type: "engine_result", result: engine });
     checkCancelled();
@@ -211,7 +403,7 @@ export function runAgent(
     if (engine.status === "insufficient_evidence") {
       result.status = "insufficient_evidence";
     } else {
-      const brief = buildBrief(scenario, engine);
+      const brief = buildBrief(scenario, engine, result.directives);
       result.brief = brief;
       const bridgeRef = options.bridgeRef ?? "B1";
 
