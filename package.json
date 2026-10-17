@@ -15,7 +15,8 @@
     "spike": "tsx --env-file-if-exists=.env.local",
     "llm:login": "tsx --env-file-if-exists=.env.local scripts/chatgpt-login.ts",
     "llm:push-credential": "tsx --env-file-if-exists=.env.local scripts/push-chatgpt-credential.ts",
-    "warm": "tsx --env-file-if-exists=.env.local scripts/warm-cache.ts"
+    "warm": "tsx --env-file-if-exists=.env.local scripts/warm-cache.ts",
+    "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke-live.ts"
   },
   "dependencies": {
     "next": "16.3.8",
