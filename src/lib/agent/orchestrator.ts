@@ -20,6 +20,7 @@ import type { EngineOptions, PlaceTheme } from "@/lib/engine/context";
 import { isStrongBridge } from "@/lib/engine/select";
 import { betterResult, reviewEvidence } from "./review";
 import { findPlaceTheme } from "./tools";
+import { writeInvitations, type Invitations } from "./invites";
 import { writeBridgeNotes, type BridgeNote } from "./notes";
 import { planDomains, type DomainPlan } from "./planner";
 import { generateProgram, type Program } from "./program";
@@ -73,6 +74,8 @@ export interface AgentResult {
   critique: CritiqueIssue[];
   program: Program | null;
   baseline: BaselineProgram | null;
+  /** One invitation per group, pitched in that group's own tastes. */
+  invitations: Invitations | null;
   warnings: string[];
   /** Why the run stopped early (Qloo unavailable, cancelled...), or null. */
   failure: string | null;
@@ -89,6 +92,7 @@ export type AgentEvent =
   | { type: "program_draft"; program: Program }
   | { type: "critique"; issues: CritiqueIssue[]; program: Program }
   | { type: "baseline"; baseline: BaselineProgram | null }
+  | { type: "invitations"; invitations: Invitations }
   | { type: "warning"; message: string }
   | { type: "done"; result: AgentResult };
 
@@ -223,6 +227,7 @@ export function runAgent(
     critique: [],
     program: null,
     baseline: null,
+    invitations: null,
     warnings: [],
     failure: null,
     timings: {},
@@ -459,7 +464,16 @@ export function runAgent(
     }
 
     await timed("EXPLAIN", async () => {
-      await baseline;
+      const invite = async () => {
+        if (!result.brief || !result.program) return;
+        try {
+          result.invitations = await writeInvitations(deps.llm, result.brief, result.program);
+          out.push({ type: "invitations", invitations: result.invitations });
+        } catch (e) {
+          warn(`Invitations failed: ${message(e)}`);
+        }
+      };
+      await Promise.all([invite(), baseline]);
     });
     out.push({ type: "state", state: "DONE" });
     out.push({ type: "done", result });

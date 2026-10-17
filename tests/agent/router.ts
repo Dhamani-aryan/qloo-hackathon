@@ -47,6 +47,11 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
           })),
       }),
     program: () => JSON.stringify(program),
+    invitations: () =>
+      JSON.stringify({
+        A: { subject: "For the film club", message: 'If you love "SA1", try "Shared Comedy".' },
+        B: { subject: "For the arts group", message: 'Fans of "Made-up Film" welcome.' },
+      }),
     review: () => JSON.stringify({ assessment: "Two solid bridges; good enough.", actions: [] }),
     directives: () =>
       JSON.stringify({
@@ -81,17 +86,19 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
   const step = (req: LlmRequest) =>
     req.system.includes("research lead")
       ? "review"
-      : req.system.includes("organizer's instructions into settings")
-        ? "directives"
-        : req.system.includes("plan research")
-          ? "plan"
-          : req.system.includes("analyst")
-            ? "notes"
-            : req.system.includes("demanding reviewer")
-              ? "critic"
-              : req.system.includes("Choose a shared cultural bridge yourself")
-                ? "baseline"
-                : "program";
+      : req.system.includes("short, warm invitations")
+        ? "invitations"
+        : req.system.includes("organizer's instructions into settings")
+          ? "directives"
+          : req.system.includes("plan research")
+            ? "plan"
+            : req.system.includes("analyst")
+              ? "notes"
+              : req.system.includes("demanding reviewer")
+                ? "critic"
+                : req.system.includes("Choose a shared cultural bridge yourself")
+                  ? "baseline"
+                  : "program";
   const llm: LlmClient = {
     provider: "test",
     model: "test",

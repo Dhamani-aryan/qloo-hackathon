@@ -47,7 +47,18 @@ describe("runAgent", () => {
     expect(events.some((e) => e.type === "engine" && e.event.type === "qloo_query_done")).toBe(
       true,
     );
-    expect(seen.sort()).toEqual(["baseline", "critic", "notes", "plan", "program", "review"]);
+    expect(seen.sort()).toEqual([
+      "baseline",
+      "critic",
+      "invitations",
+      "notes",
+      "plan",
+      "program",
+      "review",
+    ]);
+    // Invitations go through the evidence guard: a made-up title is removed.
+    expect(r.invitations?.A.message).toBe('If you love "SA1", try "Shared Comedy".');
+    expect(r.invitations?.removedTitles).toEqual(["Made-up Film"]);
     expect(r.decisions.map((d) => d.step)).toEqual(["plan", "review"]);
     expect(r.investigation).toMatchObject({ rounds: 1, placeThemes: [] });
   });
