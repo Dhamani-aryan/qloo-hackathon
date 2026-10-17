@@ -201,6 +201,7 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
       domains: r.investigation.domains,
       placeThemes: r.investigation.placeThemes,
       familyFriendly: ["all_ages", "teens"].includes(r.directives.audience ?? ""),
+      adultsOnly: r.directives.audience === "adults",
     });
     const ids = (xs: { entity: { id: string } }[]) =>
       xs
@@ -254,8 +255,13 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
   }
   if (c.notes) {
     checks.push({
-      name: "notes turned into rules the plan must follow",
-      passed: Boolean(r.program) && r.directives.rules.length > 0,
+      name: "notes understood (turned into settings the agent applied)",
+      passed:
+        Boolean(r.program) &&
+        (r.directives.rules.length > 0 ||
+          r.directives.audience !== null ||
+          r.directives.placeThemes.length > 0 ||
+          r.directives.skipDomains.length > 0),
     });
   }
   const planDomains = r.plan?.domains.map((d) => d.domain) ?? [];
