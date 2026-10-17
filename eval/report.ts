@@ -45,6 +45,44 @@ const bridgePop = ok.flatMap((r) =>
   r.bridges.flatMap((b) => (b.popularity == null ? [] : [b.popularity])),
 );
 
+// The agent beyond the fixed search: extra rounds it chose, and whether it followed notes.
+const withNotes = results.filter((r) => r.notes);
+const noteChecks = withNotes.flatMap((r) => r.notes!.checks);
+const agentRows = results
+  .map(
+    (r) =>
+      `| ${r.context} | ${r.agent?.reviewRounds ?? 0} | ${r.agent?.addedDomains.join(", ") || "—"} | ${
+        r.agent?.placeThemes.join(", ") || "—"
+      } | ${r.agent?.decisions ?? 0} |`,
+  )
+  .join("\n");
+const agentSection = `## The agent at work
+
+After the first Qloo pass the agent reviews the evidence. With three strong bridges and no notes it stops; otherwise it may run up to two extra searches with its tools: **explore another kind of culture** (films, video games) or **look for places on a theme** (a Qloo place tag such as "Jazz club"). Everything it finds is scored by the same deterministic engine, and it keeps the extra results only if they beat the earlier ones.
+
+| Case | Extra search rounds | Kinds it added | Place themes searched | Decisions logged |
+|---|---|---|---|---|
+${agentRows}
+
+${
+  withNotes.length
+    ? `### Following the organizer's notes
+
+${withNotes.length} cases repeat earlier groups with notes for the agent. Each check is verified in code against the run's output: **${noteChecks.filter((c) => c.passed).length} / ${noteChecks.length} passed**.
+
+${withNotes
+  .map(
+    (r) =>
+      `- **${r.context}:** "${r.notes!.text}"\n${r
+        .notes!.checks.map((c) => `  - ${c.passed ? "✓" : "✗"} ${c.name}`)
+        .join("\n")}`,
+  )
+  .join("\n")}
+`
+    : ""
+}
+`;
+
 // Optional earlier run (saved before a fix) to show what changed.
 const previous: CaseResult[] | null = existsSync("eval/out/summary-run1.json")
   ? (JSON.parse(readFileSync("eval/out/summary-run1.json", "utf8")) as { results: CaseResult[] })
@@ -58,6 +96,8 @@ const beforeAfter = previous
 **Run 2 → accuracy changes.** Two issues made results less trustworthy:
 - *Repeatability:* the LLM planner picked different categories on different runs, so the same input could give different bridges (Berlin). Every proven category now always runs, and films only when a group named a film.
 - *Weak third bridges:* some bridges passed at about the 51st percentile for both groups (Toronto). Only bridges with solid support from both groups (harmonic mean ≥ 0.55) are shown now; weaker ones move to "also in the running".
+
+**Run 5 → stricter bridges.** Some third bridges had one group in the 40s (Yola at 44th, *Watership Down* at 41st, *The Beatles: Get Back* at 49th), which reads as "one group doesn't really like it". Every shown bridge now needs at least the 50th percentile from **both** groups. All six cases still show three bridges: the next strong candidate takes the slot (for example Royal Tenenbaums House at 88/90 in New York).
 
 **Run 4 → robustness.** Run 4 gave the same bridges as run 3 in every case but one. In New York, Qloo rate-limited (429) one scoring call while another client was using the key. The engine read the missing scores as "no support" and silently dropped every place, including the top bridge. Now every busy Qloo call is retried after a pause; a call that still fails leaves its domain out (marked "not scored") rather than misjudging it; such runs are never cached and the page says so. Rerun alone, New York gave its usual bridges again.
 
@@ -84,7 +124,7 @@ const md = `# Evaluation (step 5.3)
 
 **Run:** ${ranAt.slice(0, 10)} · **Cases:** ${results.length} (${results.filter((r) => r.heldOut).length} held out) · **Mode:** every case live (Qloo + LLM, no cache)
 
-This is a **formative** evaluation: six fixed scenarios, technical metrics, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).
+This is a **formative** evaluation: six fixed scenarios (plus repeats with organizer notes), technical metrics, the agent's own decisions, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).
 
 Reproduce it with \`npm run spike eval/run.ts\`, then \`npm run spike eval/report.ts\`. Raw outputs stay in the git-ignored \`eval/out/\`.
 
@@ -94,7 +134,7 @@ Reproduce it with \`npm run spike eval/run.ts\`, then \`npm run spike eval/repor
 |---|---|
 | **LLM only** | The same objective, group labels and favourite *names* go to the same model, with no Qloo data (\`src/lib/agent/baseline.ts\`). |
 | **Obvious pick** | The candidate with the strongest raw support from both groups, which is mainstream by construction: what a "most popular overlap" approach would choose. |
-| **Common Ground** | The full system: Qloo discovery, per-group validation, popularity adjustment, an entity-anchored plan, and a critic pass. |
+| **Common Ground** | The full system: Qloo discovery, per-group validation, popularity adjustment, an agent review that can search further with tools, an entity-anchored plan, a critic pass, and invitations. |
 
 ## Technical metrics
 
@@ -108,7 +148,8 @@ Reproduce it with \`npm run spike eval/run.ts\`, then \`npm run spike eval/repor
 | Candidates failing the two-sided test | ${pct(failedBilateral / Math.max(pool, 1))} of all candidates |
 | Plan sessions anchored to a Qloo entity | ${pct(anchored / Math.max(sessions, 1))} (${anchored} / ${sessions}; the rest are co-creation sessions) |
 | Unverified references removed by the evidence guard | ${guardRemoved} |
-| Same top-3 bridges on an immediate rerun of the engine | ${repro.filter((r) => r.reproducible).length} / ${repro.length} |
+| Every shown bridge at or above the 50th percentile for both groups | ${ok.every((r) => r.bridges.every((b) => (b.pctA ?? 0) >= 0.5 && (b.pctB ?? 0) >= 0.5)) ? "Yes" : "No"} (lowest: ${ord(Math.min(...ok.flatMap((r) => r.bridges.map((b) => Math.min(b.pctA ?? 0, b.pctB ?? 0)))))}th) |
+| Same top-3 bridges on an immediate rerun of the engine (including the agent's extra searches) | ${repro.filter((r) => r.reproducible).length} / ${repro.length} |
 | Mean popularity of the obvious pick vs the chosen bridges | ${ord(mean(obviousPop))} vs ${ord(mean(bridgePop))} (percentile) |
 
 **Rejections across all runs:** ${Object.entries(rej)
@@ -151,6 +192,7 @@ ${results
   )
   .join("\n")}
 
+${agentSection}
 ${beforeAfter}## Human review
 
 Running the evaluation writes one **blind packet** per case to \`eval/out/packets/\`. Each has two unlabelled plans (Common Ground and LLM only, in random order), a 1–5 rating form on seven criteria (cultural specificity, authenticity, appeal to each group, actionability, novelty without forcedness, likelihood of repeat attendance), and "which would you fund or run, and why?". The answer key is in \`*.key.json\`.
@@ -160,10 +202,10 @@ Running the evaluation writes one **blind packet** per case to \`eval/out/packet
 ## Limitations
 
 - The seeds are plausible but **hypothetical**. Real profiles would come from participant intake.
-- There are six cases, one run each. The LLM steps are non-deterministic; only the Qloo engine is reproducible.
+- There are six base cases plus note variants, one run each. The LLM steps are non-deterministic; only the Qloo engine is reproducible.
 - Bridges are only as good as Qloo's data for each group. For example, Mumbai's profiles surface a self-help podcast as a bridge, which is supported by both sides but may not suit every organizer.
 - Bridge Potential is a transparent ranking score, not a probability, and **nothing here measures social cohesion**.
-- Thresholds (40th-percentile floor, popularity band 0.3–0.9) were set on the New York spike scenario. Five of these cases, including the held-out one, were not used for tuning.
+- Thresholds (40th-percentile floor for candidates, 50th for shown bridges, popularity band 0.3–0.9) were set on the New York spike scenario and the run 1–4 findings. Five of these cases, including the held-out one, were not used for tuning.
 `;
 
 writeFileSync("docs/EVALUATION.md", md);
