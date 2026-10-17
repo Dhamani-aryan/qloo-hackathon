@@ -93,11 +93,12 @@ function quotedTitles(s: string): string[] {
   return [...s.matchAll(/[“"*_]([^“”"*_]{2,60})[”"*_]/g)].map((m) => m[1].trim());
 }
 
-export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program {
-  const allowed = programEntities(brief);
-  const byRef = new Map([...allowed.values()].map((e) => [e.ref, e]));
-  const themes = new Map(brief.themes.map((t) => [t.ref, t]));
-  const evidence = knownEvidenceIds(brief);
+/**
+ * Returns a function that replaces quoted titles the evidence doesn't contain. Known names are
+ * the brief's entities and themes plus both groups' own favourites. Removed titles are pushed
+ * onto `removed`.
+ */
+export function titleGuard(brief: EvidenceBrief, removed: string[]): (s: string) => string {
   const knownNames = new Set(
     [
       ...brief.entities.map((e) => e.name),
@@ -106,6 +107,27 @@ export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program
       ...brief.themes.map((t) => t.name),
     ].map((n) => n.toLowerCase()),
   );
+  return (s: string) => {
+    let out = s;
+    for (const title of quotedTitles(s)) {
+      const lower = title.toLowerCase();
+      const known = [...knownNames].some(
+        (n) => n === lower || n.includes(lower) || lower.includes(n),
+      );
+      if (!known) {
+        removed.push(title);
+        out = out.replace(title, "[title removed: not in Qloo evidence]");
+      }
+    }
+    return out;
+  };
+}
+
+export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program {
+  const allowed = programEntities(brief);
+  const byRef = new Map([...allowed.values()].map((e) => [e.ref, e]));
+  const themes = new Map(brief.themes.map((t) => [t.ref, t]));
+  const evidence = knownEvidenceIds(brief);
   const guard: GuardReport = {
     removedEntityRefs: [],
     removedThemeRefs: [],
@@ -114,20 +136,7 @@ export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program
     warnings: [],
   };
 
-  const clean = (s: string) => {
-    let out = s;
-    for (const title of quotedTitles(s)) {
-      const lower = title.toLowerCase();
-      const known = [...knownNames].some(
-        (n) => n === lower || n.includes(lower) || lower.includes(n),
-      );
-      if (!known) {
-        guard.removedTitles.push(title);
-        out = out.replace(title, "[title removed: not in Qloo evidence]");
-      }
-    }
-    return out;
-  };
+  const clean = titleGuard(brief, guard.removedTitles);
 
   const sessions: ProgramSession[] = draft.sessions.map((s) => {
     let entity: ProgramSession["entity"] = null;
