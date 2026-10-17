@@ -187,7 +187,7 @@ function describeDirectives(
     d.addDomains.length ? `add ${d.addDomains.map(domainName).join(", ")}` : "",
     d.placeThemes.length ? `look for ${d.placeThemes.join(" and ")} places` : "",
     d.audience ? `audience: ${d.audience.replace("_", " ")}` : "",
-    ...d.rules,
+    ...d.rules.map((r) => r.replace(/[.s]+$/, "")),
   ].filter(Boolean);
   decide(
     "instructions",

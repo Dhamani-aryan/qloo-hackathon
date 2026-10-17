@@ -204,7 +204,7 @@ function AgentLog({ run }: { run: RunState }) {
         What the agent did
       </p>
       <ol className="mt-2 space-y-1.5 text-sm text-ink-2">
-        {items.slice(0, 8).map((d, i) => (
+        {items.slice(0, 12).map((d, i) => (
           <li key={i} className="flex gap-2.5">
             <span aria-hidden className="w-4 shrink-0 text-center text-bridge">
               {STEP_MARK[d.step] ?? "·"}
