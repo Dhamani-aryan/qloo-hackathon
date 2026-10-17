@@ -91,6 +91,8 @@ function rejectionGroup(reason: string): string {
   if (reason.startsWith("Unsuitable venue")) return "unsuitable venue";
   if (reason.startsWith("A bundle")) return "bundle or box set";
   if (reason.startsWith("Shares its name")) return "named like the city";
+  if (reason.startsWith("Tagged for mature")) return "mature content (under-18 group)";
+  if (reason.startsWith("Not scored")) return "not scored (Qloo busy)";
   return "other";
 }
 
