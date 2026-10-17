@@ -20,6 +20,7 @@ export const CRITIC_CHECKS = [
   "tokenism", // a tradition or group is flattened, tokenized or appropriated
   "unsupported_claims", // claims outcomes or facts not supported by the evidence
   "generic_roles", // the two communities' roles are interchangeable boilerplate
+  "organizer_rules", // breaks one of the organizer's rules or doesn't suit the stated audience
 ] as const;
 
 export const CritiqueSchema = z.object({

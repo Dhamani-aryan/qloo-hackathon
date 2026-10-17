@@ -1,4 +1,5 @@
 import type { EngineResult, Scenario, ScoredCandidate } from "@/lib/engine";
+import { NO_DIRECTIVES, type Directives } from "./directives";
 
 /**
  * The evidence brief: the ONLY cultural material the LLM may use. Entities and themes get
@@ -37,6 +38,10 @@ export interface EvidenceBrief {
     title: string;
     objective: string;
     location: string | null;
+    /** Who will attend, if the organizer said. */
+    audience: Directives["audience"];
+    /** The organizer's rules the program must follow. */
+    rules: string[];
     a: { label: string; seeds: string[] };
     b: { label: string; seeds: string[] };
   };
@@ -44,7 +49,11 @@ export interface EvidenceBrief {
   themes: BriefTheme[];
 }
 
-export function buildBrief(scenario: Scenario, result: EngineResult): EvidenceBrief {
+export function buildBrief(
+  scenario: Scenario,
+  result: EngineResult,
+  directives: Directives = NO_DIRECTIVES,
+): EvidenceBrief {
   const seedName = new Map(
     [...scenario.a.seeds, ...scenario.b.seeds].map((s) => [s.entityId, s.name]),
   );
@@ -71,6 +80,8 @@ export function buildBrief(scenario: Scenario, result: EngineResult): EvidenceBr
       title: scenario.title,
       objective: scenario.objective,
       location: scenario.location,
+      audience: directives.audience,
+      rules: directives.rules,
       a: { label: scenario.a.label, seeds: scenario.a.seeds.map((s) => s.name) },
       b: { label: scenario.b.label, seeds: scenario.b.seeds.map((s) => s.name) },
     },

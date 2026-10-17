@@ -75,7 +75,9 @@ export const PROGRAM_SYSTEM =
   "5. Do not claim it will reduce prejudice or improve cohesion; success measures should be " +
   "observable (return attendance, co-created outputs, cross-group pairs).\n" +
   "6. Never infer or mention religion, ethnicity, politics or other sensitive traits.\n" +
-  "7. Cite evidence IDs from the brief in evidenceIds.";
+  "7. Cite evidence IDs from the brief in evidenceIds.\n" +
+  "8. Follow every rule in scenario.rules and suit scenario.audience when given (e.g. no " +
+  "alcohol-centred venues or late nights for teens or all-ages groups).";
 
 export function programPrompt(brief: EvidenceBrief, bridgeRef: string, sessions = 4): string {
   return (
