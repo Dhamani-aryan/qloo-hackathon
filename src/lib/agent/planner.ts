@@ -15,6 +15,7 @@ const DOMAIN_LABELS: Record<DomainKey, string> = {
   podcast: "podcasts (live tapings, story nights)",
   place: "local places (venues, cafés, landmarks for meetups)",
   movie: "films (screenings; slower and weaker in tests)",
+  videoGame: "video games (game nights, co-op play, design jams)",
 };
 
 /**
@@ -24,9 +25,18 @@ const DOMAIN_LABELS: Record<DomainKey, string> = {
  */
 export const CORE_DOMAINS: DomainKey[] = ["tvShow", "artist", "book", "podcast", "place"];
 
-/** Films are slower and weaker in tests, so they run only when either group named a film. */
-function wantsFilms(scenario: Scenario): boolean {
-  return [...scenario.a.seeds, ...scenario.b.seeds].some((s) => s.type === "urn:entity:movie");
+/**
+ * Extended domains run up front only when a group named one (films are slower and weaker in
+ * tests); otherwise the agent may add them later in its review step.
+ */
+const EXTENDED: { domain: DomainKey; type: string }[] = [
+  { domain: "movie", type: "urn:entity:movie" },
+  { domain: "videoGame", type: "urn:entity:videogame" },
+];
+
+export function namedExtended(scenario: Scenario): DomainKey[] {
+  const types = new Set([...scenario.a.seeds, ...scenario.b.seeds].map((s) => s.type));
+  return EXTENDED.filter((x) => types.has(x.type)).map((x) => x.domain);
 }
 
 export const DomainPlanSchema = z.object({
@@ -50,7 +60,7 @@ function sortDomains<T extends { domain: DomainKey }>(list: T[]): T[] {
 export function fallbackPlan(scenario: Scenario): DomainPlan {
   const domains = [
     ...DEFAULT_DOMAINS.filter((d) => d !== "place" || scenario.location),
-    ...(wantsFilms(scenario) ? (["movie"] as DomainKey[]) : []),
+    ...namedExtended(scenario),
   ];
   return {
     source: "fallback",
@@ -92,12 +102,19 @@ export async function planDomains(llm: LlmClient, scenario: Scenario): Promise<D
         domains.push({ domain: core, reason: "Always searched: proven to surface shared tastes" });
       }
     }
-    // Films only when someone named a film; drop the LLM's film pick otherwise, so the set of
-    // domains depends only on the input.
-    const films = wantsFilms(scenario);
-    const final = domains.filter((d) => d.domain !== "movie" || films);
-    if (films && !final.some((d) => d.domain === "movie")) {
-      final.push({ domain: "movie", reason: "One of the groups named a film" });
+    // Extended domains only when someone named one; drop the LLM's other picks, so the set of
+    // domains depends only on the input. The agent can still add them after reviewing evidence.
+    const named = namedExtended(scenario);
+    const final = domains.filter(
+      (d) => CORE_DOMAINS.includes(d.domain) || named.includes(d.domain),
+    );
+    for (const domain of named) {
+      if (!final.some((d) => d.domain === domain)) {
+        final.push({
+          domain,
+          reason: `One of the groups named a ${domain === "movie" ? "film" : "video game"}`,
+        });
+      }
     }
     return { source: "llm", domains: sortDomains(final) };
   } catch {

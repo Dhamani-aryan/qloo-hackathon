@@ -10,7 +10,16 @@ export const SIDES = ["A", "B"] as const;
 export type Side = (typeof SIDES)[number];
 
 /** Output domains the engine can investigate (validated in docs/SPIKE_FINDINGS.md). */
-export const DOMAIN_KEYS = ["tvShow", "artist", "book", "podcast", "place", "movie"] as const;
+/** `movie` and `videoGame` are extended domains: searched when a group named one, or when the agent decides to. */
+export const DOMAIN_KEYS = [
+  "tvShow",
+  "artist",
+  "book",
+  "podcast",
+  "place",
+  "movie",
+  "videoGame",
+] as const;
 export type DomainKey = (typeof DOMAIN_KEYS)[number] & QlooTypeKey;
 export const DEFAULT_DOMAINS: DomainKey[] = ["tvShow", "artist", "book", "podcast", "place"];
 
@@ -81,7 +90,8 @@ export interface Evidence {
 
 // ---------- candidates and bridges ----------
 
-export type AdmissionRule = "combined-top" | "popularity-capped";
+/** `theme-focused`: places matching a theme the agent chose (Qloo `filter.tags`). */
+export type AdmissionRule = "combined-top" | "popularity-capped" | "theme-focused";
 
 export interface Candidate {
   entity: QlooEntity;
