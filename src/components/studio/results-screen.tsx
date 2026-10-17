@@ -11,6 +11,7 @@ import {
   STAGES,
   activity,
   artifacts,
+  decisions,
   domainProgress,
   stageStatuses,
   type RunState,
@@ -79,6 +80,7 @@ export function ResultsScreen({
       <div className="mt-6">
         <Progress run={run} onStop={onStop} />
       </div>
+      <AgentLog run={run} />
 
       {run.replay && !running && (
         <p className="mt-3 text-xs text-muted">
@@ -181,6 +183,37 @@ export function ResultsScreen({
         </div>
       )}
     </div>
+  );
+}
+
+const STEP_MARK: Record<string, string> = {
+  instructions: "✎",
+  plan: "→",
+  review: "◎",
+  tool: "⌕",
+  outcome: "✓",
+};
+
+/** The agent's own decisions, in plain words, as they happen. Always visible, never long. */
+function AgentLog({ run }: { run: RunState }) {
+  const items = decisions(run);
+  if (items.length === 0) return null;
+  return (
+    <section aria-label="What the agent did" className="mt-5 border-l-2 border-bridge/60 pl-4">
+      <p className="text-xs font-semibold tracking-wider text-muted uppercase">
+        What the agent did
+      </p>
+      <ol className="mt-2 space-y-1.5 text-sm text-ink-2">
+        {items.slice(0, 8).map((d, i) => (
+          <li key={i} className="flex gap-2.5">
+            <span aria-hidden className="w-4 shrink-0 text-center text-bridge">
+              {STEP_MARK[d.step] ?? "·"}
+            </span>
+            <span>{d.text}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
