@@ -37,6 +37,7 @@ export function runKey(scenario: Scenario, options: object): string {
   return cacheKey("run:v2", {
     objective: scenario.objective,
     location: scenario.location,
+    instructions: scenario.instructions,
     labels: [scenario.a.label, scenario.b.label],
     a: seeds("a"),
     b: seeds("b"),

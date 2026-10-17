@@ -56,6 +56,8 @@ export const ScenarioSchema = z.object({
   objective: z.string().default(""),
   /** Locality name used for place results, e.g. "New York City". */
   location: z.string().nullable().default(null),
+  /** Free-text organizer instructions ("all ages, free venues, about food"); the agent interprets them. */
+  instructions: z.string().max(400).default(""),
   a: CommunityProfileSchema,
   b: CommunityProfileSchema,
 });

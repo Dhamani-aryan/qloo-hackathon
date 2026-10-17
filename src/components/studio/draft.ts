@@ -40,6 +40,8 @@ export interface Draft {
   title: string;
   objective: string;
   location: string;
+  /** Optional organizer instructions for the agent. */
+  instructions: string;
   a: DraftProfile;
   b: DraftProfile;
 }
@@ -77,6 +79,7 @@ export function emptyDraft(): Draft {
     title: "Custom scenario",
     objective: "",
     location: "",
+    instructions: "",
     a: profile(""),
     b: profile(""),
   };
@@ -101,6 +104,7 @@ export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
     title: p.title,
     objective: p.objective,
     location: p.location,
+    instructions: "",
     a: profile(p.a),
     b: profile(p.b),
   };
@@ -108,7 +112,7 @@ export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
 
 export type DraftAction =
   | { type: "replace"; draft: Draft }
-  | { type: "set"; patch: Partial<Pick<Draft, "title" | "objective" | "location">> }
+  | { type: "set"; patch: Partial<Pick<Draft, "title" | "objective" | "location" | "instructions">> }
   | { type: "profile"; side: SideKey; patch: Partial<Omit<DraftProfile, "seeds">> }
   | { type: "addSeed"; side: SideKey; seed: DraftSeed }
   | { type: "updateSeed"; side: SideKey; key: string; patch: Partial<DraftSeed> }
@@ -209,6 +213,7 @@ export function toScenario(draft: Draft): Scenario {
     title: draft.title,
     objective: draft.objective.trim() || DEFAULT_OBJECTIVE,
     location: draft.location.trim() || null,
+    instructions: draft.instructions.trim(),
     a: profile("a"),
     b: profile("b"),
   };
