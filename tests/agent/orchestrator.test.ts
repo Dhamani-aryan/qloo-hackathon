@@ -24,6 +24,7 @@ describe("runAgent", () => {
       "UNDERSTAND",
       "PLAN_DOMAINS",
       "QUERY_QLOO",
+      "REVIEW",
       "DESIGN",
       "CRITIQUE",
       "EXPLAIN",
@@ -46,7 +47,9 @@ describe("runAgent", () => {
     expect(events.some((e) => e.type === "engine" && e.event.type === "qloo_query_done")).toBe(
       true,
     );
-    expect(seen.sort()).toEqual(["baseline", "critic", "notes", "plan", "program"]);
+    expect(seen.sort()).toEqual(["baseline", "critic", "notes", "plan", "program", "review"]);
+    expect(r.decisions.map((d) => d.step)).toEqual(["plan", "review"]);
+    expect(r.investigation).toMatchObject({ rounds: 1, placeThemes: [] });
   });
 
   it("stops after the engine when evidence is insufficient", async () => {
@@ -56,7 +59,7 @@ describe("runAgent", () => {
     });
     expect(r.status).toBe("insufficient_evidence");
     expect(r.program).toBeNull();
-    expect(seen).toEqual(["baseline"]);
+    expect(seen.sort()).toEqual(["baseline", "review"]);
   });
 
   it("degrades gracefully when LLM steps fail", async () => {

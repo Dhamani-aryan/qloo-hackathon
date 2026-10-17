@@ -47,6 +47,15 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
           })),
       }),
     program: () => JSON.stringify(program),
+    review: () => JSON.stringify({ assessment: "Two solid bridges; good enough.", actions: [] }),
+    directives: () =>
+      JSON.stringify({
+        skipDomains: [],
+        addDomains: [],
+        placeThemes: [],
+        audience: null,
+        rules: [],
+      }),
     critic: () =>
       JSON.stringify({
         issues: [{ check: "generic_roles", problem: "Similar roles", fix: "Distinct roles" }],
@@ -70,15 +79,19 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
     ...overrides,
   };
   const step = (req: LlmRequest) =>
-    req.system.includes("plan research")
-      ? "plan"
-      : req.system.includes("analyst")
-        ? "notes"
-        : req.system.includes("demanding reviewer")
-          ? "critic"
-          : req.system.includes("Choose a shared cultural bridge yourself")
-            ? "baseline"
-            : "program";
+    req.system.includes("research lead")
+      ? "review"
+      : req.system.includes("organizer's instructions into settings")
+        ? "directives"
+        : req.system.includes("plan research")
+          ? "plan"
+          : req.system.includes("analyst")
+            ? "notes"
+            : req.system.includes("demanding reviewer")
+              ? "critic"
+              : req.system.includes("Choose a shared cultural bridge yourself")
+                ? "baseline"
+                : "program";
   const llm: LlmClient = {
     provider: "test",
     model: "test",
