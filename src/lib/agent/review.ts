@@ -45,7 +45,9 @@ const SYSTEM =
   "- focus_places: look for places in the city with a theme (a short Qloo place-tag word such " +
   'as "jazz club", "bookstore", "park", "food"), chosen from the groups\' shared themes or the ' +
   "organizer's instructions.\n" +
-  "Return no actions when the evidence is already strong. Never infer sensitive traits.";
+  "Rules about cost, timing, age or accessibility are handled when the plan is written, not " +
+  "by searching, so don't search for venues just to satisfy them. Return no actions when the " +
+  "evidence is already strong. Never infer sensitive traits.";
 
 export function reviewPrompt(
   scenario: Scenario,
