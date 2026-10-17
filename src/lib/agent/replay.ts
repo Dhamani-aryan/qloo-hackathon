@@ -34,7 +34,7 @@ export function runKey(scenario: Scenario, options: object): string {
       .filter((s) => s.confirmed)
       .map((s) => [s.entityId, s.weight])
       .sort();
-  return cacheKey("run:v1", {
+  return cacheKey("run:v2", {
     objective: scenario.objective,
     location: scenario.location,
     labels: [scenario.a.label, scenario.b.label],
