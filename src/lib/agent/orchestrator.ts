@@ -279,16 +279,25 @@ export function runAgent(
         }),
       ]),
     );
-    result.plan = plan;
-    result.directives = directives;
-    out.push({ type: "plan", plan });
-    if (scenario.instructions.trim()) describeDirectives(directives, decide);
-    checkCancelled();
-
     const domains = applyDirectives(
       plan.domains.map((d) => d.domain),
       directives,
     );
+    // The plan as it will actually run, after the organizer's skips and additions.
+    result.plan = {
+      ...plan,
+      domains: domains.map(
+        (domain) =>
+          plan.domains.find((d) => d.domain === domain) ?? {
+            domain,
+            reason: "Asked for in your instructions",
+          },
+      ),
+    };
+    result.directives = directives;
+    out.push({ type: "plan", plan: result.plan });
+    if (scenario.instructions.trim()) describeDirectives(directives, decide);
+    checkCancelled();
     const placeThemes: PlaceTheme[] = [];
     const triedThemes: string[] = [];
     const addTheme = async (query: string) => {
@@ -356,7 +365,12 @@ export function runAgent(
             return;
           }
           decide("review", review.assessment);
-          if (review.actions.length === 0) return;
+          if (review.actions.length === 0) {
+            if (review.wanted > 0) {
+              decide("outcome", "No new searches left to try, so these bridges stand.");
+            }
+            return;
+          }
 
           const before = { domains: domains.length, themes: placeThemes.length };
           for (const a of review.actions) {
@@ -380,11 +394,14 @@ export function runAgent(
           );
           rounds++;
           const kept = betterResult(engine, next);
+          const [was, now] = [strongCount(engine), strongCount(next)];
           decide(
             "outcome",
-            kept === next
-              ? `Now ${strongCount(next)} strong bridge${strongCount(next) === 1 ? "" : "s"} (was ${strongCount(engine)}).`
-              : "The extra search didn't beat the earlier bridges, so they stay.",
+            kept !== next
+              ? "The extra search didn't beat the earlier bridges, so they stay."
+              : now > was
+                ? `Now ${now} strong bridge${now === 1 ? "" : "s"} (was ${was}).`
+                : "Found higher-scoring bridges, so the results were updated.",
           );
           if (kept !== next) {
             // Reproduce exactly what produced the kept result.

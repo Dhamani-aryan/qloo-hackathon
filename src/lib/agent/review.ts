@@ -85,9 +85,23 @@ export function reviewPrompt(
         .map((t) => t.name)
         .join(", ") || "(none)"
     }`,
+    placeRejections(engine),
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+/** Why places were ruled out (e.g. jazz clubs that are bars), so the agent can adjust. */
+function placeRejections(engine: EngineResult): string {
+  const reasons = new Map<string, number>();
+  for (const r of engine.rejections) {
+    if (r.domain !== "place") continue;
+    const key = r.reason.replace(/\s*\(.*\)$/, "");
+    reasons.set(key, (reasons.get(key) ?? 0) + 1);
+  }
+  if (reasons.size === 0) return "";
+  const top = [...reasons].sort((x, y) => y[1] - x[1]).slice(0, 4);
+  return `Places ruled out: ${top.map(([reason, n]) => `${n} × ${reason}`).join("; ")}.`;
 }
 
 /** Keep only actions the agent can actually take right now. */
@@ -121,7 +135,7 @@ export async function reviewEvidence(
   searched: DomainKey[],
   directives: Directives,
   triedThemes: string[],
-): Promise<{ assessment: string; actions: ReviewAction[] }> {
+): Promise<{ assessment: string; actions: ReviewAction[]; wanted: number }> {
   const { data } = await generateStructured(llm, {
     label: "review",
     schema: ReviewSchema,
@@ -131,6 +145,7 @@ export async function reviewEvidence(
   return {
     assessment: data.assessment,
     actions: validActions(data, scenario, searched, directives, triedThemes),
+    wanted: data.actions.length,
   };
 }
 
