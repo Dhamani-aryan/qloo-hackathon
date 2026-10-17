@@ -57,7 +57,11 @@ export async function writeInvitations(
       `${brief.scenario.a.label}, B for ${brief.scenario.b.label}.`,
   });
   const removedTitles: string[] = [];
-  const clean = titleGuard(brief, removedTitles);
+  // The plan's own title and session titles are fine to quote.
+  const clean = titleGuard(brief, removedTitles, [
+    program.title,
+    ...program.sessions.map((s) => s.title),
+  ]);
   const guard = (i: Invitation): Invitation => ({
     subject: clean(i.subject),
     message: clean(i.message),

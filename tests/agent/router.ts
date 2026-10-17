@@ -50,7 +50,10 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
     invitations: () =>
       JSON.stringify({
         A: { subject: "For the film club", message: 'If you love "SA1", try "Shared Comedy".' },
-        B: { subject: "For the arts group", message: 'Fans of "Made-up Film" welcome.' },
+        B: {
+          subject: "For the arts group",
+          message: 'Fans of "Made-up Film" welcome to "Shared Nights (revised)".',
+        },
       }),
     review: () => JSON.stringify({ assessment: "Two solid bridges; good enough.", actions: [] }),
     directives: () =>

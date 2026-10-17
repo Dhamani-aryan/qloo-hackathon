@@ -95,16 +95,21 @@ function quotedTitles(s: string): string[] {
 
 /**
  * Returns a function that replaces quoted titles the evidence doesn't contain. Known names are
- * the brief's entities and themes plus both groups' own favourites. Removed titles are pushed
- * onto `removed`.
+ * the brief's entities and themes plus both groups' own favourites, and any `alsoKnown` (e.g.
+ * the plan's own title). Removed titles are pushed onto `removed`.
  */
-export function titleGuard(brief: EvidenceBrief, removed: string[]): (s: string) => string {
+export function titleGuard(
+  brief: EvidenceBrief,
+  removed: string[],
+  alsoKnown: string[] = [],
+): (s: string) => string {
   const knownNames = new Set(
     [
       ...brief.entities.map((e) => e.name),
       ...brief.scenario.a.seeds,
       ...brief.scenario.b.seeds,
       ...brief.themes.map((t) => t.name),
+      ...alsoKnown,
     ].map((n) => n.toLowerCase()),
   );
   return (s: string) => {
