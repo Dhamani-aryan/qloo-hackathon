@@ -18,7 +18,7 @@ export const DirectivesSchema = z.object({
   /** Place themes to search in the city, as short Qloo-style tag words ("jazz club", "food"). */
   placeThemes: z.array(z.string().min(2).max(40)).max(2),
   /** Who will attend, if the organizer said. */
-  audience: z.enum(["all_ages", "teens", "adults", "seniors", "mixed"]).nullable(),
+  audience: z.enum(["all_ages", "teens", "adults", "seniors"]).nullable(),
   /** Concrete rules for the plan, rephrased as short imperatives ("Keep every session free"). */
   rules: z.array(z.string().min(3).max(140)).max(5),
 });
@@ -40,7 +40,9 @@ const SYSTEM =
   ". placeThemes are short venue or activity words to look up as Qloo place tags (e.g. " +
   '"jazz club", "bookstore", "food", "park", "art gallery"); use them only when the organizer ' +
   "asks for a kind of place or activity. rules are short imperatives the program must follow " +
-  "(budget, timing, accessibility, age, language). Never add rules about identity, religion, " +
+  "(budget, timing, accessibility, age, language). If anyone attending is under 18, audience " +
+  'is "teens" (only young people) or "all_ages" (a mix). Never add rules about identity, ' +
+  "religion, " +
   "ethnicity or politics.";
 
 export async function interpretInstructions(
