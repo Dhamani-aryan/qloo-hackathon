@@ -126,13 +126,25 @@ export function HomeScreen({
         <GroupBox side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
       </div>
 
-      <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-        <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 sm:w-72">
+      <div className="mt-6 flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-center">
+        <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 md:w-60">
           <span className="text-sm text-muted">City</span>
           <input
             value={draft.location}
             onChange={(e) => dispatch({ type: "set", patch: { location: e.target.value } })}
             placeholder="e.g. New York City"
+            className="min-w-0 flex-1 bg-transparent outline-none"
+          />
+        </label>
+        <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 md:w-96">
+          <span className="text-sm whitespace-nowrap text-muted">Notes</span>
+          <input
+            value={draft.instructions}
+            onChange={(e) =>
+              dispatch({ type: "set", patch: { instructions: e.target.value.slice(0, 400) } })
+            }
+            placeholder="Optional: all ages, free, about food…"
+            aria-label="Notes for the agent (optional)"
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
