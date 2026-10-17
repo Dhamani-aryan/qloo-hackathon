@@ -8,14 +8,14 @@ This guide starts with short summaries and then goes into detail. If you only re
 
 ## What it is, in one paragraph
 
-Common Ground helps someone who runs community programs (a university, library, museum, NGO) bring **two different groups** together. You tell it what each group loves: a few artists, films, TV shows, books or places. It asks **Qloo** (a company that knows which cultural things people like together) to find things **both** groups love that are **not just famous things everybody likes**. Then an **AI** turns the best of those into a ready-to-run **4-session plan**. Every recommendation can be traced back to Qloo's data, and the app shows what the same AI would have produced *without* Qloo.
+Common Ground helps someone who runs community programs (a university, library, museum, NGO) bring **two different groups** together. You tell it what each group loves: a few artists, films, TV shows, books or places. It asks **Qloo** (a company that knows which cultural things people like together) to find things **both** groups love that are **not just famous things everybody likes**. An **AI agent** reviews that evidence, searches further on its own when it's thin or when the organizer asked for something specific, and turns the best bridges into a ready-to-run **4-session plan** with an **invitation for each group**. Every recommendation can be traced back to Qloo's data, and the app shows what the same AI would have produced *without* Qloo.
 
 ## The two pages, in one line each
 
 | Page | What you do there |
 |---|---|
-| **Home** | Two boxes, *Group 1* and *Group 2*. Type a few things each group loves (press Enter after each), add a city, and click **Find common ground →**. Qloo matches every name to a real entry as you type. |
-| **Results** | One page, top to bottom: a progress line while it works, then *what everyone likes* vs *what these two groups share*, the top bridges, a 4-session plan, and "Why Qloo matters". |
+| **Home** | Two boxes, *Group 1* and *Group 2*. Type a few things each group loves (press Enter after each), add a city, optionally add **Notes** for the agent ("all ages, keep it free, about food"), and click **Find common ground →**. Qloo matches every name to a real entry as you type. |
+| **Results** | One page, top to bottom: a progress line, **What the agent did** (its decisions, in plain words), *what everyone likes* vs *what these two groups share*, the top bridges, a 4-session plan, an invitation for each group, and "Why Qloo matters". |
 
 ## The parts under the hood, in one line each
 
@@ -23,12 +23,13 @@ Common Ground helps someone who runs community programs (a university, library, 
 |---|---|---|
 | **Qloo connection** | Talks to Qloo's API: look up names, get recommendations, compare two groups. | `src/lib/qloo/` |
 | **Bridge engine** | Pure maths, no AI. Finds candidates, scores them for each group, and ranks the bridges. | `src/lib/engine/` |
-| **AI agent** | Uses ChatGPT to plan the search, explain bridges, write the plan and critique it. | `src/lib/agent/`, `src/lib/llm/` |
+| **AI agent** | Uses ChatGPT to read the organizer's notes, review the evidence and decide whether to search further (with tools), then explain bridges, write and critique the plan, and write invitations. | `src/lib/agent/`, `src/lib/llm/` |
 | **Evidence guard** | Checks every name the AI uses against Qloo's data and removes anything invented. | `src/lib/agent/program.ts` |
 | **"AI alone" version** | The same task given to ChatGPT with no Qloo data, so you can compare. | `src/lib/agent/baseline.ts` |
 | **Participant links** | Optional: each group fills in its own favourites on a phone link. | `src/lib/intake/`, `/join/...` |
 | **Cache** | Saves finished runs so a repeat shows in about 3 s instead of about 70 s. | `src/lib/cache/`, `src/lib/agent/replay.ts` |
 | **Website** | The two pages above. | `src/components/`, `src/app/` |
+| **MCP server** | Lets Claude, ChatGPT or any agent call Common Ground as a tool (`find_common_ground`). See [MCP.md](MCP.md). | `src/lib/server/mcp.ts`, `/api/mcp` |
 
 ---
 
@@ -62,7 +63,7 @@ Here's the default example (a university film & music club vs a neighbourhood ar
 
 **Step 1: Read both groups (instant).** The app takes the matched favourites, up to 8 per group.
 
-**Step 2: Choose what to explore (about 7 s).** The same kinds are always searched: TV shows, artists, books, podcasts and local places, plus films when a group named a film. This is fixed so the same input always gives the same bridges. ChatGPT only writes a one-line reason for each kind.
+**Step 2: Choose what to explore (about 7 s).** The same kinds are always searched: TV shows, artists, books, podcasts and local places, plus films or video games when a group named one. This is fixed so the same input always gives the same bridges. If the organizer left **notes**, ChatGPT turns them into settings that code applies: kinds to skip or add, place themes to look for ("jazz club"), the audience (under-18s switch on a filter for anything Qloo tags *Mature*), and rules the plan must follow ("keep it free").
 
 **Step 3: Search Qloo (about 9 s, no AI).** For each kind it makes 4 Qloo calls, about 25 calls in total:
 
@@ -75,6 +76,8 @@ It also asks Qloo's **Compare** feature for **themes** both groups share (e.g. "
 
 **Step 4: Score and rank (instant, no AI).** Every candidate gets a support percentile for each group and a popularity value. Weak, one-sided, too-niche or sensitive items are rejected, with a reason. The best three are selected (section 5).
 
+**Step 4b: Review and dig deeper (0–25 s, AI + Qloo).** The agent looks at what it found. With three strong bridges and no notes it moves on. Otherwise it can use two tools, for up to two rounds: **search another kind of culture** (films, video games) or **look for places on a theme** (it finds the matching Qloo place tag, then searches places in the city with that tag). New candidates are scored by the same maths, and the agent keeps them only if they beat what it had. Every decision appears under **What the agent did**.
+
 **Step 5: Design the plan (about 35 s, AI).** In parallel, ChatGPT:
 - writes a short note for each bridge (an activity idea and the main thing to watch out for);
 - writes the 4-session plan.
@@ -83,7 +86,7 @@ It may **only** use the bridges and runners-up Qloo found. It refers to them by 
 
 **Step 6: Review and improve it (about 25 s, AI).** A second pass checks the plan against 10 rules: is one group just watching the other? does it need expertise? is it a one-off? are the two groups' roles copy-pasted? and so on. It then fixes the plan.
 
-**Step 7: Compare with AI alone (runs in parallel from the start).** The same goal and the same favourites go to ChatGPT **without any Qloo data**, so you can see the difference at the end.
+**Step 7: Invitations and the comparison.** ChatGPT writes one short invitation per group, opening from that group's own favourites (checked by the same guard as the plan). In parallel from the start, the comparison runs: The same goal and the same favourites go to ChatGPT **without any Qloo data**, so you can see the difference at the end.
 
 **Total:** about 70 s live, or about 3 s when the same case was run before (the result is replayed from the cache).
 
@@ -112,7 +115,7 @@ For each candidate:
    - below 30th → **too niche** (hard to get people to come);
    - in between → **discovered**, and the less mainstream it is, the bigger the bonus (a factor between 0.5 and 1).
 5. **Bridge Potential (0–100)** = 70% × (bilateral × novelty) + 20% × evidence variety + 10% × "it's a local place".
-6. **Pick up to three:** the best from each kind first (so you don't get three TV shows), then the next best overall. A bridge is only shown if its two-sided score (step 3) is at least 55; weaker ones go to "also in the running". If none pass, the single best is shown.
+6. **Pick up to three:** the best from each kind first (so you don't get three TV shows), then the next best overall. A bridge is only shown if **both** groups put it at the 50th percentile or above and its two-sided score (step 3) is at least 55; weaker ones go to "also in the running". If none pass, the single best is shown.
 
 **Safety filters** run before scoring. Items whose *title or category* is about religion or politics are removed. Places that are hotels, banquet halls, places of worship, bars or breweries, or government buildings are removed as venues, and so are box sets and places named just like the city. Every rejection is listed with its reason.
 
