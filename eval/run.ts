@@ -24,6 +24,7 @@ import {
   type Scenario,
 } from "../src/lib/engine";
 import { createLimiter } from "../src/lib/engine/context";
+import { MATURE_TAG } from "../src/lib/engine/filters";
 import { getLlm } from "../src/lib/llm";
 import { createQlooClient } from "../src/lib/qloo";
 import { CASES, type EvalCase } from "./cases";
@@ -69,6 +70,15 @@ export interface CaseResult {
   baselineAvailable: boolean;
   reproducible: boolean | null;
   warnings: string[];
+  /** What the agent decided and did beyond the fixed search. */
+  agent: {
+    decisions: number;
+    reviewRounds: number;
+    addedDomains: string[];
+    placeThemes: string[];
+  };
+  /** For cases with organizer notes: was each checkable expectation met? */
+  notes: { text: string; checks: { name: string; passed: boolean }[] } | null;
 }
 
 const limit = createLimiter(3);
@@ -109,6 +119,7 @@ async function buildScenario(c: EvalCase, qloo: ReturnType<typeof createQlooClie
     title: c.context,
     objective: c.objective,
     location: c.location,
+    instructions: c.notes ?? "",
     a: { side: "A", label: c.a.label, source: "organizer", seeds: await side(c.a.seeds) },
     b: { side: "B", label: c.b.label, source: "organizer", seeds: await side(c.b.seeds) },
   });
@@ -184,9 +195,12 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
 
   // Reproducibility: the deterministic engine, rerun on the same inputs and domains.
   let reproducible: boolean | null = null;
-  if (r.engine && r.plan) {
+  // It replays exactly what the agent searched, including any extra searches it chose.
+  if (r.engine && r.investigation) {
     const again = await runBridgeEngine(qloo, scenario, {
-      domains: r.plan.domains.map((d) => d.domain),
+      domains: r.investigation.domains,
+      placeThemes: r.investigation.placeThemes,
+      familyFriendly: ["all_ages", "teens"].includes(r.directives.audience ?? ""),
     });
     const ids = (xs: { entity: { id: string } }[]) =>
       xs
@@ -212,6 +226,39 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
       JSON.stringify({ commonGround: p.ourFirst ? "Plan 1" : "Plan 2" }),
     );
   }
+
+  const shown = [...(r.engine?.bridges ?? []), ...(r.engine?.runnersUp ?? [])];
+  const checks: { name: string; passed: boolean }[] = [];
+  for (const d of c.expect?.skips ?? []) {
+    checks.push({
+      name: `no ${d} searched or suggested`,
+      passed: !r.investigation?.domains.includes(d) && !shown.some((x) => x.domain === d),
+    });
+  }
+  if (c.expect?.familyFriendly) {
+    checks.push({
+      name: "treated as an under-18 group (mature filter on)",
+      passed: ["all_ages", "teens"].includes(r.directives.audience ?? ""),
+    });
+    checks.push({
+      name: "nothing tagged Mature suggested",
+      passed: !shown.some((x) => x.entity.tags.some((t) => t.id === MATURE_TAG)),
+    });
+  }
+  if (c.expect?.placeTheme) {
+    const re = c.expect.placeTheme;
+    checks.push({
+      name: `searched ${re.source} places`,
+      passed: Boolean(r.investigation?.placeThemes.some((t) => re.test(t.name))),
+    });
+  }
+  if (c.notes) {
+    checks.push({
+      name: "notes turned into rules the plan must follow",
+      passed: Boolean(r.program) && r.directives.rules.length > 0,
+    });
+  }
+  const planDomains = r.plan?.domains.map((d) => d.domain) ?? [];
 
   const pr = r.program;
   return {
@@ -261,6 +308,13 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
     baselineAvailable: Boolean(r.baseline),
     reproducible,
     warnings: r.warnings,
+    agent: {
+      decisions: r.decisions.length,
+      reviewRounds: r.investigation ? r.investigation.rounds - 1 : 0,
+      addedDomains: (r.investigation?.domains ?? []).filter((d) => !planDomains.includes(d)),
+      placeThemes: (r.investigation?.placeThemes ?? []).map((t) => t.name),
+    },
+    notes: c.notes ? { text: c.notes, checks } : null,
   };
 }
 
@@ -276,6 +330,16 @@ async function main() {
       console.log(
         `${r.status} in ${(r.totalMs / 1000).toFixed(0)}s · bridges: ${r.bridges.map((b) => b.name).join(", ") || "none"} · obvious: ${r.obvious?.name ?? "-"} · reproducible: ${r.reproducible}`,
       );
+      if (r.agent.reviewRounds || r.agent.placeThemes.length) {
+        console.log(
+          `   agent: ${r.agent.reviewRounds} extra search round(s); added ${r.agent.addedDomains.join(", ") || "no kinds"}; place themes ${r.agent.placeThemes.join(", ") || "none"}`,
+        );
+      }
+      if (r.notes) {
+        console.log(
+          `   notes: ${r.notes.checks.map((x) => `${x.passed ? "✓" : "✗"} ${x.name}`).join(" · ")}`,
+        );
+      }
       if (r.ablation) {
         console.log(
           `   ablation: Qloo discovered ${r.ablation.ours.discovered}, baseline reused ${r.ablation.baseline.reusedSeeds} / unverified ${r.ablation.baseline.unverified}`,

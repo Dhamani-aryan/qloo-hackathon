@@ -1,3 +1,4 @@
+import type { DomainKey } from "../src/lib/engine";
 import type { QlooTypeKey } from "../src/lib/qloo";
 
 /**
@@ -14,6 +15,9 @@ export interface EvalCase {
   location: string;
   objective: string;
   heldOut?: boolean;
+  /** Organizer notes for the agent, and what following them must look like. */
+  notes?: string;
+  expect?: { skips?: DomainKey[]; familyFriendly?: boolean; placeTheme?: RegExp };
   a: { label: string; seeds: [string, QlooTypeKey][] };
   b: { label: string; seeds: [string, QlooTypeKey][] };
 }
@@ -182,3 +186,26 @@ export const CASES: EvalCase[] = [
     },
   },
 ];
+
+/**
+ * The same groups with organizer notes: does the agent follow them? Scored on what can be
+ * checked in code: skipped kinds never appear, under-18 groups get the mature filter, and a
+ * requested kind of place is actually searched.
+ */
+const base = (id: string) => CASES.find((c) => c.id === id)!;
+CASES.push(
+  {
+    ...base("chicago-games-books"),
+    id: "chicago-notes-teens-no-podcasts",
+    context: "Hobby groups, with notes",
+    notes: "Some members are 14 to 17. No podcasts please, and every session must be free.",
+    expect: { skips: ["podcast"], familyFriendly: true },
+  },
+  {
+    ...base("london-skate-jazz"),
+    id: "london-notes-live-jazz",
+    context: "Youth culture ↔ older enthusiasts, with notes",
+    notes: "Adults only. We'd love it to centre on a live jazz venue in the city.",
+    expect: { placeTheme: /jazz/i },
+  },
+);
