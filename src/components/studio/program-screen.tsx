@@ -12,6 +12,8 @@ import { deliveryChecks } from "@/lib/agent/readiness";
 export interface ProgramVersion {
   program: Program;
   critique: CritiqueIssue[];
+  /** The review pass ran out of time; this is the guarded first draft. */
+  critiqueSkipped?: boolean;
 }
 
 const CHECK_LABELS: Record<string, string> = {
@@ -57,11 +59,15 @@ export function PlanSection({
     setBusy(bridgeRef);
     setError(null);
     try {
-      const r = await postJson<{ program: Program; critique: CritiqueIssue[] }>("/api/program", {
+      const r = await postJson<ProgramVersion>("/api/program", {
         briefId,
         bridgeRef,
       });
-      onRegenerated({ program: r.program, critique: r.critique });
+      onRegenerated({
+        program: r.program,
+        critique: r.critique,
+        critiqueSkipped: r.critiqueSkipped,
+      });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -96,6 +102,11 @@ export function PlanSection({
           <Button variant="link" onClick={() => window.print()}>
             Print
           </Button>
+          {version.critiqueSkipped && (
+            <span className="text-xs text-warn">
+              The review pass didn&apos;t finish in time; this is the checked first draft.
+            </span>
+          )}
           <span className={cx("text-xs", removed ? "text-warn" : "text-muted")}>
             {removed === 0
               ? `${program.sessions.filter((s) => s.entity).length}/${program.sessions.length} sessions use Qloo entity anchors · activities are proposed by the agent`
