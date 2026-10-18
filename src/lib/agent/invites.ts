@@ -27,7 +27,7 @@ const SYSTEM =
   "Keep it under 120 words, plain and specific, no hype, no emojis, no diversity framing, " +
   "and never mention religion, ethnicity, politics or other sensitive traits. Put titles in " +
   '"double quotes". Only name works, artists and places that appear in the brief or the plan. ' +
-  "Follow scenario.rules (e.g. say it is free if the rules require that).";
+  "Follow scenario.rules. Use the entity descriptions rather than inferring features from a name. Do not promise venue access, supplied equipment, free admission, dates or bookings that have not been confirmed; use placeholders and describe the message as a draft when details are unresolved.";
 
 export async function writeInvitations(
   llm: LlmClient,

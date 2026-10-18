@@ -16,7 +16,7 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
     objective: "Recurring shared making",
     bridgeRef: "B1",
     format: "Monthly",
-    sessions: [session(1, "B1"), session(2, "B2"), session(3, "B3"), session(4, null)],
+    sessions: [session(1, "B1"), session(2, "B2"), session(3, "B1"), session(4, null)],
     venueType: "Community room",
     partnerTypes: [],
     accessibility: [],
@@ -52,7 +52,7 @@ export function routerLlm(overrides: Partial<Record<string, (req: LlmRequest) =>
         A: { subject: "For the film club", message: 'If you love "SA1", try "Shared Comedy".' },
         B: {
           subject: "For the arts group",
-          message: 'Fans of "Made-up Film" welcome to "Shared Nights (revised)".',
+          message: 'Fans of "SB1" welcome to "Shared Nights (revised)".',
         },
       }),
     review: () => JSON.stringify({ assessment: "Two solid bridges; good enough.", actions: [] }),

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { generateStructured } from "@/lib/llm/structured";
 import type { LlmClient } from "@/lib/llm/types";
 import { briefForPrompt, knownEvidenceIds, type EvidenceBrief } from "./brief";
+import { titleGuard } from "./program";
 
 /**
  * Interpretation notes for each selected bridge: how it becomes a shared activity, its main
@@ -32,7 +33,7 @@ export const NOTES_SYSTEM =
   "language, or one group leading the other), whyBeatsObvious (compare with the obvious bridge " +
   "O1 using the support and popularity numbers). Use ONLY facts in the brief; do not name any " +
   "work, artist, or place that is not in it. Cite the evidence IDs you relied on. Never infer " +
-  "identity, religion, ethnicity, politics or other sensitive traits.";
+  "identity, religion, ethnicity, politics or other sensitive traits. Use retrieved descriptions and categories; never infer a venue’s physical features or facilities from its name. Explain what specific property changes the activity. A place is not a confirmed venue. Do not put evidence codes in prose; put them only in evidenceIds. Familiar options may be useful too; do not dismiss them merely because they are popular.";
 
 export async function writeBridgeNotes(
   llm: LlmClient,
@@ -51,13 +52,32 @@ export async function writeBridgeNotes(
 
   const known = knownEvidenceIds(brief);
   const byRef = new Map(bridges.map((b) => [b.ref, b]));
+  const cleanTitles = titleGuard(brief, []);
+  const clean = (value: string) =>
+    cleanTitles(value)
+      .replace(/\[ev_[^\]]+\]/g, "")
+      .replace(
+        /\b[BROT]\d+\b/g,
+        (ref) =>
+          brief.entities.find((e) => e.ref === ref)?.name ??
+          brief.themes.find((t) => t.ref === ref)?.name ??
+          "the shared activity",
+      )
+      .trim();
   return data.notes.flatMap((n) => {
     const bridge = byRef.get(n.ref);
     if (!bridge) return [];
     const cited = n.evidenceIds.filter((id) => known.has(id));
     // A note whose citations are all invalid still concerns its bridge; cite the bridge's own evidence.
     return [
-      { ...n, evidenceIds: cited.length ? cited : bridge.evidenceIds, kind: "interpretation" },
+      {
+        ...n,
+        activityFit: clean(n.activityFit),
+        mainFriction: clean(n.mainFriction),
+        whyBeatsObvious: clean(n.whyBeatsObvious),
+        evidenceIds: cited.length ? cited : bridge.evidenceIds,
+        kind: "interpretation",
+      },
     ];
   });
 }

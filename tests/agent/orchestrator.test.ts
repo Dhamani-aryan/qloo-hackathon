@@ -56,9 +56,9 @@ describe("runAgent", () => {
       "program",
       "review",
     ]);
-    // Invitations go through the evidence guard: a made-up title is removed.
+    // Clean invitations are eligible for replay caching.
     expect(r.invitations?.A.message).toBe('If you love "SA1", try "Shared Comedy".');
-    expect(r.invitations?.removedTitles).toEqual(["Made-up Film"]);
+    expect(r.invitations?.removedTitles).toEqual([]);
     expect(r.decisions.map((d) => d.step)).toEqual(["plan", "review"]);
     expect(r.investigation).toMatchObject({ rounds: 1, placeThemes: [] });
   });

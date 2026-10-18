@@ -1,5 +1,8 @@
 import type { EngineResult, Scenario, ScoredCandidate } from "@/lib/engine";
 import { NO_DIRECTIVES, type Directives } from "./directives";
+import { DEFAULT_SETTINGS, type PlanningSettings } from "@/lib/planning";
+import { assessActivityFit, type ActivityFit } from "@/lib/engine/fit";
+import { isStrongBridge } from "@/lib/engine/select";
 
 /**
  * The evidence brief: the ONLY cultural material the LLM may use. Entities and themes get
@@ -23,6 +26,10 @@ export interface BriefEntity {
   supportedByA: string[];
   supportedByB: string[];
   evidenceIds: string[];
+  description: string | null;
+  categories: string[];
+  activityFit: ActivityFit;
+  unknowns: string[];
 }
 
 export interface BriefTheme {
@@ -42,6 +49,7 @@ export interface EvidenceBrief {
     audience: Directives["audience"];
     /** The organizer's rules the program must follow. */
     rules: string[];
+    settings: PlanningSettings;
     a: { label: string; seeds: string[] };
     b: { label: string; seeds: string[] };
   };
@@ -73,6 +81,20 @@ export function buildBrief(
     supportedByA: names(c.supportingSeeds.A),
     supportedByB: names(c.supportingSeeds.B),
     evidenceIds: c.evidenceIds,
+    description: c.entity.description?.slice(0, 700) ?? null,
+    categories: c.entity.tags
+      .filter((t) => /:(genre|category):/.test(t.id))
+      .slice(0, 6)
+      .map((t) => t.name ?? t.id),
+    activityFit: assessActivityFit(c, scenario.settings),
+    unknowns:
+      c.domain === "place"
+        ? [
+            "Group access, permission, availability, admission price and capacity have not been verified.",
+          ]
+        : [
+            "Media availability, licensing and participant interest require organizer confirmation.",
+          ],
   });
 
   return {
@@ -82,12 +104,13 @@ export function buildBrief(
       location: scenario.location,
       audience: directives.audience,
       rules: directives.rules,
+      settings: scenario.settings ?? DEFAULT_SETTINGS,
       a: { label: scenario.a.label, seeds: scenario.a.seeds.map((s) => s.name) },
       b: { label: scenario.b.label, seeds: scenario.b.seeds.map((s) => s.name) },
     },
     entities: [
       ...result.bridges.map((c, i) => entity(c, "bridge", `B${i + 1}`)),
-      ...result.runnersUp.map((c, i) => entity(c, "runner_up", `R${i + 1}`)),
+      ...result.runnersUp.filter(isStrongBridge).map((c, i) => entity(c, "runner_up", `R${i + 1}`)),
       ...(result.obvious ? [entity(result.obvious, "obvious", "O1")] : []),
     ],
     themes: result.themes.map((t, i) => ({

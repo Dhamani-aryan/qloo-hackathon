@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DEFAULT_DOMAINS, DOMAIN_KEYS, type DomainKey, type Scenario } from "@/lib/engine";
 import { generateStructured } from "@/lib/llm/structured";
 import type { LlmClient } from "@/lib/llm/types";
+import { DEFAULT_SETTINGS } from "@/lib/planning";
 
 /**
  * Step 1 of the agent: choose which Qloo domains to investigate for this scenario.
@@ -36,6 +37,9 @@ const EXTENDED: { domain: DomainKey; type: string }[] = [
 
 export function namedExtended(scenario: Scenario): DomainKey[] {
   const types = new Set([...scenario.a.seeds, ...scenario.b.seeds].map((s) => s.type));
+  const activity = scenario.settings?.activity ?? DEFAULT_SETTINGS.activity;
+  if (activity === "watch") types.add("urn:entity:movie");
+  if (activity === "play") types.add("urn:entity:videogame");
   return EXTENDED.filter((x) => types.has(x.type)).map((x) => x.domain);
 }
 

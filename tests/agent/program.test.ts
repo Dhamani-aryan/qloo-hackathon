@@ -60,7 +60,7 @@ describe("guardProgram", () => {
     expect(p.sessions[1].entity).toBeNull();
     expect(p.guard.removedEvidenceIds).toEqual(["ev_fake"]);
     expect(p.guard.removedTitles).toEqual(["Totally Invented Film"]);
-    expect(p.sessions[3].activity).toContain("[title removed: not in Qloo evidence]");
+    expect(p.sessions[3].activity).toContain("the shared activity");
     expect(p.guard.warnings).toEqual(["Only 1 session(s) anchored to a Qloo entity"]);
   });
 
@@ -76,6 +76,11 @@ describe("guardProgram", () => {
     expect(guardProgram(d, brief).guard.warnings).toContain(
       "Main bridge B1 does not anchor any session",
     );
+  });
+  it("does not accept an invented sequel merely because its title contains a known title", () => {
+    const d = draft();
+    d.sessions[0].activity = 'Watch "Shared Comedy II"';
+    expect(guardProgram(d, brief).guard.removedTitles).toEqual(["Shared Comedy II"]);
   });
 });
 

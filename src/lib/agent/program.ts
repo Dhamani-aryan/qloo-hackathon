@@ -77,7 +77,10 @@ export const PROGRAM_SYSTEM =
   "6. Never infer or mention religion, ethnicity, politics or other sensitive traits.\n" +
   "7. Cite evidence IDs from the brief in evidenceIds.\n" +
   "8. Follow every rule in scenario.rules and suit scenario.audience when given (e.g. no " +
-  "alcohol-centred venues or late nights for teens or all-ages groups).";
+  "alcohol-centred venues or late nights for teens or all-ages groups).\n" +
+  "9. Entity descriptions and categories are retrieved facts. Never infer architecture, food, facilities, themes or history from a name. State unknown facts as needing confirmation. A restaurant is not automatically a heritage site or workshop venue.\n" +
+  "10. Explain which specific described property of each anchor changes the activity. Do not reuse a generic observe-make-showcase template for every kind of culture. Suit scenario.settings.activity and the existing venue when specified.\n" +
+  "11. Do not promise free admission, equipment, capacity or permissions. Where unverified, explicitly require confirmation and give a no-purchase, in-room alternative. Use full entity names in user-facing prose, never B1/R2/T1 codes.";
 
 export function programPrompt(brief: EvidenceBrief, bridgeRef: string, sessions = 4): string {
   return (
@@ -103,6 +106,11 @@ export function titleGuard(
   removed: string[],
   alsoKnown: string[] = [],
 ): (s: string) => string {
+  const normalize = (value: string) =>
+    value
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, "");
   const knownNames = new Set(
     [
       ...brief.entities.map((e) => e.name),
@@ -110,18 +118,15 @@ export function titleGuard(
       ...brief.scenario.b.seeds,
       ...brief.themes.map((t) => t.name),
       ...alsoKnown,
-    ].map((n) => n.toLowerCase()),
+    ].map(normalize),
   );
   return (s: string) => {
     let out = s;
     for (const title of quotedTitles(s)) {
-      const lower = title.toLowerCase();
-      const known = [...knownNames].some(
-        (n) => n === lower || n.includes(lower) || lower.includes(n),
-      );
+      const known = knownNames.has(normalize(title));
       if (!known) {
         removed.push(title);
-        out = out.replace(title, "[title removed: not in Qloo evidence]");
+        out = out.replace(title, "the shared activity");
       }
     }
     return out;
@@ -141,7 +146,16 @@ export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program
     warnings: [],
   };
 
-  const clean = titleGuard(brief, guard.removedTitles);
+  const titles = titleGuard(brief, guard.removedTitles, [
+    draft.title,
+    ...draft.sessions.map((s) => s.title),
+  ]);
+  const refs = new Map([
+    ...brief.entities.map((e) => [e.ref, e.name] as const),
+    ...brief.themes.map((t) => [t.ref, t.name] as const),
+  ]);
+  const clean = (s: string) =>
+    titles(s).replace(/\b([BROT]\d+)\b/g, (ref) => refs.get(ref) ?? "the shared activity");
 
   const sessions: ProgramSession[] = draft.sessions.map((s) => {
     let entity: ProgramSession["entity"] = null;
@@ -191,6 +205,12 @@ export function guardProgram(draft: ProgramDraft, brief: EvidenceBrief): Program
     title: clean(draft.title),
     objective: clean(draft.objective),
     format: clean(draft.format),
+    venueType: clean(draft.venueType),
+    partnerTypes: draft.partnerTypes.map(clean),
+    accessibility: draft.accessibility.map(clean),
+    frictionMitigations: draft.frictionMitigations.map(clean),
+    successMeasures: draft.successMeasures.map(clean),
+    limitations: draft.limitations.map(clean),
     sessions,
     evidenceIds,
     guard,

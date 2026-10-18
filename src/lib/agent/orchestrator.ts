@@ -21,6 +21,8 @@ import { isStrongBridge } from "@/lib/engine/select";
 import { betterResult, reviewEvidence } from "./review";
 import { findPlaceTheme } from "./tools";
 import { writeInvitations, type Invitations } from "./invites";
+import { CallBudget } from "@/lib/engine/context";
+import { DEFAULT_SETTINGS, settingsInstructions } from "@/lib/planning";
 import { writeBridgeNotes, type BridgeNote } from "./notes";
 import { planDomains, type DomainPlan } from "./planner";
 import { generateProgram, type Program } from "./program";
@@ -61,6 +63,8 @@ export interface Investigation {
 export type AgentStatus = "ok" | "insufficient_evidence" | "partial";
 
 export interface AgentResult {
+  /** Opaque server-side evidence handle, attached by the HTTP handler. */
+  briefId?: string;
   status: AgentStatus;
   scenario: Scenario;
   plan: DomainPlan | null;
@@ -236,7 +240,33 @@ export function runAgent(
   scenario: Scenario,
   options: AgentOptions = {},
 ): AsyncGenerator<AgentEvent> {
-  const deps = abortable(rawDeps, options.signal);
+  // One budget across every review round and tag lookup (transport retries remain bounded separately).
+  const budget = new CallBudget(options.maxCalls ?? 40);
+  const requests = new Map<string, Promise<unknown>>();
+  const spend = <T>(kind: string, input: unknown, fn: () => Promise<T>): Promise<T> => {
+    const key = `${kind}:${JSON.stringify(input)}`;
+    const cached = requests.get(key);
+    if (cached) return cached as Promise<T>;
+    budget.spend();
+    const pending = fn().catch((error) => {
+      requests.delete(key);
+      throw error;
+    });
+    requests.set(key, pending);
+    return pending;
+  };
+  const deps = abortable(
+    {
+      ...rawDeps,
+      qloo: {
+        searchEntities: (i) => spend("search", i, () => rawDeps.qloo.searchEntities(i)),
+        searchTags: (i) => spend("tags", i, () => rawDeps.qloo.searchTags(i)),
+        getInsights: (i) => spend("insights", i, () => rawDeps.qloo.getInsights(i)),
+        compareProfiles: (i) => spend("compare", i, () => rawDeps.qloo.compareProfiles(i)),
+      },
+    },
+    options.signal,
+  );
   const checkCancelled = () => {
     if (options.signal?.aborted) throw new CancelledError();
   };
@@ -298,7 +328,7 @@ export function runAgent(
               return b;
             });
 
-    const [plan, directives] = await timed("PLAN_DOMAINS", () =>
+    const [plan, interpreted] = await timed("PLAN_DOMAINS", () =>
       Promise.all([
         options.domains
           ? {
@@ -312,6 +342,17 @@ export function runAgent(
         }),
       ]),
     );
+    const settings = scenario.settings ?? DEFAULT_SETTINGS;
+    const directives: Directives = {
+      ...interpreted,
+      audience:
+        settings.audience === "all_ages"
+          ? "all_ages"
+          : settings.audience === "adults"
+            ? "adults"
+            : interpreted.audience,
+      rules: [...new Set([...interpreted.rules, ...settingsInstructions(settings)])],
+    };
     const domains = applyDirectives(
       plan.domains.map((d) => d.domain),
       directives,
