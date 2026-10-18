@@ -66,9 +66,9 @@ ${agentRows}
 
 ${
   withNotes.length
-    ? `### Following the organizer's notes
+    ? `### Automated checks: notes, settings and stress cases
 
-${withNotes.length} cases repeat earlier groups with notes for the agent. Each check is verified in code against the run's output: **${noteChecks.filter((c) => c.passed).length} / ${noteChecks.length} passed**.
+Each check is verified in code against the run's output (not judged by a model): **${noteChecks.filter((c) => c.passed).length} / ${noteChecks.length} passed** across ${withNotes.length} cases. Failures are listed, not hidden.
 
 ${withNotes
   .map(
@@ -82,6 +82,23 @@ ${withNotes
     : ""
 }
 `;
+
+// Discovery preference: the same groups with familiar vs exploratory picks.
+const popOf = (id: string) => {
+  const r = results.find((x) => x.id === id);
+  const ps = r?.bridges.flatMap((b) => (b.popularity == null ? [] : [b.popularity])) ?? [];
+  return ps.length ? mean(ps) : null;
+};
+const fam = popOf("nyc-familiar");
+const exp = popOf("nyc-exploratory");
+const discoverySection =
+  fam !== null && exp !== null
+    ? `### Discovery preference
+
+Same New York groups, two settings. Mean bridge popularity: **familiar ${ord(fam)}** vs **exploratory ${ord(exp)}** (percentile)${fam > exp ? ", so the setting moves picks in the intended direction" : ". The setting did not move picks in the intended direction here; this is a known limitation"}.
+
+`
+    : "";
 
 // Optional earlier run (saved before a fix) to show what changed.
 const previous: CaseResult[] | null = existsSync("eval/out/summary-run1.json")
@@ -126,7 +143,7 @@ const md = `# Evaluation (step 5.3)
 
 **Run:** ${ranAt.slice(0, 10)} · **Cases:** ${results.length} (${results.filter((r) => r.heldOut).length} held out) · **Mode:** every case live (Qloo + LLM, no cache)
 
-This is a **formative** evaluation: six fixed scenarios (plus repeats with organizer notes), technical metrics, the agent's own decisions, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).
+This is a **formative** evaluation: six fixed scenarios plus variants with notes, settings and stress conditions (mismatched groups, sparse profiles, non-Latin titles, a smaller city), technical metrics, deterministic checks, the agent's own decisions, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).
 
 Reproduce it with \`npm run spike eval/run.ts\`, then \`npm run spike eval/report.ts\`. Raw outputs stay in the git-ignored \`eval/out/\`.
 
@@ -195,11 +212,11 @@ ${results
   .join("\n")}
 
 ${agentSection}
-${beforeAfter}## Human review
+${discoverySection}${beforeAfter}## Human review
 
 Running the evaluation writes one **blind packet** per case to \`eval/out/packets/\`. Each has two unlabelled plans (Common Ground and LLM only, in random order), a 1–5 rating form on seven criteria (cultural specificity, authenticity, appeal to each group, actionability, novelty without forcedness, likelihood of repeat attendance), and "which would you fund or run, and why?". The answer key is in \`*.key.json\`.
 
-**Status:** pending. The target is about 5 reviewers. Results will be reported here honestly as informal feedback, not as a study.
+**Status:** pending. No real organizers have rated the proposals yet, so nothing here shows that people prefer them. The target is about 5 reviewers; results will be reported as informal feedback, not as a study.
 
 ## Limitations
 
