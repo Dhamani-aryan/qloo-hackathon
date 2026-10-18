@@ -1,5 +1,7 @@
 # Evaluation (step 5.3)
 
+> **Historical results:** the measurements below predate the October 17 organizer-workflow revision. That revision changes ranking weights, activity-fit ordering, anchor eligibility, comparison counting and prompt grounding. These results do not validate the current revision. Rerun the suite and add fresh unseen cases before making current quality claims. Toronto informed a venue-filter change and should be treated as a development case rather than an untouched holdout.
+
 **Run:** 2026-10-17 · **Cases:** 8 (1 held out) · **Mode:** every case live (Qloo + LLM, no cache)
 
 This is a **formative** evaluation: six fixed scenarios (plus repeats with organizer notes), technical metrics, the agent's own decisions, and a with/without-Qloo ablation. It does **not** measure social impact, and the seeds are hypothetical test inputs, not real communities. Human ratings are collected separately (see "Human review" below).

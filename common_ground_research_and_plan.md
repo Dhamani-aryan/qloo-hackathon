@@ -1,16 +1,26 @@
 # COMMON GROUND
 ## Research-backed hackathon product and execution plan
 
-**Revision:** 3.0  
-**Updated:** October 6, 2026  
+**Revision:** 4.0
+**Updated:** October 17, 2026
 **Target:** Qloo Agentic Hackathon 2026  
 **Deadline:** October 30, 2026 at 11:45 PM EDT / October 31, 2026 at 9:15 AM IST  
-**Status:** Concept revised; live Qloo API spike required before product implementation  
+**Status:** Implemented; organizer workflow and evidence grounding revised after hands-on review
 **Implementation guide:** see `IMPLEMENTATION.md` (tracks and steps)
 
 ---
 
-# 0. What changed in Revision 3.0
+# 0. Current implementation: Revision 4.0
+
+The October 17 review found that cultural ranking and polished prose were ahead of practical program judgment. The implemented revision adds explicit activity, cost, audience, group size, venue, access and discovery preferences; a custom-first entry point with explicit examples; confirmed entity matching including games; retrieved descriptions/categories in evidence briefs; separate activity-fit ordering; and three result views for choosing, shaping and preparing a program.
+
+The cultural score now uses 80% preference-adjusted bilateral support and 20% evidence diversity. Places have no automatic locality bonus. Familiar discovery may choose mainstream candidates. Every shown bridge and every runner-up eligible to anchor a program must pass the strong bilateral gate. An insufficient-evidence response is preferable to a weak fallback.
+
+The delivery checklist separates checked references from unverified costs, access, permissions and capacity. Regeneration uses server-held evidence. Both comparison conditions receive the same practical constraints, and provenance counts are explicitly not quality evidence. Cache release is `run:v4-grounded-planning`; historical evaluation results require a new run. The ChatGPT subscription integration is retained.
+
+Current behavior and verification are documented in `docs/HOW_IT_WORKS.md`, `docs/TESTING.md` and `IMPLEMENTATION.md`. The research and earlier planning sections below preserve the development history; where they differ, this section and `docs/DECISIONS.md` describe the implementation.
+
+## Earlier changes in Revision 3.0
 
 | # | Change | Why |
 |---|---|---|

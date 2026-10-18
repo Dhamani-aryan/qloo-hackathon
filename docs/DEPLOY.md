@@ -5,6 +5,7 @@ The live site runs on **Vercel**. **Upstash Redis** (free tier) holds everything
 - participant links;
 - rate limits;
 - the ChatGPT-subscription credential.
+- opaque evidence handles for program regeneration (24-hour lifetime).
 
 Steps 1, 2 and 5 need you, because they involve your accounts. Steps 3, 4 and 6 are commands.
 
@@ -47,7 +48,7 @@ With the dev server running locally (`npm run dev -- -p 3005`), which now uses U
 npm run warm
 ```
 
-Each prebuilt scenario runs live once (about 70 s each) and is cached in Upstash for 7 days. Every visitor, including the live site, then gets it in about 3 s. Run it again any time; already-cached scenarios are skipped.
+Each prebuilt scenario runs live once (typically 60–120 s) and eligible clean results are cached in Upstash for 7 days. Outputs with generation failures or guard removals are not recorded. A clean recording replays in about 3 s. Cache keys include practical settings and the scoring/prompt release (`run:v4-grounded-planning`); warm the examples after deploying that release.
 
 ## 5. Create the Vercel project (you, about 5 minutes)
 

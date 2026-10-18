@@ -2,7 +2,7 @@
 
 **Start here in every new session:** read the **"Current status"** section at the top of `IMPLEMENTATION.md`. It says what's done, what works, known issues, how to set up keys, and the next step.
 
-- Product plan: `common_ground_research_and_plan.md` (Revision 3.0)
+- Product plan: `common_ground_research_and_plan.md` (Revision 4.0)
 - Build manual: `IMPLEMENTATION.md`. When asked to "implement step X.Y", "implement track N" or "continue", follow the session procedure at the top of that file (the next step is named in "Current status").
 - Commit in small, meaningful Conventional Commits while working (rules in `IMPLEMENTATION.md`). After each step: tick the progress tracker, update "Current status", commit, and push.
 - Record any deviation from the plan or spec in `docs/DECISIONS.md`.

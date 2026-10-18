@@ -2,6 +2,21 @@
 
 Newest first. Each entry: date, decision, reason.
 
+## 2026-10-17: Organizer workflow and grounding revision
+
+- Preserved the existing ChatGPT subscription client and authentication implementation.
+- New users start with empty groups and can explicitly load either example. Search includes games, shows entity types, and blocks ambiguous matches until a user confirms them. Unicode names remain distinct.
+- Added typed practical settings: activity, discovery preference, participant cost, audience, size, venue and access. These are passed to both program generation and the model-only baseline. Explicit mixed-age settings activate the mature-content filter without depending on LLM interpretation.
+- Removed the automatic cultural score bonus for places. Familiar discovery can select mainstream entities; Balanced and Exploratory vary the novelty modifier. Every selected bridge must pass the strong bilateral gate. No weak fallback is promoted to `ok`.
+- Activity-fit ordering is separate from cultural scoring. A restaurant or landmark is not automatically treated as a workshop venue.
+- Evidence briefs retain Qloo descriptions and categories and explicitly list unknowns. Only strongly bilateral runners-up can anchor sessions. Prompts require the anchor's specific properties to shape the activity.
+- Results use three views: Choose a bridge, Shape the program, Prepare to run it. The latter distinguishes checked references from organizer confirmations. Exported plans include unresolved delivery checks.
+- Replaced the browser-authored regeneration brief with a random handle to server-stored evidence, expiring after 24 hours.
+- One logical Qloo-operation budget spans review rounds. Identical per-run requests are reused; lower-level transport retries remain separately bounded.
+- Cached runs now use `run:v4-grounded-planning`, include practical settings, and skip incomplete or guard-altered outputs. This invalidates older example recordings, which need warming after deployment.
+- Comparison counts unique entities, uses structured arrays to preserve complete titles, and states that provenance counts do not prove quality. Historical evaluation scores must be rerun under the new method.
+- Fixed negative restart timers and stale stream updates after a newer run starts. Raw evidence codes are replaced by entity names in delivery text. Draft invitations are explicitly labelled for organizer review.
+
 ## 2026-10-17: A real agent loop, without giving up reproducibility
 
 The 2026-10-10 accuracy pass fixed the search plan, which left the LLM writing text but deciding nothing. The judging asks for agents, so the agent now decides and acts in three places, each bounded so accuracy stays measurable:

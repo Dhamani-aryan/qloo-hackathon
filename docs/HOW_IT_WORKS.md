@@ -1,170 +1,83 @@
 # How Common Ground works
 
-This guide starts with short summaries and then goes into detail. If you only read one part, read **Part 1**.
+Common Ground helps an organizer find a cultural starting point for two groups and turn it into a recurring program. Qloo supplies cultural evidence; an agent proposes activities and a critic reviews the draft. The organizer confirms practical arrangements.
 
----
+## 1. Define the groups
 
-# Part 1: The short version
+Start with your own groups or load Campus ↔ City or Jaipur Craft Futures. Examples use hypothetical cultural profiles.
 
-## What it is, in one paragraph
+Add 3–8 favorites per group. The search covers music, films, TV, books, games, podcasts and places. You can narrow the type before searching. Each result shows its type; click it to inspect the description or choose another match. Ambiguous matches require confirmation before analysis.
 
-Common Ground helps someone who runs community programs (a university, library, museum, NGO) bring **two different groups** together. You tell it what each group loves: a few artists, films, TV shows, books or places. It asks **Qloo** (a company that knows which cultural things people like together) to find things **both** groups love that are **not just famous things everybody likes**. An **AI agent** reviews that evidence, searches further on its own when it's thin or when the organizer asked for something specific, and turns the best bridges into a ready-to-run **4-session plan** with an **invitation for each group**. Every recommendation can be traced back to Qloo's data, and the app shows what the same AI would have produced *without* Qloo.
+Participant intake is available through **Let each group add their own**. Links collect aggregate favorites rather than personal profiles. Organizers import the most frequently named picks. Upstash stores the aggregate responses when configured; memory storage is only suitable for local development.
 
-## The two pages, in one line each
+## 2. State practical preferences
 
-| Page | What you do there |
-|---|---|
-| **Home** | Two boxes, *Group 1* and *Group 2*. Type a few things each group loves (press Enter after each), add a city, optionally add **Notes** for the agent ("all ages, keep it free, about food"), and click **Find common ground →**. Qloo matches every name to a real entry as you type. |
-| **Results** | One page, top to bottom: a progress line, **What the agent did** (its decisions, in plain words), *what everyone likes* vs *what these two groups share*, the top bridges, a 4-session plan, an invitation for each group, and "Why Qloo matters". |
+The optional settings capture:
 
-## The parts under the hood, in one line each
+- activity: mixed, watching, listening, making, exploring, playing;
+- participant cost: unspecified, free, or some spending possible;
+- audience: unspecified, mixed ages including under-18s, or adults;
+- number of participants;
+- existing venue, outings, or flexible location;
+- access needs;
+- Familiar, Balanced, or Exploratory discovery.
 
-| Part | Plain description | Where in the code |
-|---|---|---|
-| **Qloo connection** | Talks to Qloo's API: look up names, get recommendations, compare two groups. | `src/lib/qloo/` |
-| **Bridge engine** | Pure maths, no AI. Finds candidates, scores them for each group, and ranks the bridges. | `src/lib/engine/` |
-| **AI agent** | Uses ChatGPT to read the organizer's notes, review the evidence and decide whether to search further (with tools), then explain bridges, write and critique the plan, and write invitations. | `src/lib/agent/`, `src/lib/llm/` |
-| **Evidence guard** | Checks every name the AI uses against Qloo's data and removes anything invented. | `src/lib/agent/program.ts` |
-| **"AI alone" version** | The same task given to ChatGPT with no Qloo data, so you can compare. | `src/lib/agent/baseline.ts` |
-| **Participant links** | Optional: each group fills in its own favourites on a phone link. | `src/lib/intake/`, `/join/...` |
-| **Cache** | Saves finished runs so a repeat shows in about 3 s instead of about 70 s. | `src/lib/cache/`, `src/lib/agent/replay.ts` |
-| **Website** | The two pages above. | `src/components/`, `src/app/` |
-| **MCP server** | Lets Claude, ChatGPT or any agent call Common Ground as a tool (`find_common_ground`). See [MCP.md](MCP.md). | `src/lib/server/mcp.ts`, `/api/mcp` |
+Notes provide additional instructions, such as excluding podcasts or looking for parks. Typed settings are applied directly. Both Qloo-backed generation and the model-only comparison receive the same practical constraints.
 
----
+## 3. Investigate with Qloo
 
-# Part 2: The details
+The engine queries combined cultural seeds across validated domains. A second, popularity-capped query expands discovery beyond mainstream results. Each domain has a bounded candidate pool.
 
-## 1. The problem it solves
+It then scores the same pool independently against Group 1 and Group 2 using Qloo shortlist filtering. Affinities become percentile ranks within that pool; they are not percentages of participants or probabilities of enjoyment.
 
-When organizers try to bring two communities together (students and long-time residents, say), they usually pick something **everyone** likes: a famous film, a big landmark. That's safe but generic, and it doesn't feel like *theirs*. Asking an AI on its own doesn't help much either. It guesses from stereotypes, or it just reuses whatever you told it.
+Shared themes come from Analysis Compare. Explainability identifies input contributors and provides provenance; it is not proof that a particular person likes an item.
 
-Common Ground looks for a **bridge**: something both groups genuinely rank highly that is specific to them rather than universally popular. That's the core idea: **"bilateral" (both sides) and "not just mainstream"**.
+The agent may search additional domains or place tags when the evidence or organizer instructions warrant it. A shared operation budget covers the investigation, and repeated identical requests are reused. Low-level HTTP retries remain separately bounded.
 
-## 2. Words you'll see
+## 4. Select bridges
 
-| Term | Meaning |
-|---|---|
-| **Group** (also "community", "side A / B") | One of the two audiences. Group 1 is shown in **blue**, Group 2 in **terracotta/orange**. |
-| **Favourite / seed** | Something a group loves (an artist, film, show, book, podcast or place). Each group needs 3 to 8. |
-| **Qloo entity** | Qloo's own record for a thing, with an ID, image and type. Every favourite must match one. |
-| **Candidate** | Something Qloo suggests might appeal to both groups. One run considers about 200. |
-| **Support percentile** | How highly one group ranks a candidate compared with the other candidates. "85th" means it beats 85% of them for that group. |
-| **Popularity percentile** | How mainstream something is overall. "100th" means nearly everyone knows it. |
-| **Obvious bridge** | High support from both groups, but very popular with everyone (popularity above 90th). |
-| **Discovered bridge** | High support from both groups **and** not mainstream. This is what we want. |
-| **Bridge Potential** | A 0–100 ranking score. It's not a probability. See section 5. |
-| **Evidence** | The record of each Qloo result a claim is based on (`ev_0012`...). You can open it under any bridge on the results page. |
-| **Plan / program** | The 4-session program the AI writes from the bridges. |
+Every shown bridge needs at least the 50th percentile on both sides and a harmonic mean of at least 0.55. When none qualify, the app reports insufficient evidence. It does not lower the threshold to fill three slots.
 
-## 3. What happens when you press "Find common ground"
+The cultural ranking uses 80% preference-adjusted bilateral support and 20% evidence diversity. Places receive no automatic score bonus for being geographically local.
 
-Here's the default example (a university film & music club vs a neighbourhood arts association in New York), with real numbers from a test run.
+- **Familiar:** mainstream candidates can qualify, with no novelty discount.
+- **Balanced:** cultural support has more influence than novelty.
+- **Exploratory:** less mainstream candidates receive the stronger novelty modifier.
 
-**Step 1: Read both groups (instant).** The app takes the matched favourites, up to 8 per group.
+Activity fit is a separate, transparent heuristic based on the requested activity and retrieved descriptions/categories. Suitable media or venues are ordered ahead of candidates that need adaptation, while keeping the bilateral threshold. Activity fit does not verify admission, capacity, access, permission or availability.
 
-**Step 2: Choose what to explore (about 7 s).** The same kinds are always searched: TV shows, artists, books, podcasts and local places, plus films or video games when a group named one. This is fixed so the same input always gives the same bridges. If the organizer left **notes**, ChatGPT turns them into settings that code applies: kinds to skip or add, place themes to look for ("jazz club"), the audience (under-18s switch on a filter for anything Qloo tags *Mature*), and rules the plan must follow ("keep it free").
+## 5. Choose, shape, prepare
 
-**Step 3: Search Qloo (about 9 s, no AI).** For each kind it makes 4 Qloo calls, about 25 calls in total:
+The result workspace has three views:
 
-1. *"What would people who like all of these favourites (both groups combined) also like?"*
-2. The same question, but **leaving out very popular items**, to reach past the obvious.
-3. *"How much does Group 1 alone like each of these candidates?"*
-4. *"How much does Group 2 alone like each of these candidates?"*
+1. **Choose a bridge:** compare up to three options, descriptions, input contributors, relative ranks and activity-fit explanations. Advanced source queries are expandable. A mainstream alternative is available for comparison.
+2. **Shape the program:** review the initial draft or build around another bridge. Sessions have balanced roles, specific cultural anchors and practical alternatives. The critic revises the first draft.
+3. **Prepare to run it:** review delivery checks, mark your own confirmations, adapt invitations, and optionally compare the model-only proposal.
 
-It also asks Qloo's **Compare** feature for **themes** both groups share (e.g. "Personal growth": *Lady Bird* ↔ *Joni Mitchell*).
+The agent receives Qloo descriptions and categories, not just names. It must explain how an anchor's properties change the activity. Unknown venue facts remain unknown. Only selected bridges and strongly supported runners-up are eligible program anchors.
 
-**Step 4: Score and rank (instant, no AI).** Every candidate gets a support percentile for each group and a popularity value. Weak, one-sided, too-niche or sensitive items are rejected, with a reason. The best three are selected (section 5).
+Reference guards validate entity codes and evidence IDs, replace internal codes in prose, and report removed quoted titles. This is reference checking, not verification of every generated factual statement. Organizers still review the text.
 
-**Step 4b: Review and dig deeper (0–25 s, AI + Qloo).** The agent looks at what it found. With three strong bridges and no notes it moves on. Otherwise it can use two tools, for up to two rounds: **search another kind of culture** (films, video games) or **look for places on a theme** (it finds the matching Qloo place tag, then searches places in the city with that tag). New candidates are scored by the same maths, and the agent keeps them only if they beat what it had. Every decision appears under **What the agent did**.
+## 6. Delivery checks
 
-**Step 5: Design the plan (about 35 s, AI).** In parallel, ChatGPT:
-- writes a short note for each bridge (an activity idea and the main thing to watch out for);
-- writes the 4-session plan.
+The app separates checked cultural references from unresolved delivery arrangements. Venue, capacity, cost, access, audience suitability, media permissions and recording require organizer confirmation. A directly detectable outing conflict with an existing-venue requirement is flagged for revision.
 
-It may **only** use the bridges and runners-up Qloo found. It refers to them by code (B1, B2...), never by free text.
+Checkmarks stay in the current browser session for that program. They reset after refresh or replacement and are not evidence of an external booking. Exported Markdown includes unresolved delivery checks.
 
-**Step 6: Review and improve it (about 25 s, AI).** A second pass checks the plan against 10 rules: is one group just watching the other? does it need expertise? is it a one-off? are the two groups' roles copy-pasted? and so on. It then fixes the plan.
+Invitations are drafts. They are never sent automatically.
 
-**Step 7: Invitations and the comparison.** ChatGPT writes one short invitation per group, opening from that group's own favourites (checked by the same guard as the plan). In parallel from the start, the comparison runs: The same goal and the same favourites go to ChatGPT **without any Qloo data**, so you can see the difference at the end.
+## 7. Evidence and comparison
 
-**Total:** about 70 s live, or about 3 s when the same case was run before (the result is replayed from the cache).
+The model-only proposal gets the same favorites, objective, notes and practical settings, without Qloo. The comparison counts unique named entities and evidence citations. Structured title arrays preserve punctuation such as commas and ampersands.
 
-## 4. What you see on the results page
+These counts show provenance. An unvalidated model proposal is not necessarily false, and more citations do not prove a better program. Human evaluation remains necessary.
 
-At the top there are two columns:
-- **What everyone likes**: e.g. *Strawberry Fields*. Both groups rank it very high (95th and 98th), **but** it's at the 100th popularity percentile. Everyone likes it, so it says nothing special about these two groups.
-- **What these two groups share**: e.g. *Cannoli King*. Strong for both (85th and 78th), but only at the 68th popularity percentile. That's a real bridge.
+## 8. Server behavior
 
-Below that are the **top bridges** (up to three), with a score out of 100 on the right. Only bridges with solid support from **both** groups are shown, so some runs show one or two. Tap a row to see:
-- **Linked to these favourites**: which of each group's favourites Qloo credits for the recommendation;
-- **How to use it** and **Watch out**: the AI's notes;
-- **Qloo evidence**: the raw records (affinity scores, percentiles, ranks).
+Credentials stay on the server. Qloo responses are cached for one day and eligible complete runs for seven days. Runs with relevant failures or guard removals are not recorded. Replays are labelled and can be bypassed with **Run it live**. Cache release and practical settings are part of the key.
 
-**More: shared themes, other ideas, what was ruled out** shows shared themes, other good ideas ("also in the running") and how many candidates were rejected and why.
+Program regeneration accepts a random handle to a server-held evidence brief, valid for 24 hours. Client-authored briefs are rejected. The same Upstash database supports deployment cache, intake, rate limits, evidence handles and the existing ChatGPT credential store. Local memory is the development fallback.
 
-## 5. How the scoring works (the maths, simply)
+Rate limits apply to live analysis, regeneration, resolution and intake. Cancellation stops subsequent operations and aborts active model requests. Stale streams cannot overwrite a newer run in the browser.
 
-For each candidate:
-
-1. **Support for each group, as percentiles.** Qloo's raw "affinity" scores all sit between 0.80 and 0.97, so they're hard to compare. Instead the app ranks all candidates for Group 1 and turns each rank into a percentile, then does the same for Group 2.
-2. **Both sides must agree.** A candidate is **rejected** if either group puts it below the 40th percentile ("one-sided"), or if both do ("weak support from both").
-3. **Combine with a harmonic mean.** `bilateral = 2·A·B / (A + B)`. This is high only when **both** A and B are high. 90 and 90 gives 90, but 100 and 10 gives about 18.
-4. **Popularity check:**
-   - above 90th percentile → **obvious** (shown as the contrast, not chosen);
-   - below 30th → **too niche** (hard to get people to come);
-   - in between → **discovered**, and the less mainstream it is, the bigger the bonus (a factor between 0.5 and 1).
-5. **Bridge Potential (0–100)** = 70% × (bilateral × novelty) + 20% × evidence variety + 10% × "it's a local place".
-6. **Pick up to three:** the best from each kind first (so you don't get three TV shows), then the next best overall. A bridge is only shown if **both** groups put it at the 50th percentile or above and its two-sided score (step 3) is at least 55; weaker ones go to "also in the running". If none pass, the single best is shown.
-
-**Safety filters** run before scoring. Items whose *title or category* is about religion or politics are removed. Places that are hotels, banquet halls, places of worship, bars or breweries, or government buildings are removed as venues, and so are box sets and places named just like the city. Every rejection is listed with its reason.
-
-## 6. What the AI is allowed to do, and the guard
-
-The AI is useful for **planning, explaining and writing**, but it can invent things. So:
-
-- It gets an **evidence brief**: only the bridges, runners-up, the obvious pick, themes and their evidence codes.
-- It must point to entities by code (`B1`, `R2`). The guard swaps each code for the real Qloo entity.
-- Anything not in the brief is **removed**: unknown codes, made-up evidence IDs, and quoted titles that aren't in Qloo's data (replaced with "[title removed: not in Qloo evidence]").
-- The plan shows **"✓ Every session is built on real Qloo data"**, or how many references were removed.
-
-## 7. "Why Qloo matters" (the comparison at the bottom of the results page)
-
-Three numbers compare **With Qloo** and **AI alone**:
-- **New titles backed by both groups' data:** e.g. 3 vs 0.
-- **Unverified guesses (lower is better):** titles the AI named with no evidence, e.g. 0 vs 7–10.
-- **Qloo evidence citations:** e.g. 15 vs 0.
-
-Open **"Compare the two plans session by session"** to see the AI-alone plan. Its picks are greyed if it just reused one of your favourites, and amber if it made something up without evidence.
-
-## 8. Participant links (optional)
-
-Instead of the organizer guessing each group's tastes, click **"Let each group add their own"** under the examples on the home page, then **Create the two links**. Each group gets its own link. People open it on their phone, name up to 3 favourites (no account, no name), and submit. Back on the home page, **Import responses** replaces each group's list with the most-named picks.
-
-The app only stores counts per title. No names, emails or IPs are kept. Right now responses are stored **in the server's memory**, so they disappear when the server restarts. Before deployment this needs a free Upstash Redis database.
-
-## 9. Speed, cost and safety controls
-
-- **Cache:**
-  - a finished run is saved for 7 days and replayed in about 3 s, with a note and a **"Run it live"** link;
-  - individual Qloo answers are saved for 1 day;
-  - right now the cache lives in server memory and resets on restart.
-- **Rate limits:** 5 live runs per 10 minutes per visitor (replays are free), so a public demo can't drain the Qloo key or the ChatGPT subscription.
-- **Stop button and closing the tab** both cancel the run, so no more calls are made.
-- **Errors:** if Qloo is down or the key is wrong, the app says so ("Qloo is unavailable…") rather than showing a misleading "no bridge" result.
-
-## 10. Where things live (for developers)
-
-```text
-src/app/page.tsx                 the website (home page + results page)
-src/app/join/[id]/[side]/        the participant page
-src/app/api/…                    server endpoints: resolve, analysis (streamed), program, intake
-src/components/studio/           home-screen, results-screen and their sections
-src/lib/qloo/                    Qloo client
-src/lib/engine/                  bridge engine (deterministic, no AI)
-src/lib/agent/                   planner, notes, program + guard, critic, AI-alone baseline, orchestrator, replay
-src/lib/llm/                     ChatGPT-subscription client
-src/lib/intake/, src/lib/cache/  participant storage and cache
-tests/                           125 automated tests (no real API calls)
-spike/                           scripts that call the real APIs from the terminal
-```
+The ChatGPT subscription integration is unchanged. See [deployment](DEPLOY.md), [MCP](MCP.md), and [testing](TESTING.md).

@@ -12,14 +12,16 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 > **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
 
-**Last updated:** 2026-10-17 · **Commits:** ~265 · **Tests:** 160 passing · **Build:** passing
+**Last updated:** 2026-10-17 · **Current revision:** organizer workflow and grounding pass (see `docs/DECISIONS.md`). The earlier track history below is retained; current checks and live verification are recorded at handoff.
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI), 5.1–5.3 (caching, hardening, UI redesign, evaluation), plus an accuracy pass and a simpler two-page UI (2026-10-10), and a scoring push for the judging criteria (2026-10-17): a real agent loop (organizer notes → directives, review with tools, decision log), invitations per group, stricter bridges (≥ 50th percentile for both groups), a mature-content filter, adults-only venues, and an MCP endpoint (`/api/mcp`, see `docs/MCP.md`).
 **Live:** https://qloo-hackathon-inky.vercel.app (Vercel, auto-deploys from `main`; Upstash holds the run cache, intake, rate limits and the ChatGPT credential, so `CHATGPT_AUTH_STORE=redis` locally too). Verified 2026-10-16: replay in 4 s, a full live run in 70 s, phone layout.
 **Deadline:** Oct 31, 9:15 AM IST (= Oct 30, 11:45 PM EDT); target Oct 29.
-**Next:** 5.5 (README for judges) and 5.6 (screenshots and Devpost description). After any change to bridge selection, bump `run:v2` in `src/lib/agent/replay.ts` and rerun `npm run warm https://qloo-hackathon-inky.vercel.app`.
+**Next:** rerun the formative evaluation under the revised scoring, obtain real organizer feedback, and finish screenshots/Devpost copy. After changes to selection or generation, update the cache release in `src/lib/agent/replay.ts` (currently `run:v4-grounded-planning`) and warm the examples. Do not treat the historical evaluation as evidence of the revised ranking.
 
-**What works today (all verified live):**
+**Organizer workflow revision:** empty custom start with explicit examples; typed practical preferences; game search and explicit ambiguity confirmation; factual entity descriptions in prompts; separate cultural and activity-fit assessments; strict bilateral gate; three result views; delivery checklist; server-held evidence handles for regeneration; fairer model-only comparison. ChatGPT subscription integration is unchanged. `docs/HOW_IT_WORKS.md` and `docs/TESTING.md` describe the current experience.
+
+**Earlier implementation inventory (predates the organizer workflow revision above):**
 - Qloo client (`src/lib/qloo/`): search, tags, insights (incl. explainability), Analysis Compare.
 - Bridge engine (`src/lib/engine/`): `runBridgeEngine(client, scenario)` returns 3 bridges, the obvious contrast, runners-up, themes, rejections and the evidence ledger. About 21 Qloo calls and 8–9 s.
 - AI agent (`src/lib/agent/`): planner, directives from organizer notes (`directives.ts`), review-and-investigate loop with two tools (`review.ts`, `tools.ts`: explore another domain, search places on a Qloo tag), bridge notes, entity-anchored program, critic, invitations (`invites.ts`), and an LLM-only baseline, run by `runAgent()` in `orchestrator.ts`. Every decision is emitted as a `decision` event. About 75–100 s live.
@@ -53,7 +55,7 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 - Intake needs an Upstash Redis database for deployment: the owner must create one (free tier) and set the two env vars.
 - Commit `1a2227f` imports a file added two commits later, so it doesn't build on its own (history only; `main` builds).
 - The engine thresholds were tuned on one scenario; check them in the evaluation (5.3).
-- Bridge #3 is often weak (Bridge Potential ~35). Film and music rarely win.
+- The UI now returns fewer than three bridges when fewer pass the strict bilateral gate. Weak candidates remain in the alternatives, not in generated program anchors.
 - Deployment (5.4): the ChatGPT credential lives in Upstash with a cross-instance refresh lock (`CHATGPT_AUTH_STORE=redis`); demo runs are pre-warmed with `npm run warm`. Steps are in `docs/DEPLOY.md`.
 
 **Where to look:** plan → `common_ground_research_and_plan.md` · decisions → `docs/DECISIONS.md` · spike results → `docs/SPIKE_FINDINGS.md`.
