@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DOMAIN_KEYS, type DomainKey, type EngineResult, type Scenario } from "@/lib/engine";
-import { isStrongBridge } from "@/lib/engine/select";
+import { barFor, isStrongBridge } from "@/lib/engine/select";
 import { generateStructured } from "@/lib/llm/structured";
 import type { LlmClient } from "@/lib/llm/types";
 import type { Directives } from "./directives";
@@ -57,7 +57,7 @@ export function reviewPrompt(
   triedThemes: string[],
 ): string {
   const pct = (v: number | null) => (v === null ? "?" : Math.round(v * 100));
-  const strong = engine.bridges.filter(isStrongBridge);
+  const strong = engine.bridges.filter((b) => isStrongBridge(b, barFor(engine)));
   const unsearched = DOMAIN_KEYS.filter(
     (d) =>
       !searched.includes(d) &&
@@ -155,7 +155,7 @@ export async function reviewEvidence(
 export function betterResult(a: EngineResult, b: EngineResult): EngineResult {
   const key = (r: EngineResult) => [
     r.status === "ok" ? 1 : 0,
-    r.bridges.filter(isStrongBridge).length,
+    r.bridges.filter((b) => isStrongBridge(b, barFor(r))).length,
     r.bridges.length,
     r.bridges.reduce((s, x) => s + x.bridgePotential, 0),
   ];

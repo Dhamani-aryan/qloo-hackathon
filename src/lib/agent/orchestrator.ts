@@ -17,7 +17,7 @@ import {
   type Directives,
 } from "./directives";
 import type { EngineOptions, PlaceTheme } from "@/lib/engine/context";
-import { isStrongBridge } from "@/lib/engine/select";
+import { barFor, isStrongBridge } from "@/lib/engine/select";
 import { betterResult, reviewEvidence } from "./review";
 import { findPlaceTheme } from "./tools";
 import { writeInvitations, type Invitations } from "./invites";
@@ -415,7 +415,8 @@ export function runAgent(
     const reviewable =
       options.review !== false &&
       !engine.warnings.some((w) => w.includes("failed") || w.includes("confirmed seeds"));
-    const strongCount = (r: EngineResult) => r.bridges.filter(isStrongBridge).length;
+    const strongCount = (r: EngineResult) =>
+      r.bridges.filter((b) => isStrongBridge(b, barFor(r))).length;
     if (reviewable) {
       await timed("REVIEW", async () => {
         for (let round = 0; round < MAX_REVIEW_ROUNDS; round++) {

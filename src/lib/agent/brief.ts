@@ -2,7 +2,7 @@ import type { EngineResult, Scenario, ScoredCandidate } from "@/lib/engine";
 import { NO_DIRECTIVES, type Directives } from "./directives";
 import { DEFAULT_SETTINGS, type PlanningSettings } from "@/lib/planning";
 import { assessActivityFit, type ActivityFit } from "@/lib/engine/fit";
-import { isStrongBridge } from "@/lib/engine/select";
+import { barFor, isStrongBridge } from "@/lib/engine/select";
 
 /**
  * The evidence brief: the ONLY cultural material the LLM may use. Entities and themes get
@@ -110,7 +110,9 @@ export function buildBrief(
     },
     entities: [
       ...result.bridges.map((c, i) => entity(c, "bridge", `B${i + 1}`)),
-      ...result.runnersUp.filter(isStrongBridge).map((c, i) => entity(c, "runner_up", `R${i + 1}`)),
+      ...result.runnersUp
+        .filter((c) => isStrongBridge(c, barFor(result)))
+        .map((c, i) => entity(c, "runner_up", `R${i + 1}`)),
       ...(result.obvious ? [entity(result.obvious, "obvious", "O1")] : []),
     ],
     themes: result.themes.map((t, i) => ({

@@ -54,6 +54,23 @@ describe("runBridgeEngine (synthetic world)", () => {
     expect(r.stats.qlooCalls).toBe(6);
   });
 
+  it("marks overlap as weak and applies the stricter bar when the groups share no theme", async () => {
+    const normal = await runBridgeEngine(fakeClient(world, compare).client, scenario(), {
+      domains: ["tvShow", "artist", "place"],
+    });
+    expect(normal.overlap).toBe("normal");
+    const weak = await runBridgeEngine(
+      fakeClient(world, { ...compare, sharedTags: [] }).client,
+      scenario(),
+      { domains: ["tvShow", "artist", "place"] },
+    );
+    expect(weak.overlap).toBe("weak");
+    for (const b of weak.bridges) {
+      expect(Math.min(b.pct.A!, b.pct.B!)).toBeGreaterThanOrEqual(0.65);
+    }
+    expect(weak.warnings.some((w) => /no shared themes/.test(w))).toBe(true);
+  });
+
   describe("when Qloo is busy while scoring one side", () => {
     const busyTvScoringForA = (failures: number) => {
       let left = failures;

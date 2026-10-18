@@ -3,7 +3,7 @@ import { buildPool } from "./candidates";
 import { createContext, type EngineOptions } from "./context";
 import { expandDomain } from "./expand";
 import { scoreCandidate } from "./score";
-import { selectBridges } from "./select";
+import { barFor, selectBridges } from "./select";
 import { findThemes } from "./themes";
 import {
   DEFAULT_DOMAINS,
@@ -124,7 +124,16 @@ export async function runBridgeEngine(
     }
   }
 
-  const selection = selectBridges(scored, scenario.settings);
+  const compareFailed = ctx.warnings.some((w) => w.startsWith("Theme comparison failed"));
+  const overlap = !compareFailed && themes.length === 0 ? "weak" : "normal";
+  if (overlap === "weak") {
+    ctx.emit({
+      type: "warning",
+      message:
+        "Qloo found no shared themes between the groups; only clearly two-sided options are shown.",
+    });
+  }
+  const selection = selectBridges(scored, scenario.settings, barFor({ overlap }));
   selection.bridges.forEach((b, i) =>
     ctx.emit({
       type: "bridge_ranked",
@@ -168,6 +177,7 @@ export async function runBridgeEngine(
       runnersUp: selection.runnersUp.map(slim),
       obvious: selection.obvious && slim(selection.obvious),
       status: selection.status,
+      overlap,
       themes,
       rejections,
       evidence: ctx.ledger.toJSON().filter((e) => cited.has(e.evidenceId)),

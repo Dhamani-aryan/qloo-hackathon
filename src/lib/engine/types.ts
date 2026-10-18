@@ -167,6 +167,8 @@ export interface EngineResult {
   /** Evidence cited by the bridges, runners-up, obvious pick and themes. */
   evidence: Evidence[];
   warnings: string[];
+  /** "weak" when Qloo's Compare found no shared theme between the groups (a stricter bar applies). */
+  overlap?: "weak" | "normal";
   stats: EngineStats;
 }
 

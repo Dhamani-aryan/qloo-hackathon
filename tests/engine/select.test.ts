@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evidenceDiversity, scoreCandidate } from "@/lib/engine/score";
-import { selectBridges } from "@/lib/engine/select";
+import { selectBridges, WEAK_OVERLAP_BAR } from "@/lib/engine/select";
 import type { Candidate, DomainKey, ScoredCandidate } from "@/lib/engine/types";
 import type { SideScores } from "@/lib/engine/validate";
 import { entity } from "./helpers";
@@ -102,5 +102,18 @@ describe("selectBridges", () => {
     expect(s.status).toBe("insufficient_evidence");
     expect(s.bridges).toEqual([]);
     expect(s.runnersUp.map((b) => b.entity.id)).toEqual(["weak1", "weak2"]);
+  });
+});
+
+describe("weak overall overlap", () => {
+  const pick = (id: string, domain: DomainKey, pA: number, pB: number) =>
+    scoreCandidate(candidate(id, domain, 0.6), scores({ [id]: [pA, pB] }));
+
+  it("shows only clearly two-sided candidates when the groups share no theme", () => {
+    const all = [pick("clear", "tvShow", 0.8, 0.75), pick("relative", "podcast", 0.6, 0.6)];
+    expect(selectBridges(all).bridges.map((b) => b.entity.id)).toEqual(["clear", "relative"]);
+    expect(selectBridges(all, undefined, WEAK_OVERLAP_BAR).bridges.map((b) => b.entity.id)).toEqual(
+      ["clear"],
+    );
   });
 });
