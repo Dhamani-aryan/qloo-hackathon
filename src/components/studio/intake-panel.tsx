@@ -46,8 +46,9 @@ export function IntakePanel({
     try {
       setSession(
         await postJson<Session>("/api/intake", {
-          title: draft.title,
-          labels: { a: draft.a.label, b: draft.b.label },
+          title: draft.title.trim() || "Common Ground",
+          // Groups may not be named yet; participants still need to see which link is theirs.
+          labels: { a: groupName(draft.a, "a"), b: groupName(draft.b, "b") },
         }),
       );
     } catch (e) {
