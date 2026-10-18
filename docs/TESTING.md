@@ -72,3 +72,20 @@ npm run warm -- https://qloo-hackathon-inky.vercel.app
 ```
 
 A live run finishing does not by itself prove it was cached; guard-altered or incomplete outputs are deliberately excluded.
+
+## Production-mode test log (2026-10-18)
+
+Run against `next start` on port 3010 with the real Qloo key and ChatGPT sign-in, then against the Vercel deployment. These are observed outcomes, not evidence that participants prefer the output.
+
+| # | Path | Observed | Fix made |
+|---|---|---|---|
+| 1 | Custom input: ambiguous title, type labels, keyboard entry | "Shōgun" flagged **?** with TV/Artist/Book options and descriptions; "Hollow Knight" resolved as a video game; a nonsense title showed "not found"; Tab/Enter worked with a visible focus ring. Confirming cleared the "confirm unsure matches" block. The "couldn't check · retry" path needs a real Qloo outage, so it is covered by unit tests only. | None needed |
+| 2 | Built-in examples: fresh run, then real replay | Campus 125 s / 74 s live, Jaipur 76 s live. Campus replayed in 4 s. Jaipur was never cached: 1 in 3 runs quoted "Jaipur Craft Futures" in an invitation and the title guard removed it. | Organizer's own scenario and group names count as known; the server now logs why a run isn't cached. Both examples now replay in 4 s on production. |
+| 3 | Same favorites, different settings | Watch & discuss + familiar + existing venue gave *Somebody Somewhere*, *Marriage Story*, Weyes Blood (default gave a place instead of the film) and ran live, so the settings key is separate. The venue check showed no conflict. | None needed |
+| 4 | Very little common ground (kids' TV vs death metal, Oslo) | Three "bridges" at the 50th–64th percentile, e.g. a celebrity chat podcast. Qloo Compare found no shared theme. The podcast's description included an ad-sales email and a privacy-policy URL. | No shared theme now applies a stricter bar (≥ 65th percentile for both) and shows a warning. Links, emails and ad boilerplate are stripped from descriptions. |
+| 5 | Alternate bridge | Rebuilt on High Fidelity in 58 s with the correct anchor. While building, the other bridge said "Available when the current analysis finishes". Invitations disappeared without explanation. | Accurate busy text; an explanation plus **Write invitations for this version** (server-held evidence, anchors checked); the critique is skipped (and labelled) if it would exceed a 100 s budget. |
+| 6 | Download | The Markdown export lists pending delivery checks under "organizer confirmation required". | Test added |
+| 7 | Stop, edit, start another | Stopped after 3 s; the next run started clean with none of the old bridges or labels. | None needed |
+| 8 | Expired / forged evidence handle | Forged UUID → 410 in 0.8 s; malformed ID or a browser-written brief → 400; no model call. | None needed |
+| 9 | Participant links and import | **Link creation failed** before groups were named (raw validation error). **The join page crashed** ("Event handlers cannot be passed to Client Component props", from the logo's click handler; this predates the revision). After fixes: phone join page, "Hollow Knight" pick, submit, and import into Group 1 all worked. | Default group labels; client-component shell; group names in the import message; participants no longer see "Custom scenario". |
+| 10 | Layouts | No horizontal overflow at 375 px or desktop, including a long group name. On a phone the first bridge's action sat 1,037 px below its name. Choosing an example silently discarded typed groups. "Group 1/Group 2" both showed as "Group". | Decision and action first on phones (186 px), descriptions clamped with "Read more"; confirmation before replacing typed groups; numbered labels kept. |
