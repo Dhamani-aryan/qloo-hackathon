@@ -25,6 +25,8 @@ import {
 } from "../src/lib/engine";
 import { createLimiter } from "../src/lib/engine/context";
 import { MATURE_TAG } from "../src/lib/engine/filters";
+import { deliveryChecks } from "../src/lib/agent/readiness";
+import { DEFAULT_SETTINGS } from "../src/lib/planning";
 import { getLlm } from "../src/lib/llm";
 import { createQlooClient } from "../src/lib/qloo";
 import { CASES, type EvalCase } from "./cases";
@@ -96,6 +98,15 @@ function rejectionGroup(reason: string): string {
   return "other";
 }
 
+function describeSettings(c: EvalCase): string {
+  const s = c.settings ?? {};
+  return (
+    Object.entries(s)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ") || "(default settings)"
+  );
+}
+
 async function buildScenario(c: EvalCase, qloo: ReturnType<typeof createQlooClient>) {
   const resolution = { seeds: 0, exact: 0, ambiguous: 0, unresolved: 0 };
   const side = async (seeds: EvalCase["a"]["seeds"]) =>
@@ -122,6 +133,7 @@ async function buildScenario(c: EvalCase, qloo: ReturnType<typeof createQlooClie
     objective: c.objective,
     location: c.location,
     instructions: c.notes ?? "",
+    settings: { ...DEFAULT_SETTINGS, ...c.settings },
     a: { side: "A", label: c.a.label, source: "organizer", seeds: await side(c.a.seeds) },
     b: { side: "B", label: c.b.label, source: "organizer", seeds: await side(c.b.seeds) },
   });
@@ -255,6 +267,34 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
       passed: Boolean(r.investigation?.placeThemes.some((t) => re.test(t.name))),
     });
   }
+  if (c.expect?.littleOverlap) {
+    checks.push({
+      name: "flags weak overlap or returns insufficient evidence (no filler)",
+      passed: r.engine?.status === "insufficient_evidence" || r.engine?.overlap === "weak",
+    });
+  }
+  if (c.expect?.stayInVenue && r.program) {
+    const venue = deliveryChecks(r.program, r.brief).find((x) => x.id === "venue");
+    checks.push({
+      name: "no session sends people to a recommended place",
+      passed: venue?.status !== "conflict",
+    });
+  }
+  if (c.expect?.allResolved) {
+    checks.push({
+      name: "every non-Latin favourite resolved",
+      passed: resolution.unresolved === 0,
+    });
+  }
+  if (r.program && r.brief) {
+    const strong = new Set(
+      r.brief.entities.filter((e) => e.role !== "obvious").map((e) => e.entityId),
+    );
+    checks.push({
+      name: "every plan anchor is a strong bridge or strong alternative",
+      passed: r.program.sessions.every((x) => !x.entity || strong.has(x.entity.id)),
+    });
+  }
   if (c.notes) {
     checks.push({
       name: "notes understood (turned into settings the agent applied)",
@@ -322,7 +362,7 @@ async function evaluate(c: EvalCase): Promise<CaseResult> {
       addedDomains: (r.investigation?.domains ?? []).filter((d) => !planDomains.includes(d)),
       placeThemes: (r.investigation?.placeThemes ?? []).map((t) => t.name),
     },
-    notes: c.notes ? { text: c.notes, checks } : null,
+    notes: checks.length ? { text: c.notes ?? describeSettings(c), checks } : null,
   };
 }
 

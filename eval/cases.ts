@@ -1,5 +1,6 @@
 import type { DomainKey } from "../src/lib/engine";
 import type { QlooTypeKey } from "../src/lib/qloo";
+import type { PlanningSettings } from "../src/lib/planning";
 
 /**
  * Fixed evaluation cases (plan §14): six pairs of communities across different cities and
@@ -17,7 +18,19 @@ export interface EvalCase {
   heldOut?: boolean;
   /** Organizer notes for the agent, and what following them must look like. */
   notes?: string;
-  expect?: { skips?: DomainKey[]; familyFriendly?: boolean; placeTheme?: RegExp };
+  /** Organizer settings from the home page (activity, discovery, cost, audience, venue). */
+  settings?: Partial<PlanningSettings>;
+  expect?: {
+    skips?: DomainKey[];
+    familyFriendly?: boolean;
+    placeTheme?: RegExp;
+    /** Groups with almost nothing in common: weak overlap or insufficient evidence, no filler. */
+    littleOverlap?: boolean;
+    /** An existing venue was chosen: no session may send people to a recommended place. */
+    stayInVenue?: boolean;
+    /** Every favourite must resolve (non-Latin titles). */
+    allResolved?: boolean;
+  };
   a: { label: string; seeds: [string, QlooTypeKey][] };
   b: { label: string; seeds: [string, QlooTypeKey][] };
 }
@@ -207,5 +220,135 @@ CASES.push(
     context: "Youth culture ↔ older enthusiasts, with notes",
     notes: "Adults only. We'd love it to centre on a live jazz venue in the city.",
     expect: { placeTheme: /jazz/i },
+  },
+);
+
+/**
+ * Stress cases (handoff §4): mismatched and sparse profiles, discovery preference, all-ages
+ * media, an existing free venue, non-Latin titles and a smaller, less-covered city. Checks are
+ * deterministic; quality judgments are left to human review.
+ */
+CASES.push(
+  {
+    id: "oslo-mismatch",
+    context: "Mismatched groups",
+    location: "Oslo",
+    objective: OBJECTIVE,
+    a: {
+      label: "Preschool parents' circle",
+      seeds: [
+        ["Bluey", "tvShow"],
+        ["PAW Patrol", "tvShow"],
+        ["Peppa Pig", "tvShow"],
+      ],
+    },
+    b: {
+      label: "Extreme metal society",
+      seeds: [
+        ["Cannibal Corpse", "artist"],
+        ["Mayhem", "artist"],
+        ["Slayer", "artist"],
+      ],
+    },
+    expect: { littleOverlap: true },
+  },
+  {
+    id: "lisbon-sparse",
+    context: "Sparse profiles",
+    location: "Lisbon",
+    objective: OBJECTIVE,
+    a: {
+      label: "Fado listening group",
+      seeds: [
+        ["Amália Rodrigues", "artist"],
+        ["Mariza", "artist"],
+        ["Ana Moura", "artist"],
+      ],
+    },
+    b: {
+      label: "Surf club",
+      seeds: [
+        ["Point Break", "movie"],
+        ["Jack Johnson", "artist"],
+        ["Endless Summer", "movie"],
+      ],
+    },
+  },
+  {
+    ...base("nyc-campus-city"),
+    id: "nyc-familiar",
+    context: "University ↔ neighbourhood, familiar picks",
+    settings: { novelty: "familiar" },
+  },
+  {
+    ...base("nyc-campus-city"),
+    id: "nyc-exploratory",
+    context: "University ↔ neighbourhood, exploratory picks",
+    settings: { novelty: "exploratory" },
+  },
+  {
+    ...base("chicago-games-books"),
+    id: "chicago-all-ages",
+    context: "Hobby groups, all ages",
+    settings: { audience: "all_ages", activity: "play" },
+    expect: { familyFriendly: true },
+  },
+  {
+    ...base("berlin-electronic-theatre"),
+    id: "berlin-existing-free-venue",
+    context: "Nightlife ↔ performing arts, free at an existing venue",
+    settings: {
+      venue: "existing",
+      venueName: "Community library hall",
+      budget: "free",
+      groupSize: 24,
+      access: "step-free access, captions",
+    },
+    expect: { stayInVenue: true },
+  },
+  {
+    id: "seoul-non-latin",
+    context: "Non-Latin titles",
+    location: "Seoul",
+    objective: OBJECTIVE,
+    a: {
+      label: "Korean film society",
+      seeds: [
+        ["기생충", "movie"],
+        ["올드보이", "movie"],
+        ["아이유", "artist"],
+      ],
+    },
+    b: {
+      label: "Anime club",
+      seeds: [
+        ["千と千尋の神隠し", "movie"],
+        ["君の名は。", "movie"],
+        ["米津玄師", "artist"],
+      ],
+    },
+    expect: { allResolved: true },
+  },
+  {
+    id: "tartu-small-city",
+    context: "Smaller, less-covered city",
+    location: "Tartu",
+    objective: OBJECTIVE,
+    a: {
+      label: "Student choir",
+      seeds: [
+        ["Arvo Pärt", "artist"],
+        ["Ennio Morricone", "artist"],
+        ["La La Land", "movie"],
+      ],
+    },
+    b: {
+      label: "Board-game café regulars",
+      seeds: [
+        ["Catan", "videoGame"],
+        ["Stardew Valley", "videoGame"],
+        ["The Hobbit", "book"],
+      ],
+    },
   },
 );
