@@ -46,7 +46,8 @@ export function IntakePanel({
     try {
       setSession(
         await postJson<Session>("/api/intake", {
-          title: draft.title.trim() || "Common Ground",
+          // Participants see this title; the internal "Custom scenario" placeholder means none.
+          title: draft.id.startsWith("custom") ? "Common Ground" : draft.title,
           // Groups may not be named yet; participants still need to see which link is theirs.
           labels: { a: groupName(draft.a, "a"), b: groupName(draft.b, "b") },
         }),
@@ -70,7 +71,7 @@ export function IntakePanel({
       for (const side of ["a", "b"] as const) {
         const s = sides[side];
         if (s.participants === 0) {
-          empty.push(draft[side].label);
+          empty.push(groupName(draft[side], side));
           continue;
         }
         const seeds: DraftSeed[] = s.entities.slice(0, MAX_SEEDS).map((e) => ({
