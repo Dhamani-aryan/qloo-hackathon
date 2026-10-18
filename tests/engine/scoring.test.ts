@@ -17,7 +17,7 @@ describe("percentiles", () => {
       ]),
     );
     expect(Object.fromEntries(p)).toEqual({ a: 0, b: 1 / 3, c: 1 / 3, d: 1 });
-    expect(percentiles(new Map([["solo", 0.5]])).get("solo")).toBe(1);
+    expect(percentiles(new Map([["solo", 0.5]])).get("solo")).toBe(0.5);
     expect(percentiles(new Map()).size).toBe(0);
   });
 

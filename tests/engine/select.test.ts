@@ -94,12 +94,13 @@ describe("selectBridges", () => {
     expect(s.runnersUp.map((b) => b.entity.id)).toContain("lopsided");
   });
 
-  it("still shows the single best candidate when nothing is strong", () => {
+  it("keeps the evidence threshold when nothing is strong", () => {
     const s = selectBridges([
       pick("weak1", "tvShow", 0.6, 0.5, 0.5),
       pick("weak2", "artist", 0.6, 0.45, 0.45),
     ]);
-    expect(s.status).toBe("ok");
-    expect(s.bridges.map((b) => b.entity.id)).toEqual(["weak1"]);
+    expect(s.status).toBe("insufficient_evidence");
+    expect(s.bridges).toEqual([]);
+    expect(s.runnersUp.map((b) => b.entity.id)).toEqual(["weak1", "weak2"]);
   });
 });

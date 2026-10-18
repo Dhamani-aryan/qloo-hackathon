@@ -1,13 +1,15 @@
 import { assessLift } from "./lift";
 import type { Candidate, ScoredCandidate, Theme } from "./types";
 import type { SideScores } from "./validate";
+import { DEFAULT_SETTINGS } from "@/lib/planning";
 
 /**
  * Bridge Potential (plan §8 Stage 6, simplified in Revision 3.0):
- *   0.70 × BilateralLift + 0.20 × EvidenceDiversity + 0.10 × LocalAvailability
+ *   0.80 × preference-adjusted BilateralLift + 0.20 × EvidenceDiversity
+ * A place's presence in the city does not establish that it is a usable venue.
  * Shown as 0–100. It is a transparent ranking score, not a probability.
  */
-export const WEIGHTS = { bilateralLift: 0.7, evidenceDiversity: 0.2, localAvailability: 0.1 };
+export const WEIGHTS = { bilateralLift: 0.8, evidenceDiversity: 0.2, localAvailability: 0 };
 
 /**
  * Independent kinds of Qloo evidence for a candidate (0–1):
@@ -28,14 +30,21 @@ export function scoreCandidate(
   c: Candidate,
   scores: SideScores,
   themes: Theme[] = [],
+  settings = DEFAULT_SETTINGS,
 ): ScoredCandidate {
   const id = c.entity.id;
   const pct = { A: scores.pct.A.get(id) ?? null, B: scores.pct.B.get(id) ?? null };
   const lift = assessLift(pct.A, pct.B, c.entity.popularity);
+  const novelty =
+    settings.novelty === "familiar"
+      ? 1
+      : settings.novelty === "balanced"
+        ? 0.75 + 0.25 * lift.novelty
+        : lift.novelty;
   const diversity = evidenceDiversity(c, new Set(themes.map((t) => t.tagId)));
   const local = c.domain === "place" ? 1 : 0;
   const raw =
-    WEIGHTS.bilateralLift * lift.bilateralLift +
+    WEIGHTS.bilateralLift * lift.bilateral * novelty +
     WEIGHTS.evidenceDiversity * diversity +
     WEIGHTS.localAvailability * local;
 
@@ -45,8 +54,8 @@ export function scoreCandidate(
     pct,
     popularity: c.entity.popularity,
     bilateral: lift.bilateral,
-    novelty: lift.novelty,
-    bilateralLift: lift.bilateralLift,
+    novelty,
+    bilateralLift: lift.bilateral * novelty,
     evidenceDiversity: diversity,
     localAvailability: local,
     bridgePotential: Math.round(raw * 100),

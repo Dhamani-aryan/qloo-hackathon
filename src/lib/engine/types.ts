@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PlanningSettingsSchema, type PlanningSettings } from "@/lib/planning";
 import type { QlooEntity, QlooTypeKey } from "@/lib/qloo";
 
 /**
@@ -27,9 +28,9 @@ export const DEFAULT_DOMAINS: DomainKey[] = ["tvShow", "artist", "book", "podcas
 
 export const SeedSchema = z.object({
   /** What the user or participant typed. */
-  input: z.string().min(1),
-  entityId: z.string().min(1),
-  name: z.string().min(1),
+  input: z.string().min(1).max(200),
+  entityId: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
   /** Qloo type URN of the resolved entity. */
   type: z.string().nullable(),
   popularity: z.number().nullable().default(null),
@@ -43,25 +44,27 @@ export type Seed = z.infer<typeof SeedSchema>;
 
 export const CommunityProfileSchema = z.object({
   side: z.enum(SIDES),
-  label: z.string().min(1),
+  label: z.string().min(1).max(100),
   source: z.enum(["intake", "organizer"]),
   contributorCount: z.number().int().nonnegative().nullable().default(null),
-  seeds: z.array(SeedSchema).min(1),
+  seeds: z.array(SeedSchema).min(1).max(8),
 });
 export type CommunityProfile = z.infer<typeof CommunityProfileSchema>;
 
 export const ScenarioSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  objective: z.string().default(""),
+  id: z.string().min(1).max(100),
+  title: z.string().min(1).max(200),
+  objective: z.string().max(800).default(""),
   /** Locality name used for place results, e.g. "New York City". */
-  location: z.string().nullable().default(null),
+  location: z.string().max(160).nullable().default(null),
   /** Free-text organizer instructions ("all ages, free venues, about food"); the agent interprets them. */
   instructions: z.string().max(400).default(""),
+  settings: PlanningSettingsSchema.optional(),
   a: CommunityProfileSchema,
   b: CommunityProfileSchema,
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
+export type { PlanningSettings };
 
 // ---------- evidence ----------
 

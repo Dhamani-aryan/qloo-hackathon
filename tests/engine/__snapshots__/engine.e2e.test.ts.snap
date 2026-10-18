@@ -3,8 +3,8 @@
 exports[`runBridgeEngine (synthetic world) > finds two-sided, non-mainstream bridges and explains every rejection 1`] = `
 {
   "bridges": [
-    "Jazz Fusion Duo (artist) BP 68",
-    "Shared Comedy (tvShow) BP 47",
+    "Jazz Fusion Duo (artist) BP 90",
+    "Shared Comedy (tvShow) BP 65",
   ],
   "calls": 13,
   "obvious": "Famous Square",

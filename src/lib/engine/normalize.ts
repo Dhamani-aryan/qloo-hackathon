@@ -9,7 +9,8 @@ export function percentiles(values: Map<string, number>): Map<string, number> {
   const n = sorted.length;
   const out = new Map<string, number>();
   if (n === 0) return out;
-  if (n === 1) return new Map([[sorted[0][0], 1]]);
+  // With no comparator, a lone item has neutral rather than perfect relative support.
+  if (n === 1) return new Map([[sorted[0][0], 0.5]]);
   let i = 0;
   while (i < n) {
     let j = i;

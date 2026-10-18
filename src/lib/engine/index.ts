@@ -110,7 +110,7 @@ export async function runBridgeEngine(
       continue;
     }
     for (const c of d.candidates) {
-      const s = scoreCandidate(c, d.scores, themes);
+      const s = scoreCandidate(c, d.scores, themes, scenario.settings);
       scored.push(s);
       if (s.verdict === "rejected") {
         rejections.push({
@@ -124,7 +124,7 @@ export async function runBridgeEngine(
     }
   }
 
-  const selection = selectBridges(scored);
+  const selection = selectBridges(scored, scenario.settings);
   selection.bridges.forEach((b, i) =>
     ctx.emit({
       type: "bridge_ranked",
@@ -154,7 +154,13 @@ export async function runBridgeEngine(
   ]);
   const slim = (c: ScoredCandidate): ScoredCandidate => ({
     ...c,
-    entity: { ...c.entity, tags: c.entity.tags.slice(0, MAX_TAGS) },
+    entity: {
+      ...c.entity,
+      tags: [
+        ...c.entity.tags.filter((t) => /:(genre|category):/.test(t.id)).slice(0, 6),
+        ...c.entity.tags.filter((t) => !/:(genre|category):/.test(t.id)),
+      ].slice(0, MAX_TAGS),
+    },
   });
   return result(
     {
