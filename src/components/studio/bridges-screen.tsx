@@ -72,6 +72,7 @@ export function CommonGround({
             onChoose={() => onChoose?.(`B${i + 1}`)}
             canChoose={canChoose}
             busy={busyBridge === `B${i + 1}`}
+            otherBusy={Boolean(busyBridge) && busyBridge !== `B${i + 1}`}
           />
         ))}
       </ol>
@@ -203,6 +204,7 @@ function BridgeRow({
   onChoose,
   canChoose,
   busy,
+  otherBusy,
 }: {
   rank: number;
   bridge: ScoredCandidate;
@@ -215,6 +217,8 @@ function BridgeRow({
   onChoose: () => void;
   canChoose: boolean;
   busy: boolean;
+  /** Another bridge's program is being built right now. */
+  otherBusy: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const rows = bridge.evidenceIds.flatMap((id) => evidence.get(id) ?? []);
@@ -346,7 +350,11 @@ function BridgeRow({
                 {busy ? "Building this program…" : "Build around this bridge →"}
               </button>
               {!canChoose && !busy && (
-                <p className="text-xs text-muted">Available when the current analysis finishes.</p>
+                <p className="text-xs text-muted">
+                  {otherBusy
+                    ? "Another version is being built. You can switch once it's ready."
+                    : "Available when the current analysis finishes."}
+                </p>
               )}
             </div>
           </div>
