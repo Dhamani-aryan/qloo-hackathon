@@ -84,6 +84,17 @@ describe("filters added after the evaluation", () => {
     expect(rejectionReason(entity("w4", "Barbican Centre"), "place")).toBeNull();
   });
 
+  it("rejects K-12 schools as venues but keeps colleges", () => {
+    const school = entity("s1", "Hugo Treffner Gymnasium", {
+      tags: [{ id: "urn:tag:category:place:high_school", name: "High school", type: null }],
+    });
+    expect(rejectionReason(school, "place")).toMatch(/high school/);
+    const college = entity("s2", "Pearl Academy", {
+      tags: [{ id: "urn:tag:category:place:design_school", name: "Design school", type: null }],
+    });
+    expect(rejectionReason(college, "place")).toBeNull();
+  });
+
   it("allows bars and clubs only when the organizer said adults only", () => {
     const jazzBar = entity("j1", "Ronnie Scott's", {
       tags: [{ id: "urn:tag:category:place:bar", name: "Bar", type: null }],
