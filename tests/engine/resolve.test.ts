@@ -24,6 +24,10 @@ describe("normalizeName", () => {
     expect(normalizeName("Mughal-e-Azam")).toBe(normalizeName("Mughal-E-Azam"));
     expect(normalizeName("Amélie!")).toBe("amelie");
   });
+  it("does not collapse distinct non-Latin titles to the same empty string", () => {
+    expect(normalizeName("पंचायत")).not.toBe(normalizeName("पाकीज़ा"));
+    expect(normalizeName("पंचायत").length).toBeGreaterThan(0);
+  });
 });
 
 describe("assessMatches", () => {
@@ -59,6 +63,13 @@ describe("assessMatches", () => {
     expect(r.best?.id).toBe("main");
     expect(r.ambiguous).toBe(false);
   });
+  it("requires a choice across different entity types even when one is more popular", () => {
+    const result = assessMatches({ input: "Hollow Knight" }, [
+      match("artist", "Hollow Knight", { type: "urn:entity:artist", popularity: 0.99 }),
+      match("game", "Hollow Knight", { type: "urn:entity:videogame", popularity: 0.5 }),
+    ]);
+    expect(result.ambiguous).toBe(true);
+  });
 
   it("flags a type mismatch and an empty result", () => {
     const wrong = assessMatches({ input: "Atlanta", type: "movie" }, [match("1", "Atlanta")]);
@@ -81,7 +92,7 @@ describe("resolveSeed", () => {
       { query: "Atlanta", types: ["urn:entity:tv_show"], take: 5 },
     ]);
     expect((searchEntities.mock.calls[1] as unknown as [{ types: string[] }])[0].types.length).toBe(
-      6,
+      7,
     );
   });
 });

@@ -25,14 +25,22 @@ export interface SeedResolution {
   reasons: AmbiguityReason[];
 }
 
-const SEARCH_TYPES: QlooTypeKey[] = ["artist", "movie", "tvShow", "book", "podcast", "place"];
+const SEARCH_TYPES: QlooTypeKey[] = [
+  "artist",
+  "movie",
+  "tvShow",
+  "book",
+  "podcast",
+  "place",
+  "videoGame",
+];
 
 export const normalizeName = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/\p{M}/gu, "")
+    .replace(/[^\p{L}\p{N}]/gu, "");
 
 /** Popularity gap below which two exact-name matches are treated as genuinely ambiguous. */
 export const DUPLICATE_MARGIN = 0.05;
@@ -57,7 +65,11 @@ export function assessMatches(query: SeedQuery, matches: EntityMatch[]): SeedRes
     // popular; otherwise the clearly more popular one (e.g. Skins the TV show at 0.98 vs a
     // namesake at 0.59) is almost always what people mean.
     const runnerUp = ranked[1];
-    if (runnerUp && (best.popularity ?? 0) - (runnerUp.popularity ?? 0) < DUPLICATE_MARGIN) {
+    if (
+      runnerUp &&
+      ((!query.type && runnerUp.type !== best.type) ||
+        (best.popularity ?? 0) - (runnerUp.popularity ?? 0) < DUPLICATE_MARGIN)
+    ) {
       reasons.push("duplicate_exact_names");
     }
   }
