@@ -6,6 +6,7 @@ import { Button, Dot, More, Note, Spinner, Title, cx, typeLabel } from "../ui";
 import { CommonGround } from "./bridges-screen";
 import { Comparison } from "./comparison";
 import { Invitations } from "./invitations";
+import type { Invitations as InvitationsData } from "@/lib/agent/invites";
 import { PlanSection, type ProgramVersion } from "./program-screen";
 import { DeliveryChecklist } from "./delivery-checklist";
 import { ACTIVITY_LABELS, DEFAULT_SETTINGS } from "@/lib/planning";
@@ -62,6 +63,25 @@ export function ResultsScreen({
   const settings = scenario.settings ?? DEFAULT_SETTINGS;
   const [rebuilding, setRebuilding] = useState<string | null>(null);
   const [rebuildError, setRebuildError] = useState<string | null>(null);
+  // Invitations written for a program the organizer rebuilt on another bridge.
+  const [versionInvites, setVersionInvites] = useState<{
+    program: Program;
+    invitations: InvitationsData | null;
+    error: string | null;
+  } | null>(null);
+  const writeVersionInvites = async (program: Program) => {
+    if (!result?.briefId) return;
+    setVersionInvites({ program, invitations: null, error: null });
+    try {
+      const r = await postJson<{ invitations: InvitationsData }>("/api/invitations", {
+        briefId: result.briefId,
+        program,
+      });
+      setVersionInvites({ program, invitations: r.invitations, error: null });
+    } catch (error) {
+      setVersionInvites({ program, invitations: null, error: (error as Error).message });
+    }
+  };
   const [confirmation, setConfirmation] = useState<{ program: Program | null; ids: string[] }>({
     program: null,
     ids: [],
@@ -307,6 +327,41 @@ export function ResultsScreen({
             invitations={view.invitations}
             labels={[scenario.a.label, scenario.b.label]}
           />
+        </div>
+      )}
+
+      {section === "prepare" && version && version.program !== view.program && (
+        <div className="mt-12">
+          {versionInvites?.program === version.program && versionInvites.invitations ? (
+            <Invitations
+              invitations={versionInvites.invitations}
+              labels={[scenario.a.label, scenario.b.label]}
+            />
+          ) : (
+            <Note>
+              <p className="font-medium text-ink">Invitations for this version</p>
+              <p>
+                The first invitations were written for the original plan, so they&apos;re hidden
+                here rather than shown with the wrong bridge.
+              </p>
+              {versionInvites?.program === version.program && versionInvites.error && (
+                <p className="mt-2 text-warn">{versionInvites.error}</p>
+              )}
+              <p className="mt-3">
+                {versionInvites?.program === version.program && !versionInvites.error ? (
+                  <Spinner label="Writing invitations for this version…" />
+                ) : (
+                  <Button
+                    variant="link"
+                    disabled={!result?.briefId}
+                    onClick={() => void writeVersionInvites(version.program)}
+                  >
+                    Write invitations for this version
+                  </Button>
+                )}
+              </p>
+            </Note>
+          )}
         </div>
       )}
 
