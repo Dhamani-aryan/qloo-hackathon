@@ -221,6 +221,7 @@ function BridgeRow({
   otherBusy: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [showFull, setShowFull] = useState(false);
   const rows = bridge.evidenceIds.flatMap((id) => evidence.get(id) ?? []);
   const fit = assessActivityFit(bridge, settings);
 
@@ -270,11 +271,25 @@ function BridgeRow({
               {bridge.entity.description && (
                 <div>
                   <p className="mb-2 text-xs font-semibold text-bridge">FROM QLOO</p>
-                  <p className="text-sm leading-relaxed text-ink-2">
+                  <p
+                    className={cx(
+                      "text-sm leading-relaxed text-ink-2",
+                      !showFull && "line-clamp-4",
+                    )}
+                  >
                     {bridge.entity.description.length > 500
                       ? `${bridge.entity.description.slice(0, 500)}…`
                       : bridge.entity.description}
                   </p>
+                  {bridge.entity.description.length > 220 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFull((v) => !v)}
+                      className="mt-1 text-xs text-muted underline underline-offset-2 hover:text-ink"
+                    >
+                      {showFull ? "Show less" : "Read more"}
+                    </button>
+                  )}
                 </div>
               )}
               <SupportBars
@@ -322,9 +337,26 @@ function BridgeRow({
                 </ul>
               </details>
             </div>
-            <div className="space-y-4 text-sm leading-relaxed">
+            <div className="order-first space-y-4 text-sm leading-relaxed lg:order-none">
               <p className="text-xs font-semibold text-bridge">ACTIVITY FIT · OUR INTERPRETATION</p>
               <p>{fit.reason}</p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled={!canChoose}
+                  onClick={onChoose}
+                  className="rounded-md border border-bridge px-4 py-2 text-sm text-bridge transition hover:bg-bridge-soft disabled:cursor-wait disabled:opacity-40"
+                >
+                  {busy ? "Building this program…" : "Build around this bridge →"}
+                </button>
+                {!canChoose && !busy && (
+                  <p className="text-xs text-muted">
+                    {otherBusy
+                      ? "Another version is being built. You can switch once it's ready."
+                      : "Available when the current analysis finishes."}
+                  </p>
+                )}
+              </div>
               {note ? (
                 <>
                   <p className="text-xs text-muted">One way to use it</p>
@@ -341,21 +373,6 @@ function BridgeRow({
                   <li key={item}>↳ {item}</li>
                 ))}
               </ul>
-              <button
-                type="button"
-                disabled={!canChoose}
-                onClick={onChoose}
-                className="rounded-md border border-bridge px-4 py-2 text-sm text-bridge transition hover:bg-bridge-soft disabled:cursor-wait disabled:opacity-40"
-              >
-                {busy ? "Building this program…" : "Build around this bridge →"}
-              </button>
-              {!canChoose && !busy && (
-                <p className="text-xs text-muted">
-                  {otherBusy
-                    ? "Another version is being built. You can switch once it's ready."
-                    : "Available when the current analysis finishes."}
-                </p>
-              )}
             </div>
           </div>
         </div>
