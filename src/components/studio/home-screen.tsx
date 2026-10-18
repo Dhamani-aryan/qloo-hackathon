@@ -100,6 +100,12 @@ export function HomeScreen({
 
   const load = (id: string) => {
     const preset = PREBUILT.find((p) => p.id === id);
+    const isCustom = draft.id.startsWith("custom");
+    if (!preset && isCustom) return; // already on their own groups
+    // Don't silently throw away groups the organizer typed themselves.
+    const typed =
+      isCustom && [draft.a, draft.b].some((p) => p.seeds.length > 0 || p.label.trim().length > 0);
+    if (typed && !window.confirm("Replace your groups with this example?")) return;
     const next = preset ? draftFromPrebuilt(preset) : emptyDraft();
     dispatch({ type: "replace", draft: next });
     void resolve(
