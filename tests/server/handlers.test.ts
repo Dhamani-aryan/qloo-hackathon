@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { runAgentToCompletion } from "@/lib/agent/orchestrator";
 import { MissingEnvError } from "@/lib/env";
-import { handleAnalysis, handleProgram, handleResolve } from "@/lib/server/handlers";
+import {
+  handleAnalysis,
+  handleInvitations,
+  handleProgram,
+  handleResolve,
+} from "@/lib/server/handlers";
 import { QlooError, type EntityMatch, type QlooClient } from "@/lib/qloo";
 import { fakeClient } from "../engine/helpers";
 import { compare, world, worldScenario } from "../engine/world";
@@ -156,5 +161,49 @@ describe("handleProgram", () => {
     const brief = { scenario: {}, entities: [], themes: [] };
     expect((await handleProgram(post({ brief, bridgeRef: "B1" }), deps)).status).toBe(400);
     expect((await handleProgram(post({ brief: "nope", bridgeRef: "B1" }), deps)).status).toBe(400);
+  });
+});
+
+describe("handleInvitations", () => {
+  const setup = async () => {
+    const deps = { qloo: fakeClient(world, compare).client, llm: routerLlm().llm };
+    const first = await runAgentToCompletion(deps, worldScenario(), { baseline: false });
+    const cache = createMemoryCache(10, new Map());
+    const briefId = crypto.randomUUID();
+    await cache.set(`brief:${briefId}`, first.brief, 60);
+    return { deps, cache, briefId, program: first.program! };
+  };
+
+  it("writes guarded invitations for a program version from server-held evidence", async () => {
+    const { deps, cache, briefId, program } = await setup();
+    const res = await handleInvitations(
+      post({ briefId, program }),
+      () => deps,
+      () => cache,
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.invitations.A.subject).toBeTruthy();
+    expect(body.invitations.A.message).toBe('If you love "SA1", try "Shared Comedy".');
+  });
+
+  it("rejects expired evidence and anchors outside it before calling the model", async () => {
+    const { cache, briefId, program } = await setup();
+    const noModel = () => {
+      throw new Error("Model must not be called");
+    };
+    const expired = await handleInvitations(
+      post({ briefId: crypto.randomUUID(), program }),
+      noModel,
+      () => cache,
+    );
+    expect(expired.status).toBe(410);
+    const forged = {
+      ...program,
+      sessions: [{ ...program.sessions[0], entity: { id: "INVENTED", name: "Invented" } }],
+    };
+    const res = await handleInvitations(post({ briefId, program: forged }), noModel, () => cache);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("unknown_anchor");
   });
 });

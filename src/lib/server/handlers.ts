@@ -4,7 +4,8 @@ import { critiqueProgram } from "@/lib/agent/critic";
 import { runAgent, type AgentDeps, type AgentEvent } from "@/lib/agent/orchestrator";
 import { loadRecording, recordRun, replayRun, runKey } from "@/lib/agent/replay";
 import type { Cache } from "@/lib/cache/cache";
-import { generateProgram } from "@/lib/agent/program";
+import { generateProgram, type Program } from "@/lib/agent/program";
+import { writeInvitations } from "@/lib/agent/invites";
 import { DOMAIN_KEYS, ScenarioSchema, resolveSeed } from "@/lib/engine";
 import { createLimiter } from "@/lib/engine/context";
 import { QLOO_TYPES, QlooError, type QlooClient, type QlooTypeKey } from "@/lib/qloo";
@@ -192,6 +193,73 @@ export async function handleProgram(
     if (!body.critic) return Response.json({ program: draft, critique: [] });
     const c = await critiqueProgram(llm, brief, draft).catch(() => null);
     return Response.json({ program: c?.revised ?? draft, draft, critique: c?.issues ?? [] });
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
+// ---------- POST /api/invitations (for a plan rebuilt on another bridge) ----------
+
+const InvitationProgramSchema = z.object({
+  title: z.string().min(1).max(200),
+  objective: z.string().max(800),
+  format: z.string().max(400),
+  venueType: z.string().max(400),
+  sessions: z
+    .array(
+      z.object({
+        number: z.number().int(),
+        title: z.string().min(1).max(200),
+        entity: z.object({ id: z.string().max(100), name: z.string().max(200) }).nullable(),
+        roles: z.object({ A: z.string().max(400), B: z.string().max(400) }),
+      }),
+    )
+    .min(1)
+    .max(6),
+});
+
+export const InvitationsRequestSchema = z.object({
+  briefId: z.string().uuid(),
+  program: InvitationProgramSchema,
+});
+
+/**
+ * Invitations for a program version the browser holds. The evidence comes from the server
+ * (briefId); every anchor in the submitted program must be one of its entities, so a forged
+ * program can't smuggle in cultural claims the evidence doesn't support.
+ */
+export async function handleInvitations(
+  req: Request,
+  deps: () => AgentDeps,
+  cache?: () => Cache,
+): Promise<Response> {
+  try {
+    const body = InvitationsRequestSchema.parse(await req.json());
+    const brief = await cache?.().get<EvidenceBrief>(`brief:${body.briefId}`);
+    if (!brief) {
+      return Response.json(
+        {
+          error: "evidence_expired",
+          detail: "This analysis has expired. Run the search again before writing invitations.",
+        },
+        { status: 410 },
+      );
+    }
+    const allowed = new Set(
+      brief.entities.filter((e) => e.role !== "obvious").map((e) => e.entityId),
+    );
+    if (body.program.sessions.some((s) => s.entity && !allowed.has(s.entity.id))) {
+      return Response.json(
+        { error: "unknown_anchor", detail: "The program uses an entity outside this analysis." },
+        { status: 400 },
+      );
+    }
+    const invitations = await writeInvitations(
+      deps().llm,
+      brief,
+      body.program as unknown as Program,
+    );
+    return Response.json({ invitations });
   } catch (err) {
     return errorResponse(err);
   }
