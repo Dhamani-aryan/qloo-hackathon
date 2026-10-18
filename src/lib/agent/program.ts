@@ -117,6 +117,10 @@ export function titleGuard(
       ...brief.scenario.a.seeds,
       ...brief.scenario.b.seeds,
       ...brief.themes.map((t) => t.name),
+      // The organizer's own names are not cultural claims (a run quoted "Jaipur Craft Futures").
+      brief.scenario.title,
+      brief.scenario.a.label,
+      brief.scenario.b.label,
       ...alsoKnown,
     ].map(normalize),
   );

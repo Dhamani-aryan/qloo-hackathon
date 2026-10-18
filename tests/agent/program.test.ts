@@ -77,6 +77,12 @@ describe("guardProgram", () => {
       "Main bridge B1 does not anchor any session",
     );
   });
+  it("keeps the organizer's own scenario and group names when quoted", () => {
+    const d = draft();
+    d.sessions[0].activity = `Welcome to "${brief.scenario.title}" with "${brief.scenario.a.label}"`;
+    expect(guardProgram(d, brief).guard.removedTitles).toEqual([]);
+  });
+
   it("does not accept an invented sequel merely because its title contains a known title", () => {
     const d = draft();
     d.sessions[0].activity = 'Watch "Shared Comedy II"';
