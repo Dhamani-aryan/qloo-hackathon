@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateBaseline } from "@/lib/agent/baseline";
+import { DEFAULT_SETTINGS } from "@/lib/planning";
 import { SCENARIO } from "./fixtures";
 import { scriptedLlm } from "./helpers";
 
@@ -21,13 +22,19 @@ describe("generateBaseline", () => {
         successMeasures: ["Attendance"],
       }),
     );
-    const b = await generateBaseline(llm, SCENARIO);
+    const b = await generateBaseline(llm, {
+      ...SCENARIO,
+      instructions: "No podcasts",
+      settings: { ...DEFAULT_SETTINGS, budget: "free" },
+    });
 
     expect(b.kind).toBe("llm_only");
     expect(b.sessions[0].anchor).toBe("Some Famous Film");
     const prompt = requests[0].prompt;
     expect(prompt).toContain("A four-session campus and city program");
     expect(prompt).toContain("SA1");
+    expect(prompt).toContain("No podcasts");
+    expect(prompt).toContain("Every session must be free");
     expect(prompt).not.toMatch(/evidence|ev_|percentile/i);
   });
 });

@@ -58,6 +58,7 @@ const baseline: BaselineProgram = {
       number: 1,
       title: "A",
       anchor: "SA1, SB1 and Made Up Film",
+      anchors: ["SA1", "SB1", "Made Up Film"],
       activity: "x",
       roles: { A: "x", B: "x" },
     },
@@ -68,13 +69,14 @@ const baseline: BaselineProgram = {
 };
 
 describe("splitAnchor", () => {
-  it("splits lists joined by commas, 'and' and ampersands", () => {
-    expect(splitAnchor("Lady Bird, Cinema Paradiso, and Just Kids")).toEqual([
+  it("uses semicolons for legacy lists and preserves punctuation inside titles", () => {
+    expect(splitAnchor("Lady Bird; Cinema Paradiso; Just Kids")).toEqual([
       "Lady Bird",
       "Cinema Paradiso",
       "Just Kids",
     ]);
-    expect(splitAnchor("Simon & Garfunkel")).toEqual(["Simon", "Garfunkel"]);
+    expect(splitAnchor("Simon & Garfunkel")).toEqual(["Simon & Garfunkel"]);
+    expect(splitAnchor("Everything Everywhere All at Once")).toHaveLength(1);
     expect(splitAnchor(null)).toEqual([]);
   });
 });
@@ -85,6 +87,16 @@ describe("compareStats", () => {
     expect(s.ours).toMatchObject({ anchored: 2, discovered: 2, sessions: 3 });
     expect(s.ours.evidence).toBeGreaterThan(0);
     expect(s.baseline).toEqual({ named: 3, reusedSeeds: 2, unverified: 1, sessions: 2 });
+  });
+  it("counts unique anchors and preserves punctuation in structured baseline titles", () => {
+    const repeated = { ...program, sessions: [program.sessions[0], program.sessions[0]] };
+    const b = {
+      ...baseline,
+      sessions: [{ ...baseline.sessions[0], anchors: ["Simon & Garfunkel", "Simon & Garfunkel"] }],
+    };
+    const stats = compareStats(repeated, b, SCENARIO);
+    expect(stats.ours.discovered).toBe(1);
+    expect(stats.baseline.named).toBe(1);
   });
 });
 

@@ -8,13 +8,17 @@ import type { Program } from "./program";
  * Used by the UI and by the evaluation (eval/run.ts).
  */
 
-export const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+export const normName = (s: string) =>
+  s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "");
 
-/** Split an anchor like "Lady Bird, Cinema Paradiso, and Just Kids" into names. */
+/** Legacy display strings use semicolons; commas and 'and' may be part of an actual title. */
 export function splitAnchor(anchor: string | null): string[] {
   if (!anchor) return [];
   return anchor
-    .split(/,\s*|\s+and\s+|\s*&\s*|;\s*/)
+    .split(/;\s*/)
     .map((s) => s.replace(/^and\s+/i, "").trim())
     .filter(Boolean);
 }
@@ -30,8 +34,18 @@ export function compareStats(
   scenario: Scenario,
 ): ComparisonStats {
   const seeds = new Set([...scenario.a.seeds, ...scenario.b.seeds].map((s) => normName(s.name)));
-  const ourEntities = program.sessions.flatMap((s) => (s.entity ? [s.entity.name] : []));
-  const theirs = baseline.sessions.flatMap((s) => splitAnchor(s.anchor));
+  const ourEntities = [
+    ...new Map(
+      program.sessions.flatMap((s) => (s.entity ? [[s.entity.id, s.entity.name] as const] : [])),
+    ).values(),
+  ];
+  const theirs = [
+    ...new Map(
+      baseline.sessions
+        .flatMap((s) => s.anchors ?? splitAnchor(s.anchor))
+        .map((name) => [normName(name), name]),
+    ).values(),
+  ];
   const reused = theirs.filter((n) => seeds.has(normName(n)));
   return {
     ours: {

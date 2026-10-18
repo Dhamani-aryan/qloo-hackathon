@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  compareStats,
-  normName as norm,
-  splitAnchor,
-  type ComparisonStats,
-} from "@/lib/agent/ablation";
+import { compareStats, normName as norm, splitAnchor } from "@/lib/agent/ablation";
 import type { BaselineProgram } from "@/lib/agent/baseline";
 import type { Program } from "@/lib/agent/program";
 import type { Scenario } from "@/lib/engine/types";
@@ -15,17 +10,6 @@ import { Kicker, More, Rule, Spinner, Title, cx } from "../ui";
  * With vs without Qloo, shown in the product. The LLM-only version got the same objective and
  * the same favourites, but no Qloo evidence. Counting logic lives in @/lib/agent/ablation.
  */
-
-function headline(stats: ComparisonStats): string {
-  const { baseline } = stats;
-  if (baseline.named > 0 && baseline.unverified === 0) {
-    return "Without Qloo, the model could only reuse the favourites it was given.";
-  }
-  if (baseline.unverified > baseline.reusedSeeds) {
-    return "Without Qloo, the model's new picks are guesses with no evidence behind them.";
-  }
-  return "Without Qloo, the program has nothing to stand on but the model's intuition.";
-}
 
 export function Comparison({
   program,
@@ -63,26 +47,27 @@ export function Comparison({
   return (
     <section aria-label="With versus without Qloo">
       <div className="border-t-2 border-ink pt-10">
-        <Kicker>Why Qloo matters</Kicker>
+        <Kicker>Evidence comparison</Kicker>
         <Title level={2} className="mt-4 max-w-3xl">
-          {headline(stats)}
+          Two proposals. Different evidence.
         </Title>
         <p className="mt-4 max-w-2xl text-ink-2">
-          Same favourites, same AI, with and without Qloo.
+          Same favorites, organizer notes, practical constraints and model. One proposal uses Qloo;
+          the other uses the model’s knowledge. Source counts show provenance, not which program
+          people will prefer.
         </p>
       </div>
 
       <dl className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
         <Figure
-          label="New titles backed by both groups' data"
+          label="Unique new anchors with Qloo support"
           ours={stats.ours.discovered}
           theirs={0}
         />
         <Figure
-          label="Unverified guesses (lower is better)"
+          label="Named titles without Qloo validation"
           ours={0}
           theirs={stats.baseline.unverified}
-          lowerIsBetter
         />
         <Figure label="Qloo evidence citations" ours={stats.ours.evidence} theirs={0} />
       </dl>
@@ -100,6 +85,7 @@ export function Comparison({
                   <p className="text-sm">
                     <span className="figures text-muted">{s.number}.</span> {s.title}
                   </p>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-2">{s.activity}</p>
                   <p className="mt-1 text-xs">
                     {s.entity ? (
                       <>
@@ -133,7 +119,7 @@ export function Comparison({
                     <span className="figures text-muted">{s.number}.</span> {s.title}
                   </p>
                   <p className="mt-1 text-xs leading-relaxed">
-                    {splitAnchor(s.anchor).map((n, i, all) => (
+                    {(s.anchors ?? splitAnchor(s.anchor)).map((n, i, all) => (
                       <span key={n}>
                         <span className={cx(seeds.has(norm(n)) ? "text-muted" : "text-warn")}>
                           {n}
@@ -141,14 +127,18 @@ export function Comparison({
                         {i < all.length - 1 && <span className="text-muted">, </span>}
                       </span>
                     ))}
-                    {!s.anchor && <span className="text-muted">No anchor</span>}
+                    {!s.anchor && !s.anchors?.length && (
+                      <span className="text-muted">No anchor</span>
+                    )}
                   </p>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-2">{s.activity}</p>
                 </li>
               ))}
             </ol>
             <p className="mt-3 text-xs text-muted">
-              Grey: a favourite it was given. <span className="text-warn">Amber</span>: named with
-              no evidence that both groups would want it.
+              Grey: a supplied favorite. <span className="text-warn">Amber</span>: a model proposal
+              without Qloo validation. Unvalidated does not mean false or unsuitable; organizer
+              feedback is still needed for both plans.
             </p>
           </div>
         </div>
@@ -157,42 +147,17 @@ export function Comparison({
   );
 }
 
-function Figure({
-  label,
-  ours,
-  theirs,
-  lowerIsBetter = false,
-}: {
-  label: string;
-  ours: number;
-  theirs: number;
-  lowerIsBetter?: boolean;
-}) {
-  const oursBetter = lowerIsBetter ? ours <= theirs : ours >= theirs;
+function Figure({ label, ours, theirs }: { label: string; ours: number; theirs: number }) {
   return (
     <div className="border-t border-line pt-4">
       <dt className="text-xs text-muted">{label}</dt>
       <dd className="mt-3 flex items-baseline gap-6">
         <span>
-          <span
-            className={cx(
-              "figures font-display text-5xl leading-none",
-              oursBetter ? "text-bridge" : "text-ink-2",
-            )}
-          >
-            {ours}
-          </span>
+          <span className="figures font-display text-5xl leading-none text-bridge">{ours}</span>
           <span className="mt-1 block text-[11px] text-muted">with Qloo</span>
         </span>
         <span>
-          <span
-            className={cx(
-              "figures font-display text-5xl leading-none",
-              lowerIsBetter && theirs > 0 ? "text-warn" : "text-muted/70",
-            )}
-          >
-            {theirs}
-          </span>
+          <span className="figures font-display text-5xl leading-none text-ink-2">{theirs}</span>
           <span className="mt-1 block text-[11px] text-muted">model only</span>
         </span>
       </dd>

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Scenario } from "@/lib/engine";
 import { generateStructured } from "@/lib/llm/structured";
 import type { LlmClient } from "@/lib/llm/types";
+import { DEFAULT_SETTINGS, settingsInstructions } from "@/lib/planning";
 
 /**
  * The LLM-only baseline (plan §14, condition 1): the same objective, community labels and
@@ -22,6 +23,7 @@ export const BaselineProgramSchema = z.object({
         title: text(90),
         /** Any work, artist or place the LLM picks; not checked against Qloo. */
         anchor: z.string().max(120).nullable(),
+        anchors: z.array(z.string().min(1).max(200)).max(8).optional(),
         activity: text(600),
         roles: z.object({ A: text(240), B: text(240) }),
       }),
@@ -54,6 +56,9 @@ export async function generateBaseline(
       `Location: ${scenario.location ?? "(not specified)"}`,
       `Community A, ${scenario.a.label}, likes: ${seeds("a")}`,
       `Community B, ${scenario.b.label}, likes: ${seeds("b")}`,
+      `Organizer notes: ${scenario.instructions}`,
+      `Practical constraints: ${settingsInstructions(scenario.settings ?? DEFAULT_SETTINGS).join(" ")}`,
+      "Return each named cultural entity separately in the anchors array, preserving its complete title (commas, ampersands and 'and' may belong to a title). Also set anchor to a short display string or null.",
       `Design a ${sessions}-session program.`,
     ].join("\n"),
   });
