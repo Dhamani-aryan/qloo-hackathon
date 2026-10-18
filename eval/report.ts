@@ -114,6 +114,8 @@ const beforeAfter = previous
 - *Repeatability:* the LLM planner picked different categories on different runs, so the same input could give different bridges (Berlin). Every proven category now always runs, and films only when a group named a film.
 - *Weak third bridges:* some bridges passed at about the 51st percentile for both groups (Toronto). Only bridges with solid support from both groups (harmonic mean ≥ 0.55) are shown now; weaker ones move to "also in the running".
 
+**Run 8 → stress cases under the revised scoring.** Organizer settings now change scoring (familiar picks averaged the 92nd popularity percentile vs 73rd for exploratory), and eight stress cases were added. Findings: a kids' TV group and a death-metal group got filler "bridges" at the 50th–64th percentile, because percentiles are relative to the pool; when Qloo's Compare finds no shared theme, a stricter bar (65th for both) now applies and the page warns, leaving one bridge. Two Tartu high schools appeared as bridges and a cardiology clinic as the mainstream contrast; K-12 schools, childcare and medical facilities are now excluded as venues (rerun: a canal and an artisan courtyard). Non-Latin titles (Korean, Japanese) all resolved.
+
 **Run 6 → following notes.** With "adults only, a live jazz venue", the agent searched Qloo's *Jazz club* tag, but every club was rejected as a bar by the mixed-age alcohol rule. Bars and clubs are now allowed when the organizer says the group is adults only (hotels, worship and government buildings stay out). In run 7 the clubs were scored properly and still didn't qualify: the skate collective's support for Ronnie Scott's is only around the 20th percentile. The agent now says exactly that in its log instead of forcing a one-sided pick.
 
 **Run 5 → stricter bridges.** Some third bridges had one group in the 40s (Yola at 44th, *Watership Down* at 41st, *The Beatles: Get Back* at 49th), which reads as "one group doesn't really like it". Every shown bridge now needs at least the 50th percentile from **both** groups. All six cases still show three bridges: the next strong candidate takes the slot (for example Royal Tenenbaums House at 88/90 in New York).
@@ -191,6 +193,8 @@ Reproduce it with \`npm run spike eval/run.ts\`, then \`npm run spike eval/repor
 | Titles that just **reuse the favourites** it was given | — | ${reused} of ${named} named |
 | **Unverified** titles (named without any evidence) | 0 | ${unverified} of ${named} named |
 | Evidence citations | ${citations} | 0 |
+
+These counts show **provenance** (where each named title came from), not that the plans are better. The model-only version gets the same favourites, notes and settings. Whether organizers prefer either is a human judgment that is still pending.
 
 ## Per case
 
