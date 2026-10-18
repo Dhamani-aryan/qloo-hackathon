@@ -131,7 +131,10 @@ export const pct = (v: number | null) => (v === null ? "—" : ordinal(v));
 
 /** First word of a community label ("University film & music club" → "University"). */
 export function shortLabel(label: string): string {
-  return label.trim().split(/\s+/)[0] ?? label;
+  const words = label.trim().split(/\s+/);
+  // "Group 1" / "Group 2" must stay distinguishable.
+  if (words.length > 1 && /^\d+$/.test(words[1])) return `${words[0]} ${words[1]}`;
+  return words[0] ?? label;
 }
 
 const TYPE_LABELS: Record<string, string> = {
