@@ -147,6 +147,13 @@ export function summarize(r: AgentResult, unmatched: string[], appUrl: string): 
         `${engine.obvious.entity.name}. Not chosen, because it says nothing specific about these groups.`,
     );
   }
+  if (engine.overlap === "weak") {
+    lines.push(
+      "",
+      "Caution: Qloo found no shared themes between these groups, so only options both rank " +
+        "clearly highly are listed. Treat them as experiments.",
+    );
+  }
   lines.push(
     "",
     "## Bridges (support = percentile within the candidate pool, per group)",
