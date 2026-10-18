@@ -1,6 +1,7 @@
 import { cacheKey, type Cache } from "@/lib/cache/cache";
 import type { Scenario } from "@/lib/engine/types";
 import type { AgentEvent, AgentResult } from "./orchestrator";
+import { DEFAULT_SETTINGS } from "@/lib/planning";
 
 /**
  * Whole-run caching for demo speed. A finished run is stored server-side and replayed as a
@@ -34,10 +35,11 @@ export function runKey(scenario: Scenario, options: object): string {
       .filter((s) => s.confirmed)
       .map((s) => [s.entityId, s.weight])
       .sort();
-  return cacheKey("run:v2", {
+  return cacheKey("run:v4-grounded-planning", {
     objective: scenario.objective,
     location: scenario.location,
     instructions: scenario.instructions,
+    settings: scenario.settings ?? DEFAULT_SETTINGS,
     labels: [scenario.a.label, scenario.b.label],
     a: seeds("a"),
     b: seeds("b"),
@@ -72,6 +74,17 @@ export async function* recordRun(
       if (e.result.status === "ok" && !e.result.program) continue;
       // A run where some Qloo calls failed is incomplete; don't replay it to others for a week.
       if (e.result.engine?.warnings.some((w) => w.includes("failed"))) continue;
+      if (
+        e.result.warnings.length ||
+        (e.result.program &&
+          (e.result.program.guard.warnings.length ||
+            e.result.program.guard.removedTitles.length ||
+            e.result.program.guard.removedEntityRefs.length ||
+            e.result.program.guard.removedThemeRefs.length ||
+            e.result.program.guard.removedEvidenceIds.length)) ||
+        e.result.invitations?.removedTitles.length
+      )
+        continue;
       const recording: Recording = {
         version: 1,
         recordedAt: Date.now(),

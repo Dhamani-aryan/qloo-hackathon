@@ -115,6 +115,25 @@ describe("run recording and replay", () => {
     expect(runKey(scenario, { domains: ["tvShow"] })).not.toBe(a);
   });
 
+  it("does not cache output whose guard had to remove an invitation title", async () => {
+    const cache = fresh();
+    const key = runKey(scenario, {});
+    const { llm } = routerLlm({
+      invitations: () =>
+        JSON.stringify({
+          A: { subject: "Join", message: 'Try "Invented Work".' },
+          B: { subject: "Join", message: "Make together." },
+        }),
+    });
+    for await (const event of recordRun(
+      runAgent({ qloo: fakeClient(world, compare).client, llm }, scenario),
+      cache,
+      key,
+    ))
+      void event;
+    expect(await loadRecording(cache, key)).toBeNull();
+  });
+
   it("handleAnalysis replays from the cache unless fresh is requested", async () => {
     const cache = fresh();
     const post = (body: unknown) =>

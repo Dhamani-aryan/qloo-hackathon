@@ -63,7 +63,7 @@ async function warm(id: string) {
   const done = text.includes("event: done");
   const status = text.match(/"status":"(ok|insufficient_evidence|partial)"/)?.[1] ?? "unknown";
   console.log(
-    `${preset.title}: ${replayed ? "already cached" : "ran live and cached"} · ${status} · ${(
+    `${preset.title}: ${replayed ? "already cached" : "ran live (only clean results are cached)"} · ${status} · ${(
       (Date.now() - started) /
       1000
     ).toFixed(0)}s${done ? "" : " · WARNING: stream ended without a result"}`,

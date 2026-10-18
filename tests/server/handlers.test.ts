@@ -6,6 +6,7 @@ import { QlooError, type EntityMatch, type QlooClient } from "@/lib/qloo";
 import { fakeClient } from "../engine/helpers";
 import { compare, world, worldScenario } from "../engine/world";
 import { routerLlm } from "../agent/router";
+import { createMemoryCache } from "@/lib/cache/cache";
 
 const post = (body: unknown) =>
   new Request("http://test.local/api", {
@@ -117,11 +118,37 @@ describe("handleProgram", () => {
   it("regenerates a program for another bridge from the brief", async () => {
     const deps = { qloo: fakeClient(world, compare).client, llm: routerLlm().llm };
     const first = await runAgentToCompletion(deps, worldScenario(), { baseline: false });
-    const res = await handleProgram(post({ brief: first.brief, bridgeRef: "B2" }), () => deps);
+    const cache = createMemoryCache(10, new Map());
+    const briefId = crypto.randomUUID();
+    await cache.set(`brief:${briefId}`, first.brief, 60);
+    const res = await handleProgram(
+      post({ briefId, bridgeRef: "B2" }),
+      () => deps,
+      () => cache,
+    );
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.program.sessions.length).toBeGreaterThan(0);
     expect(body.critique[0].check).toBe("generic_roles");
+  });
+
+  it("refuses expired or browser-authored evidence before calling the model", async () => {
+    const cache = createMemoryCache(10, new Map());
+    const deps = () => {
+      throw new Error("Model must not be called");
+    };
+    const expired = await handleProgram(
+      post({ briefId: crypto.randomUUID(), bridgeRef: "B1" }),
+      deps,
+      () => cache,
+    );
+    expect(expired.status).toBe(410);
+    const forged = await handleProgram(
+      post({ brief: { entities: [], themes: [] }, bridgeRef: "B1" }),
+      deps,
+      () => cache,
+    );
+    expect(forged.status).toBe(400);
   });
 
   it("rejects unknown bridges and malformed briefs", async () => {
