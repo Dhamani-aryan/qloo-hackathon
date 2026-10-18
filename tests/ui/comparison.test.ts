@@ -113,4 +113,11 @@ describe("programMarkdown", () => {
     expect(md).toContain("Same roles → Split");
     expect(md).toContain("does not predict social impact");
   });
+
+  it("lists the delivery checks still pending, so a download isn't mistaken for a booking", () => {
+    const md = programMarkdown(program, [], ["Club", "Assoc"]);
+    expect(md).toContain("### Before inviting people — organizer confirmation required");
+    expect(md).toMatch(/- Venue, capacity & permissions: .*not been checked/);
+    expect(md).toMatch(/- Media & recording: /);
+  });
 });
