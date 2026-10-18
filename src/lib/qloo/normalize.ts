@@ -23,6 +23,23 @@ const num = (v: unknown): number | null => (typeof v === "number" && Number.isFi
 const obj = (v: unknown): Obj => (isObj(v) ? v : {});
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
+const PROMO = /https?:\/\/|www\.|[\w.+-]+@[\w-]+\.[\w.]+|privacy policy|advertis/i;
+
+/**
+ * Descriptions are shown to organizers and given to the model, so drop sentences that are
+ * links, contact addresses or sponsorship boilerplate (a podcast description included an ad
+ * sales email and a privacy-policy URL). Returns null if nothing descriptive is left.
+ */
+export function cleanDescription(text: string | null): string | null {
+  if (!text) return null;
+  const kept = text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => !PROMO.test(sentence));
+  const out = kept.join(" ").trim();
+  return out.length >= 20 ? out : null;
+}
+
 function imageUrl(props: Obj): string | null {
   const image = props.image;
   if (typeof image === "string") return image;
@@ -92,7 +109,7 @@ export function normalizeEntity(raw: unknown): QlooEntity | null {
     name,
     type: str(raw.type) ?? str(arr(raw.types)[0]),
     subtype: str(raw.subtype),
-    description: str(props.description) ?? str(props.short_description),
+    description: cleanDescription(str(props.description) ?? str(props.short_description)),
     imageUrl: imageUrl(props),
     popularity: num(raw.popularity),
     disambiguation: str(raw.disambiguation),

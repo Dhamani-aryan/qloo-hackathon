@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanDescription,
   normalizeCompare,
   normalizeInsights,
   normalizeSearch,
@@ -89,5 +90,19 @@ describe("normalizeCompare", () => {
   it("reads one-sided tags with their counts", () => {
     expect(r.aTags[0]).toMatchObject({ name: "Youth", count: 4, score: null });
     expect(r.bTags).toEqual([]);
+  });
+});
+
+describe("cleanDescription", () => {
+  it("drops links, contact addresses and ad boilerplate but keeps the description", () => {
+    const raw =
+      "Join a host and guests as they chat about whatever. Comedy sketches and music. " +
+      "Help us improve: https://bit.ly/x  For advertising opportunities please email ads@studio.com " +
+      "Privacy Policy: https://example.com/privacy";
+    expect(cleanDescription(raw)).toBe(
+      "Join a host and guests as they chat about whatever. Comedy sketches and music.",
+    );
+    expect(cleanDescription("See https://example.com")).toBeNull();
+    expect(cleanDescription(null)).toBeNull();
   });
 });
