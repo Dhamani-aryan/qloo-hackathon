@@ -191,6 +191,15 @@ export function ResultsScreen({
             </Button>
           </Note>
         )}
+        {engineOk && view.engine?.overlap === "weak" && (
+          <Note tone="warn">
+            <p className="font-medium text-ink">These groups share little in Qloo&apos;s data.</p>
+            <p>
+              Qloo found no common themes between them, so only options both groups rank clearly
+              highly are shown. Treat them as experiments and check with both groups first.
+            </p>
+          </Note>
+        )}
         {view.engine?.status === "insufficient_evidence" && (
           <Note tone="warn">
             <p className="font-medium text-ink">No strong common ground this time.</p>
