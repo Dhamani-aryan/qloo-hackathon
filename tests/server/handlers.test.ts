@@ -207,3 +207,31 @@ describe("handleInvitations", () => {
     expect((await res.json()).error).toBe("unknown_anchor");
   });
 });
+
+describe("handleProgram time budget", () => {
+  it("returns the guarded draft when the critique can't finish in time", async () => {
+    const base = { qloo: fakeClient(world, compare).client, llm: routerLlm().llm };
+    const first = await runAgentToCompletion(base, worldScenario(), { baseline: false });
+    const cache = createMemoryCache(10, new Map());
+    const briefId = crypto.randomUUID();
+    await cache.set(`brief:${briefId}`, first.brief, 60);
+    const slowCritic = {
+      ...base.llm,
+      generateText: (req: Parameters<typeof base.llm.generateText>[0]) =>
+        req.system.includes("demanding reviewer")
+          ? new Promise<never>(() => {})
+          : base.llm.generateText(req),
+    };
+    const res = await handleProgram(
+      post({ briefId, bridgeRef: "B2" }),
+      () => ({ ...base, llm: slowCritic }),
+      () => cache,
+      300,
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.critiqueSkipped).toBe(true);
+    expect(body.program.title).toBe("Shared Nights");
+    expect(body.critique).toEqual([]);
+  });
+});

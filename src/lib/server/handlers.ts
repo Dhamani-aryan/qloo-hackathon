@@ -173,6 +173,8 @@ export async function handleProgram(
   req: Request,
   deps: () => AgentDeps,
   cache?: () => Cache,
+  /** Total time for draft + critique; the route allows 120 s. */
+  budgetMs = 100_000,
 ): Promise<Response> {
   try {
     const body = ProgramRequestSchema.parse(await req.json());
@@ -189,10 +191,25 @@ export async function handleProgram(
       return Response.json({ error: "unknown_bridge" }, { status: 400 });
     }
     const { llm } = deps();
+    const started = Date.now();
     const draft = await generateProgram(llm, brief, body.bridgeRef);
     if (!body.critic) return Response.json({ program: draft, critique: [] });
-    const c = await critiqueProgram(llm, brief, draft).catch(() => null);
-    return Response.json({ program: c?.revised ?? draft, draft, critique: c?.issues ?? [] });
+    // The critique is optional polish: if it can't finish inside the route's time budget,
+    // return the guarded first draft rather than letting the whole request time out.
+    const remaining = budgetMs - (Date.now() - started);
+    const c =
+      remaining > Math.min(5_000, budgetMs / 2)
+        ? await Promise.race([
+            critiqueProgram(llm, brief, draft).catch(() => null),
+            new Promise<null>((r) => setTimeout(() => r(null), remaining)),
+          ])
+        : null;
+    return Response.json({
+      program: c?.revised ?? draft,
+      draft,
+      critique: c?.issues ?? [],
+      critiqueSkipped: !c,
+    });
   } catch (err) {
     return errorResponse(err);
   }
