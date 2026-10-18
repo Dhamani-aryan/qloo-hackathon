@@ -71,20 +71,12 @@ export async function* recordRun(
       e.type === "done" &&
       (e.result.status === "ok" || e.result.status === "insufficient_evidence")
     ) {
-      if (e.result.status === "ok" && !e.result.program) continue;
-      // A run where some Qloo calls failed is incomplete; don't replay it to others for a week.
-      if (e.result.engine?.warnings.some((w) => w.includes("failed"))) continue;
-      if (
-        e.result.warnings.length ||
-        (e.result.program &&
-          (e.result.program.guard.warnings.length ||
-            e.result.program.guard.removedTitles.length ||
-            e.result.program.guard.removedEntityRefs.length ||
-            e.result.program.guard.removedThemeRefs.length ||
-            e.result.program.guard.removedEvidenceIds.length)) ||
-        e.result.invitations?.removedTitles.length
-      )
+      const reason = uncacheableReason(e.result);
+      if (reason) {
+        // Visible in server logs, so a demo that never replays can be diagnosed.
+        console.warn(`[run-cache] not cached: ${reason}`);
         continue;
+      }
       const recording: Recording = {
         version: 1,
         recordedAt: Date.now(),
@@ -95,6 +87,27 @@ export async function* recordRun(
       await cache.set(key, recording, RUN_CACHE_TTL);
     }
   }
+}
+
+/** Why a finished run must not be replayed to other visitors, or null if it is clean. */
+export function uncacheableReason(r: AgentResult): string | null {
+  if (r.status === "ok" && !r.program) return "no program";
+  // A run where some Qloo calls failed is incomplete; don't replay it to others for a week.
+  if (r.engine?.warnings.some((w) => w.includes("failed"))) return "a Qloo call failed";
+  if (r.warnings.length) return `warnings: ${r.warnings.join(" | ")}`;
+  const g = r.program?.guard;
+  if (g?.warnings.length) return `guard warnings: ${g.warnings.join(" | ")}`;
+  const removed = [
+    ...(g?.removedTitles ?? []),
+    ...(g?.removedEntityRefs ?? []),
+    ...(g?.removedThemeRefs ?? []),
+    ...(g?.removedEvidenceIds ?? []),
+  ];
+  if (removed.length) return `plan references removed: ${removed.join(", ")}`;
+  if (r.invitations?.removedTitles.length) {
+    return `invitation titles removed: ${r.invitations.removedTitles.join(", ")}`;
+  }
+  return null;
 }
 
 export async function loadRecording(cache: Cache, key: string): Promise<Recording | null> {
