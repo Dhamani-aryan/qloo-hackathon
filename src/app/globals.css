@@ -118,6 +118,20 @@ select {
   color: var(--ink);
 }
 
+input[type="checkbox"] {
+  accent-color: var(--bridge);
+}
+button,
+summary,
+select {
+  touch-action: manipulation;
+}
+button:not(:disabled),
+summary,
+select {
+  cursor: pointer;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--muted);

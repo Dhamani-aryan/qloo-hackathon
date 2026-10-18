@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Invitations as InvitationsData } from "@/lib/agent/invites";
 import { Button, Dot, Kicker, Title } from "../ui";
 
-/** One ready-to-send invitation per group, each pitched in that group's own tastes. */
+/** Draft invitations for organizer review, each pitched in that group's own tastes. */
 export function Invitations({
   invitations,
   labels,
@@ -28,6 +28,10 @@ export function Invitations({
     <section aria-label="Invitations">
       <Kicker tone="bridge">Get both groups through the door</Kicker>
       <Title level={2}>Invite each group</Title>
+      <p className="mt-3 max-w-2xl text-sm text-muted">
+        Draft messages. Replace the date and confirm venue, costs and access before sending. These
+        messages have not been sent to anyone.
+      </p>
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         {(["A", "B"] as const).map((side, i) => (
           <article

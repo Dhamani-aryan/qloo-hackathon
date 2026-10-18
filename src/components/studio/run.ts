@@ -44,6 +44,7 @@ export function useAgentRun() {
         { scenario, fresh },
         controller.signal,
       )) {
+        if (abort.current !== controller) return;
         if (event.type === "replay") {
           setRun((r) => ({
             ...r,
@@ -59,16 +60,28 @@ export function useAgentRun() {
             : {}),
         }));
       }
+      if (abort.current !== controller) return;
       setRun((r) =>
         r.status === "running"
-          ? { ...r, status: "error", error: "The connection closed before the agent finished." }
+          ? {
+              ...r,
+              status: "error",
+              error: "The connection closed before the agent finished.",
+              finishedAt: Date.now(),
+            }
           : r,
       );
     } catch (err) {
+      if (abort.current !== controller) return;
       if (controller.signal.aborted) {
         setRun((r) => ({ ...r, status: "stopped", finishedAt: Date.now() }));
       } else {
-        setRun((r) => ({ ...r, status: "error", error: (err as Error).message }));
+        setRun((r) => ({
+          ...r,
+          status: "error",
+          error: (err as Error).message,
+          finishedAt: Date.now(),
+        }));
       }
     }
   }, []);
@@ -76,6 +89,7 @@ export function useAgentRun() {
   const stop = useCallback(() => abort.current?.abort(), []);
   const reset = useCallback(() => {
     abort.current?.abort();
+    abort.current = null;
     setRun(IDLE);
   }, []);
 

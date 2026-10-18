@@ -7,6 +7,7 @@ import type { Program } from "@/lib/agent/program";
 import type { EngineResult } from "@/lib/engine/types";
 import { Button, Dot, Kicker, More, Note, Spinner, Thumb, Title, cx, typeLabel } from "../ui";
 import { postJson } from "./api";
+import { deliveryChecks } from "@/lib/agent/readiness";
 
 export interface ProgramVersion {
   program: Program;
@@ -30,12 +31,14 @@ export function PlanSection({
   version,
   engine,
   brief,
+  briefId,
   labels,
   onRegenerated,
 }: {
   version: ProgramVersion;
   engine: EngineResult;
   brief: EvidenceBrief | null;
+  briefId?: string;
   labels: [string, string];
   onRegenerated: (v: ProgramVersion) => void;
 }) {
@@ -50,12 +53,12 @@ export function PlanSection({
     program.guard.removedThemeRefs.length;
 
   const rebuild = async (bridgeRef: string) => {
-    if (!brief) return;
+    if (!brief || !briefId) return;
     setBusy(bridgeRef);
     setError(null);
     try {
       const r = await postJson<{ program: Program; critique: CritiqueIssue[] }>("/api/program", {
-        brief,
+        briefId,
         bridgeRef,
       });
       onRegenerated({ program: r.program, critique: r.critique });
@@ -67,7 +70,7 @@ export function PlanSection({
   };
 
   const exportMarkdown = () => {
-    const blob = new Blob([programMarkdown(program, critique, labels)], {
+    const blob = new Blob([programMarkdown(program, critique, labels, brief)], {
       type: "text/markdown",
     });
     const url = URL.createObjectURL(blob);
@@ -81,7 +84,9 @@ export function PlanSection({
   return (
     <div>
       <section className="max-w-3xl space-y-3">
-        <Kicker tone="bridge">Your 4-session plan{main ? ` · built on ${main.name}` : ""}</Kicker>
+        <Kicker tone="bridge">
+          Your {program.sessions.length}-session plan{main ? ` · built on ${main.name}` : ""}
+        </Kicker>
         <Title level={2}>{program.title}</Title>
         <p className="text-ink-2">{program.objective}</p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm print:hidden">
@@ -93,7 +98,7 @@ export function PlanSection({
           </Button>
           <span className={cx("text-xs", removed ? "text-warn" : "text-muted")}>
             {removed === 0
-              ? "✓ Every session is built on real Qloo data"
+              ? `${program.sessions.filter((s) => s.entity).length}/${program.sessions.length} sessions use Qloo entity anchors · activities are proposed by the agent`
               : `${removed} unverified reference${removed === 1 ? " was" : "s were"} removed`}
           </span>
         </div>
@@ -153,7 +158,7 @@ export function PlanSection({
                     <Button
                       key={b.ref}
                       variant="link"
-                      disabled={Boolean(busy)}
+                      disabled={Boolean(busy) || !briefId}
                       onClick={() => rebuild(b.ref)}
                     >
                       {busy === b.ref ? <Spinner label={b.name} /> : b.name}
@@ -170,6 +175,11 @@ export function PlanSection({
                 </div>
               )}
             </More>
+            {!briefId && (
+              <p className="mt-2 text-xs text-muted">
+                Changing the bridge becomes available after the full analysis finishes.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -259,6 +269,7 @@ export function programMarkdown(
   program: Program,
   critique: CritiqueIssue[],
   labels: [string, string],
+  brief: EvidenceBrief | null = null,
 ): string {
   const list = (title: string, items: string[]) =>
     items.length ? `\n### ${title}\n${items.map((i) => `- ${i}`).join("\n")}\n` : "";
@@ -292,6 +303,12 @@ export function programMarkdown(
     list("Friction mitigations", program.frictionMitigations),
     list("Success measures", program.successMeasures),
     list("Limitations", program.limitations),
+    list(
+      "Before inviting people — organizer confirmation required",
+      deliveryChecks(program, brief)
+        .filter((c) => c.status !== "satisfied")
+        .map((c) => `${c.label}: ${c.detail}`),
+    ),
     critique.length
       ? list(
           "Critic's fixes",

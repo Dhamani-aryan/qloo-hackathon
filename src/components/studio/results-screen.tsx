@@ -7,6 +7,10 @@ import { CommonGround } from "./bridges-screen";
 import { Comparison } from "./comparison";
 import { Invitations } from "./invitations";
 import { PlanSection, type ProgramVersion } from "./program-screen";
+import { DeliveryChecklist } from "./delivery-checklist";
+import { ACTIVITY_LABELS, DEFAULT_SETTINGS } from "@/lib/planning";
+import { postJson } from "./api";
+import type { Program } from "@/lib/agent/program";
 import {
   CALLS_PER_DOMAIN,
   STAGES,
@@ -26,7 +30,7 @@ function useElapsed(run: RunState): number {
     return () => clearInterval(t);
   }, [run.status]);
   if (!run.startedAt) return 0;
-  return ((run.finishedAt ?? now) - run.startedAt) / 1000;
+  return Math.max(0, ((run.finishedAt ?? now) - run.startedAt) / 1000);
 }
 
 /** One page: progress, then the common ground, the plan, and why Qloo matters. */
@@ -54,6 +58,35 @@ export function ResultsScreen({
   const result = run.result;
   const engineOk = view.engine?.status === "ok";
   const programFailed = !running && engineOk && !view.program;
+  const [section, setSection] = useState<"bridges" | "plan" | "prepare">("bridges");
+  const settings = scenario.settings ?? DEFAULT_SETTINGS;
+  const [rebuilding, setRebuilding] = useState<string | null>(null);
+  const [rebuildError, setRebuildError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ program: Program | null; ids: string[] }>({
+    program: null,
+    ids: [],
+  });
+  const chooseBridge = async (bridgeRef: string) => {
+    if (version?.program.bridgeRef === bridgeRef) {
+      setSection("plan");
+      return;
+    }
+    if (!result?.briefId || rebuilding) return;
+    setRebuilding(bridgeRef);
+    setRebuildError(null);
+    try {
+      const next = await postJson<ProgramVersion>("/api/program", {
+        briefId: result.briefId,
+        bridgeRef,
+      });
+      onRegenerated(next);
+      setSection("plan");
+    } catch (error) {
+      setRebuildError((error as Error).message);
+    } finally {
+      setRebuilding(null);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -76,12 +109,19 @@ export function ResultsScreen({
               ? "Their common ground"
               : "No result"}
         </Title>
+        <p className="text-sm text-muted">
+          {ACTIVITY_LABELS[settings.activity]} · {settings.novelty} discovery
+          {settings.budget === "free" ? " · free to participants" : ""}
+          {settings.groupSize ? ` · ${settings.groupSize} people` : ""}
+        </p>
       </header>
 
       <div className="mt-6">
         <Progress run={run} onStop={onStop} />
       </div>
-      <AgentLog run={run} />
+      <More className="mt-4" label="What the agent decided">
+        <AgentLog run={run} />
+      </More>
 
       {run.replay && !running && (
         <p className="mt-3 text-xs text-muted">
@@ -135,7 +175,8 @@ export function ResultsScreen({
           <Note tone="warn">
             <p className="font-medium text-ink">No strong common ground this time.</p>
             <p>
-              Try adding more varied favourites (different kinds, fewer blockbusters).{" "}
+              Add more varied favorites or try Familiar discovery. We haven’t lowered the evidence
+              threshold to fill the list.{" "}
               <Button variant="link" onClick={onEdit}>
                 Edit the groups
               </Button>
@@ -144,19 +185,76 @@ export function ResultsScreen({
         )}
       </div>
 
-      {engineOk && view.engine && (
-        <div className="mt-12">
-          <CommonGround scenario={scenario} engine={view.engine} notes={view.notes} />
+      {engineOk && (
+        <nav
+          aria-label="Your program workspace"
+          className="mt-10 grid grid-cols-3 border-y border-line print:hidden"
+        >
+          {(
+            [
+              ["bridges", "01", "Choose a bridge"],
+              ["plan", "02", "Shape the program"],
+              ["prepare", "03", "Prepare to run it"],
+            ] as const
+          ).map(([id, number, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={section === id ? "step" : undefined}
+              onClick={() => setSection(id)}
+              className={cx(
+                "border-b-2 px-2 py-4 text-left text-sm sm:px-4",
+                section === id
+                  ? "border-bridge text-ink"
+                  : "border-transparent text-muted hover:text-ink",
+              )}
+            >
+              <span className="mb-1 block text-[10px] tracking-widest text-bridge">{number}</span>
+              {label}
+              {id !== "bridges" && !version && (
+                <span className="block text-[10px]">
+                  {running ? "Being written…" : "Not available"}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {engineOk && view.engine && section === "bridges" && (
+        <div className="mt-10">
+          <CommonGround
+            scenario={scenario}
+            engine={view.engine}
+            notes={view.notes}
+            onChoose={(ref) => void chooseBridge(ref)}
+            canChoose={Boolean(result?.briefId) && !rebuilding}
+            busyBridge={rebuilding}
+          />
+          {rebuildError && (
+            <div className="mt-4">
+              <Note tone="warn">{rebuildError}</Note>
+            </div>
+          )}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button onClick={() => setSection("plan")}>Shape the program →</Button>
+            <p className="text-xs text-muted">
+              {version
+                ? "Your draft is ready. Choose any bridge above to build a different version."
+                : "A draft is being built around the first bridge. You can change the anchor when it’s ready."}
+            </p>
+          </div>
         </div>
       )}
 
-      {engineOk && (
-        <div className="mt-20 border-t-2 border-ink pt-10">
+      {engineOk && section === "plan" && (
+        <div className="mt-10">
           {version ? (
             <PlanSection
               version={version}
               engine={view.engine!}
               brief={view.brief}
+              briefId={result?.briefId}
               labels={[scenario.a.label, scenario.b.label]}
               onRegenerated={onRegenerated}
             />
@@ -173,9 +271,38 @@ export function ResultsScreen({
         </div>
       )}
 
+      {engineOk && section === "plan" && version && (
+        <div className="mt-10 print:hidden">
+          <Button onClick={() => setSection("prepare")}>Review delivery & invitations →</Button>
+        </div>
+      )}
+
+      {engineOk &&
+        section === "prepare" &&
+        (version ? (
+          <div className="mt-10">
+            <DeliveryChecklist
+              program={version.program}
+              brief={view.brief}
+              confirmed={confirmation.program === version.program ? confirmation.ids : []}
+              onConfirmedChange={(ids) => setConfirmation({ program: version.program, ids })}
+            />
+          </div>
+        ) : (
+          <div className="mt-10">
+            <Spinner
+              label={
+                running
+                  ? "The program will appear here when it’s ready."
+                  : "Write a program before reviewing delivery."
+              }
+            />
+          </div>
+        ))}
+
       {/* Invitations belong to the agent's own plan, not a plan rebuilt on another bridge. */}
-      {view.invitations && version?.program === view.program && (
-        <div className="mt-20">
+      {section === "prepare" && view.invitations && version?.program === view.program && (
+        <div className="mt-12">
           <Invitations
             invitations={view.invitations}
             labels={[scenario.a.label, scenario.b.label]}
@@ -183,15 +310,15 @@ export function ResultsScreen({
         </div>
       )}
 
-      {version && (
-        <div className="mt-24">
+      {section === "prepare" && version && (
+        <More className="mt-12" label="Compare with a model-only proposal">
           <Comparison
             program={version.program}
             baseline={view.baseline}
             scenario={scenario}
             pending={running}
           />
-        </div>
+        </More>
       )}
     </div>
   );
@@ -266,8 +393,15 @@ function Progress({ run, onStop }: { run: RunState; onStop: () => void }) {
       ) : (
         run.startedAt && (
           <p className="text-sm text-muted">
-            Done in <span className="figures">{Math.round(elapsed)}</span>s ·{" "}
-            <span className="figures">{calls}</span> Qloo searches
+            {run.status === "done"
+              ? run.replay
+                ? "Replayed in"
+                : "Completed in"
+              : run.status === "stopped"
+                ? "Stopped after"
+                : "Connection ended after"}{" "}
+            <span className="figures">{Math.round(elapsed)}</span>s ·{" "}
+            <span className="figures">{calls}</span> Qloo query steps
             {engine ? (
               <>
                 {" "}
