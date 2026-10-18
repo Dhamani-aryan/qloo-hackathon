@@ -88,4 +88,9 @@ describe("draft model", () => {
     expect(updated.a.seeds[0].confirmed).toBe(false);
     expect(draftReducer(updated, { type: "removeSeed", side: "a", key }).a.seeds).toHaveLength(1);
   });
+  it("blocks an unresolved choice even if three other seeds are confirmed", () => {
+    let d = withSeeds(withSeeds({ ...emptyDraft(), location: "Test City" }, "a", 3), "b", 3);
+    d = withSeeds(d, "a", 1, false);
+    expect(readiness(d)[0]).toMatch(/Confirm the unsure matches/);
+  });
 });

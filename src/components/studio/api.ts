@@ -86,6 +86,7 @@ export async function postJson<T>(url: string, body: unknown): Promise<T> {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(125_000),
   });
   if (!res.ok) throw await readError(res);
   return (await res.json()) as T;

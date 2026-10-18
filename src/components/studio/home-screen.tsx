@@ -18,6 +18,8 @@ import {
 } from "./draft";
 import { resolveSeeds } from "./api";
 import { IntakePanel } from "./intake-panel";
+import { PlanningSettingsForm } from "./planning-settings";
+import type { QlooTypeKey } from "@/lib/qloo/types";
 
 const RETRY_DELAYS_MS = [1500, 4000];
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -62,7 +64,7 @@ export function useSeedResolver(dispatch: Dispatch<DraftAction>) {
                   matches: r.matches,
                   chosenId: r.bestId,
                   reasons: r.ambiguous && !trusted ? r.reasons : [],
-                  confirmed: true,
+                  confirmed: trusted || !r.ambiguous,
                 }
               : { status: "unresolved", matches: [], reasons: r.reasons },
           });
@@ -111,13 +113,32 @@ export function HomeScreen({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <section className="space-y-3 text-center">
-        <h1 className="font-display text-4xl leading-tight sm:text-5xl">Find common ground</h1>
-        <p className="text-lg text-ink-2">
-          Bringing two groups together? Add a few things each loves, and get a program both will
-          come back to.
+      <section className="max-w-3xl space-y-5">
+        <p className="text-xs font-semibold tracking-[0.18em] text-bridge uppercase">
+          Different tastes. A shared starting point.
+        </p>
+        <h1 className="font-display text-5xl leading-[1.04] sm:text-7xl">
+          Find a reason
+          <br />
+          to come together.
+        </h1>
+        <p className="max-w-xl text-lg leading-relaxed text-ink-2">
+          Turn what two groups love into something they can do together. Explore cultural
+          connections, choose a bridge, and shape a practical four-session program.
         </p>
       </section>
+
+      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-line py-4 text-sm">
+        <span className="text-muted">Start with your groups below, or try:</span>
+        {PREBUILT.map((p) => (
+          <ExampleLink key={p.id} active={draft.id === p.id} onClick={() => load(p.id)}>
+            {p.title} ↗
+          </ExampleLink>
+        ))}
+        <ExampleLink active={draft.id.startsWith("custom")} onClick={() => load("custom")}>
+          Use my groups
+        </ExampleLink>
+      </div>
 
       <div className="mt-10 grid gap-5 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
         <GroupBox side="a" profile={draft.a} dispatch={dispatch} resolve={resolve} />
@@ -127,17 +148,20 @@ export function HomeScreen({
         <GroupBox side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
       </div>
 
-      <div className="mt-6 flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-center">
+      <PlanningSettingsForm settings={draft.settings} dispatch={dispatch} />
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-[15rem_1fr]">
         <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 md:w-60">
           <span className="text-sm text-muted">City</span>
           <input
             value={draft.location}
             onChange={(e) => dispatch({ type: "set", patch: { location: e.target.value } })}
             placeholder="e.g. New York City"
+            maxLength={160}
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
-        <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 md:w-96">
+        <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3">
           <span className="text-sm whitespace-nowrap text-muted">Notes</span>
           <input
             value={draft.instructions}
@@ -149,25 +173,23 @@ export function HomeScreen({
             className="min-w-0 flex-1 bg-transparent outline-none"
           />
         </label>
-        <Button onClick={onRun} disabled={problems.length > 0} className="px-7 py-3.5 text-base">
+      </div>
+
+      <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-lg text-sm text-muted" aria-live="polite">
+          {problems[0] ??
+            "Ready to explore. Cultural fit comes from Qloo; the activity plan is a draft for your review."}
+        </p>
+        <Button
+          onClick={onRun}
+          disabled={problems.length > 0}
+          className="shrink-0 px-7 py-3.5 text-base"
+        >
           Find common ground →
         </Button>
       </div>
-      <p className="mt-3 h-5 text-center text-sm text-muted" aria-live="polite">
-        {problems[0] ?? ""}
-      </p>
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted">
-        <span>Try an example:</span>
-        {PREBUILT.map((p) => (
-          <ExampleLink key={p.id} active={draft.id === p.id} onClick={() => load(p.id)}>
-            {p.title}
-          </ExampleLink>
-        ))}
-        <ExampleLink active={false} onClick={() => load("custom")}>
-          Clear
-        </ExampleLink>
-        <span aria-hidden>·</span>
         <button
           type="button"
           onClick={() => setIntakeOpen((v) => !v)}
@@ -221,13 +243,15 @@ function GroupBox({
   resolve: ReturnType<typeof useSeedResolver>;
 }) {
   const [input, setInput] = useState("");
+  const [inputType, setInputType] = useState<QlooTypeKey | "">("");
   const full = profile.seeds.length >= MAX_SEEDS;
   const n = side === "a" ? 1 : 2;
 
   const add = () => {
     const name = input.trim();
     if (!name || full) return;
-    const seed = newSeed(name);
+    if (profile.seeds.some((s) => s.input.toLowerCase() === name.toLowerCase())) return;
+    const seed = newSeed(name, inputType || undefined);
     dispatch({ type: "addSeed", side, seed });
     void resolve([{ side, seeds: [seed] }]);
     setInput("");
@@ -254,6 +278,7 @@ function GroupBox({
       </div>
       <input
         value={profile.label}
+        maxLength={100}
         onChange={(e) => dispatch({ type: "profile", side, patch: { label: e.target.value } })}
         placeholder={side === "a" ? "e.g. University film club" : "e.g. Neighbourhood arts group"}
         aria-label={`Group ${n} name`}
@@ -279,16 +304,40 @@ function GroupBox({
           add();
         }}
       >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted">
+            Search in
+            <select
+              aria-label={`Favourite type for group ${n}`}
+              value={inputType}
+              onChange={(e) => setInputType(e.target.value as QlooTypeKey | "")}
+              className="rounded border border-line bg-paper px-2 py-1"
+            >
+              <option value="">All culture</option>
+              <option value="artist">Music</option>
+              <option value="movie">Films</option>
+              <option value="tvShow">TV</option>
+              <option value="book">Books</option>
+              <option value="videoGame">Games</option>
+              <option value="podcast">Podcasts</option>
+              <option value="place">Places</option>
+            </select>
+          </label>
+          <span className="text-xs text-muted">
+            {profile.seeds.length}/{MAX_SEEDS}
+          </span>
+        </div>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={full}
+          maxLength={120}
           placeholder={full ? "That's plenty (8 max)" : "Type something they love and press Enter"}
           aria-label={`Add a favourite to group ${n}`}
           className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-ink"
         />
         <p className="mt-1.5 text-xs text-muted">
-          Artists, films, shows, books or places · {profile.seeds.length}/{MAX_SEEDS}
+          Add at least 3 favorites. Check the type on each match.
         </p>
       </form>
     </section>
@@ -334,7 +383,7 @@ function Chip({
             )}
             <button
               type="button"
-              onClick={() => seed.matches.length > 1 && setOpen((v) => !v)}
+              onClick={() => seed.matches.length > 0 && setOpen((v) => !v)}
               title={
                 unchecked
                   ? `Couldn't check with Qloo: ${seed.reasons[0] ?? "try again"}`
@@ -349,6 +398,7 @@ function Chip({
               {match?.name ?? seed.input}
               {failed && !unchecked && " · not found"}
             </button>
+            {match?.type && <span className="text-[10px] text-muted">{typeLabel(match.type)}</span>}
             {unchecked && (
               <button
                 type="button"
@@ -381,7 +431,7 @@ function Chip({
       </span>
 
       {open && seed.matches.length > 0 && (
-        <ul className="absolute top-full left-0 z-20 mt-1 w-72 rounded-xl border border-line bg-paper p-1.5 shadow-lg">
+        <ul className="absolute top-full left-0 z-20 mt-1 w-72 max-w-[calc(100vw-3rem)] rounded-xl border border-line bg-paper p-1.5 shadow-lg">
           <li className="px-2 py-1 text-xs text-muted">Which one did you mean?</li>
           {seed.matches.slice(0, 5).map((m) => (
             <li key={m.id}>
@@ -410,6 +460,11 @@ function Chip({
                       ? ` · ${m.disambiguation}`
                       : ""}
                   </span>
+                  {m.description && (
+                    <span className="mt-1 block text-xs leading-relaxed text-muted">
+                      {m.description.slice(0, 150)}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>

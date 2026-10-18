@@ -1,6 +1,7 @@
 import type { Scenario } from "@/lib/engine/types";
 import type { QlooTypeKey } from "@/lib/qloo/types";
 import type { PrebuiltScenario } from "@/scenarios";
+import { DEFAULT_SETTINGS, type PlanningSettings } from "@/lib/planning";
 
 /** Client-side editable scenario ("draft") and its reducer. */
 
@@ -42,6 +43,7 @@ export interface Draft {
   location: string;
   /** Optional organizer instructions for the agent. */
   instructions: string;
+  settings: PlanningSettings;
   a: DraftProfile;
   b: DraftProfile;
 }
@@ -80,6 +82,7 @@ export function emptyDraft(): Draft {
     objective: "",
     location: "",
     instructions: "",
+    settings: { ...DEFAULT_SETTINGS },
     a: profile(""),
     b: profile(""),
   };
@@ -105,6 +108,7 @@ export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
     objective: p.objective,
     location: p.location,
     instructions: "",
+    settings: { ...DEFAULT_SETTINGS },
     a: profile(p.a),
     b: profile(p.b),
   };
@@ -112,6 +116,7 @@ export function draftFromPrebuilt(p: PrebuiltScenario): Draft {
 
 export type DraftAction =
   | { type: "replace"; draft: Draft }
+  | { type: "settings"; patch: Partial<PlanningSettings> }
   | {
       type: "set";
       patch: Partial<Pick<Draft, "title" | "objective" | "location" | "instructions">>;
@@ -125,6 +130,8 @@ export function draftReducer(draft: Draft, action: DraftAction): Draft {
   switch (action.type) {
     case "replace":
       return action.draft;
+    case "settings":
+      return { ...draft, settings: { ...draft.settings, ...action.patch } };
     case "set":
       return { ...draft, ...action.patch };
     case "profile":
@@ -174,12 +181,21 @@ export function readiness(draft: Draft): string[] {
       problems.push(`Looking up ${name}'s favourites…`);
     } else if (p.seeds.some((s) => s.status === "error")) {
       problems.push(`Some of ${name}'s favourites couldn't be checked. Tap retry or remove them.`);
+    } else if (p.seeds.some((s) => s.status === "resolved" && !s.confirmed)) {
+      problems.push(`Confirm the unsure matches for ${name} before continuing.`);
     } else if (n < MIN_SEEDS) {
       const missing = MIN_SEEDS - n;
       problems.push(`Add ${missing} more favourite${missing === 1 ? "" : "s"} for ${name}.`);
     }
   }
   if (!draft.location.trim()) problems.push("Add a city.");
+  if (
+    draft.settings.groupSize !== null &&
+    (!Number.isInteger(draft.settings.groupSize) ||
+      draft.settings.groupSize < 2 ||
+      draft.settings.groupSize > 500)
+  )
+    problems.push("Choose a group size between 2 and 500.");
   return problems;
 }
 
@@ -217,6 +233,7 @@ export function toScenario(draft: Draft): Scenario {
     objective: draft.objective.trim() || DEFAULT_OBJECTIVE,
     location: draft.location.trim() || null,
     instructions: draft.instructions.trim(),
+    settings: draft.settings,
     a: profile("a"),
     b: profile("b"),
   };

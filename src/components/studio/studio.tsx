@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useReducer, useState } from "react";
 import type { Scenario } from "@/lib/engine/types";
-import { PREBUILT } from "@/scenarios";
 import { Main, TopBar } from "../shell";
-import { draftFromPrebuilt, draftReducer, toScenario } from "./draft";
-import { HomeScreen, useSeedResolver } from "./home-screen";
+import { emptyDraft, draftReducer, toScenario } from "./draft";
+import { HomeScreen } from "./home-screen";
 import type { ProgramVersion } from "./program-screen";
 import { ResultsScreen } from "./results-screen";
 import { artifacts, useAgentRun } from "./run";
@@ -13,26 +12,11 @@ import { artifacts, useAgentRun } from "./run";
 /** Two views: enter the two groups, then one results page. */
 export function Studio() {
   const [view, setView] = useState<"home" | "results">("home");
-  const [draft, dispatch] = useReducer(draftReducer, PREBUILT[0], draftFromPrebuilt);
-  const resolve = useSeedResolver(dispatch);
+  const [draft, dispatch] = useReducer(draftReducer, undefined, emptyDraft);
   const { run, start, stop } = useAgentRun();
   const [ranScenario, setRanScenario] = useState<Scenario | null>(null);
   const [override, setOverride] = useState<ProgramVersion | null>(null);
-  const loaded = useRef(false);
   const { program, critique } = artifacts(run);
-
-  // Resolve the default example once so a first-time visitor lands on something runnable.
-  useEffect(() => {
-    if (loaded.current) return;
-    loaded.current = true;
-    void resolve(
-      [
-        { side: "a", seeds: draft.a.seeds },
-        { side: "b", seeds: draft.b.seeds },
-      ],
-      true,
-    );
-  }, [draft, resolve]);
 
   const show = (next: "home" | "results") => {
     setView(next);
@@ -76,6 +60,7 @@ export function Studio() {
         )}
         {view === "results" && ranScenario && (
           <ResultsScreen
+            key={run.startedAt}
             run={run}
             scenario={ranScenario}
             version={override ?? (program ? { program, critique } : null)}
