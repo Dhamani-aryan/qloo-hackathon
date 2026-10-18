@@ -25,7 +25,7 @@ const SENSITIVE =
  * - government buildings (evaluation: the Palace of Westminster in London).
  */
 const UNSUITABLE_VENUE =
-  /\b(hotels?|motels?|hostels?|lodging|resorts?|banquets?|wedding venues?|marriage hall|guest ?house|bed (and |& )?breakfast|condominium|serviced apartments?|extended stay|holiday home|hyatt|marriott|hilton|oyo|church|cathedral|chapel|mosque|masjid|temple|synagogue|gurdwara|place of worship|high schools?|secondary schools?|primary schools?|elementary schools?|middle schools?|kindergartens?|preschools?|day ?care|child ?care|parliament|palace of westminster|capitol|city hall|town hall|courthouse|embassy|consulate|government)\b/i;
+  /\b(hotels?|motels?|hostels?|lodging|resorts?|banquets?|wedding venues?|marriage hall|guest ?house|bed (and |& )?breakfast|condominium|serviced apartments?|extended stay|holiday home|hyatt|marriott|hilton|oyo|church|cathedral|chapel|mosque|masjid|temple|synagogue|gurdwara|place of worship|high schools?|secondary schools?|primary schools?|elementary schools?|middle schools?|kindergartens?|preschools?|day ?care|child ?care|hospitals?|clinics?|medical cent(er|re)|pharmac(y|ies)|kliinikum|parliament|palace of westminster|capitol|city hall|town hall|courthouse|embassy|consulate|government)\b/i;
 
 /**
  * Alcohol-centred venues. Excluded by default because mixed groups may include under-21s;

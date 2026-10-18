@@ -93,6 +93,9 @@ describe("filters added after the evaluation", () => {
       tags: [{ id: "urn:tag:category:place:design_school", name: "Design school", type: null }],
     });
     expect(rejectionReason(college, "place")).toBeNull();
+    expect(
+      rejectionReason(entity("h2", "Tartu Ülikooli Kliinikum SA Südamekliinik"), "place"),
+    ).toMatch(/kliinikum/i);
   });
 
   it("allows bars and clubs only when the organizer said adults only", () => {
