@@ -12,12 +12,12 @@ Work is split into **5 tracks**, and each track into numbered **steps** (`1.1`, 
 
 > **Keep this section current.** Update it at the end of every step: last updated, what works, known issues, and next step.
 
-**Last updated:** 2026-10-17 · **Current revision:** organizer workflow and grounding pass (see `docs/DECISIONS.md`). The earlier track history below is retained; current checks and live verification are recorded at handoff.
+**Last updated:** 2026-10-18 · **Commits:** ~320 · **Tests:** 185 passing · **Build:** passing
 
 **Done:** Track 0, Track 1 (API spike: GO), Track 2 (bridge engine), Track 3 (AI agent and API), Track 4 (the full web UI), 5.1–5.3 (caching, hardening, UI redesign, evaluation), plus an accuracy pass and a simpler two-page UI (2026-10-10), and a scoring push for the judging criteria (2026-10-17): a real agent loop (organizer notes → directives, review with tools, decision log), invitations per group, stricter bridges (≥ 50th percentile for both groups), a mature-content filter, adults-only venues, and an MCP endpoint (`/api/mcp`, see `docs/MCP.md`).
 **Live:** https://qloo-hackathon-inky.vercel.app (Vercel, auto-deploys from `main`; Upstash holds the run cache, intake, rate limits and the ChatGPT credential, so `CHATGPT_AUTH_STORE=redis` locally too). Verified 2026-10-16: replay in 4 s, a full live run in 70 s, phone layout.
 **Deadline:** Oct 31, 9:15 AM IST (= Oct 30, 11:45 PM EDT); target Oct 29.
-**Next:** rerun the formative evaluation under the revised scoring, obtain real organizer feedback, and finish screenshots/Devpost copy. After changes to selection or generation, update the cache release in `src/lib/agent/replay.ts` (currently `run:v4-grounded-planning`) and warm the examples. Do not treat the historical evaluation as evidence of the revised ranking.
+**Next:** submit on Devpost (text in `docs/SUBMISSION.md`); optional human review of `eval/out/packets/`. Handoff from Codex (`docs/CLAUDE_HANDOFF.md`) is complete: diff stabilised and committed, all 10 production paths tested (`docs/TESTING.md`, fixes listed there), eval run 8 with stress cases (`docs/EVALUATION.md`), README and screenshots. After any change to bridge selection, bump `run:v4-grounded-planning` in `src/lib/agent/replay.ts` and run `npm run smoke -- https://qloo-hackathon-inky.vercel.app`.
 
 **Organizer workflow revision:** empty custom start with explicit examples; typed practical preferences; game search and explicit ambiguity confirmation; factual entity descriptions in prompts; separate cultural and activity-fit assessments; strict bilateral gate; three result views; delivery checklist; server-held evidence handles for regeneration; fairer model-only comparison. ChatGPT subscription integration is unchanged. `docs/HOW_IT_WORKS.md` and `docs/TESTING.md` describe the current experience.
 
