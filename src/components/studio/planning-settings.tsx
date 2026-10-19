@@ -15,11 +15,21 @@ export function PlanningSettingsForm({
 }) {
   const update = (patch: Partial<PlanningSettings>) => dispatch({ type: "settings", patch });
   return (
-    <section className="mt-10 border-t border-line pt-8" aria-label="Program preferences">
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-2xl">Make it work in real life.</h2>
-        <p className="text-xs text-muted">Optional. Leave what you don’t know open.</p>
-      </div>
+    <details
+      className="group mt-8 rounded-2xl border border-line px-5 py-4"
+      aria-label="Program preferences"
+    >
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-2 [&::-webkit-details-marker]:hidden">
+        <span className="flex items-baseline gap-2">
+          <span aria-hidden className="text-muted transition-transform group-open:rotate-90">
+            ›
+          </span>
+          <span className="font-medium">Practical details</span>
+          <span className="text-sm text-muted">optional</span>
+        </span>
+        <span className="text-xs text-muted">{summary(settings)}</span>
+      </summary>
+      <div className="mt-6" />
       <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
         <label className="text-sm">
           What would you like to do?
@@ -90,7 +100,7 @@ export function PlanningSettingsForm({
             value={settings.novelty}
             onChange={(e) => update({ novelty: e.target.value as PlanningSettings["novelty"] })}
           >
-            <option value="familiar">Familiar — shared favorites first</option>
+            <option value="familiar">Familiar — shared favourites first</option>
             <option value="balanced">Balanced — fit with some discovery</option>
             <option value="exploratory">Exploratory — less mainstream</option>
           </select>
@@ -118,6 +128,21 @@ export function PlanningSettingsForm({
           />
         </label>
       </div>
-    </section>
+    </details>
   );
+}
+
+/** One line of what's been chosen, so a folded section still shows its state. */
+function summary(s: PlanningSettings): string {
+  const parts = [
+    ACTIVITY_LABELS[s.activity],
+    s.novelty === "balanced" ? null : `${s.novelty} picks`,
+    s.budget === "free" ? "free" : null,
+    s.audience === "all_ages" ? "all ages" : s.audience === "adults" ? "adults" : null,
+    s.groupSize ? `${s.groupSize} people` : null,
+    s.venue === "existing" ? "your venue" : s.venue === "outing" ? "outings" : null,
+  ].filter(Boolean);
+  return parts.length > 1 || s.activity !== "mixed"
+    ? parts.join(" · ")
+    : "Activity, cost, ages, venue, access";
 }

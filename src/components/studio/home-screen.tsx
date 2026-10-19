@@ -154,8 +154,6 @@ export function HomeScreen({
         <GroupBox side="b" profile={draft.b} dispatch={dispatch} resolve={resolve} />
       </div>
 
-      <PlanningSettingsForm settings={draft.settings} dispatch={dispatch} />
-
       <div className="mt-8 grid gap-4 sm:grid-cols-[15rem_1fr]">
         <label className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 md:w-60">
           <span className="text-sm text-muted">City</span>
@@ -180,6 +178,8 @@ export function HomeScreen({
           />
         </label>
       </div>
+
+      <PlanningSettingsForm settings={draft.settings} dispatch={dispatch} />
 
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="max-w-lg text-sm text-muted" aria-live="polite">
@@ -343,7 +343,9 @@ function GroupBox({
           className="w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-ink"
         />
         <p className="mt-1.5 text-xs text-muted">
-          Add at least 3 favorites. Check the type on each match.
+          {profile.seeds.length < 3
+            ? `Add ${3 - profile.seeds.length} more · artists, films, TV, books, games, podcasts, places`
+            : "Check the type on each match; tap one to change it."}
         </p>
       </form>
     </section>
