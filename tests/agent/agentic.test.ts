@@ -180,3 +180,29 @@ describe("themeReport", () => {
     ).toBe("Jazz Café (jazz club) is one of the bridges.");
   });
 });
+
+describe("planning without notes", () => {
+  it("starts the Qloo search without waiting for the model's reasons, then attaches them", async () => {
+    const { llm } = routerLlm({
+      plan: () =>
+        JSON.stringify({
+          domains: [
+            { domain: "tvShow", reason: "watch club" },
+            { domain: "artist", reason: "listening night" },
+            { domain: "place", reason: "venue" },
+          ],
+        }),
+    });
+    const events: string[] = [];
+    const r = await runAgentToCompletion(
+      { qloo: fakeClient(world, compare).client, llm },
+      worldScenario(),
+      {},
+      (e) => events.push(e.type === "engine" ? `engine:${e.event.type}` : e.type),
+    );
+    const plans = events.flatMap((e, i) => (e === "plan" ? [i] : []));
+    expect(plans.length).toBe(2);
+    expect(plans[0]).toBeLessThan(events.findIndex((e) => e.startsWith("engine:")));
+    expect(r.plan?.domains.find((d) => d.domain === "tvShow")?.reason).toBe("watch club");
+  });
+});

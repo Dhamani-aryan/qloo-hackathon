@@ -140,7 +140,8 @@ export interface DomainProgress {
 export const CALLS_PER_DOMAIN = 4;
 
 export function domainProgress(run: RunState): DomainProgress[] {
-  const plan = run.events.find((e) => e.type === "plan");
+  // The plan can be re-sent later with the model's reasons; the latest one wins.
+  const plan = run.events.findLast((e) => e.type === "plan");
   if (!plan || plan.type !== "plan") return [];
   const engineDone = run.events.some((e) => e.type === "engine_result");
   // Kinds the agent added while reviewing the evidence show up after the planned ones.

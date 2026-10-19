@@ -24,7 +24,7 @@ import { writeInvitations, type Invitations } from "./invites";
 import { CallBudget } from "@/lib/engine/context";
 import { DEFAULT_SETTINGS, settingsInstructions } from "@/lib/planning";
 import { writeBridgeNotes, type BridgeNote } from "./notes";
-import { planDomains, type DomainPlan } from "./planner";
+import { fallbackPlan, planDomains, type DomainPlan } from "./planner";
 import { generateProgram, type Program } from "./program";
 
 /**
@@ -328,6 +328,10 @@ export function runAgent(
               return b;
             });
 
+    // Without notes the searched domains are fixed (planner.ts), so the search starts at once
+    // and the model's one-line reasons for each domain arrive in parallel (~6 s saved).
+    const quickPlan = !options.domains && !scenario.instructions.trim();
+    const reasons = quickPlan ? planDomains(deps.llm, scenario).catch(() => null) : null;
     const [plan, interpreted] = await timed("PLAN_DOMAINS", () =>
       Promise.all([
         options.domains
@@ -335,7 +339,9 @@ export function runAgent(
               source: "fallback" as const,
               domains: options.domains.map((domain) => ({ domain, reason: "Chosen by caller" })),
             }
-          : planDomains(deps.llm, scenario),
+          : quickPlan
+            ? fallbackPlan(scenario)
+            : planDomains(deps.llm, scenario),
         interpretInstructions(deps.llm, scenario).catch((e) => {
           warn(`Couldn't read the instructions: ${message(e)}`);
           return NO_DIRECTIVES;
@@ -546,7 +552,20 @@ export function runAgent(
           warn(`Invitations failed: ${message(e)}`);
         }
       };
-      await Promise.all([invite(), baseline]);
+      const attachReasons = async () => {
+        const llmPlan = reasons && (await reasons);
+        if (!llmPlan || !result.plan) return;
+        const why = new Map(llmPlan.domains.map((d) => [d.domain, d.reason]));
+        result.plan = {
+          source: llmPlan.source,
+          domains: result.plan.domains.map((d) => ({
+            ...d,
+            reason: why.get(d.domain) ?? d.reason,
+          })),
+        };
+        out.push({ type: "plan", plan: result.plan });
+      };
+      await Promise.all([invite(), baseline, attachReasons()]);
     });
     out.push({ type: "state", state: "DONE" });
     out.push({ type: "done", result });
