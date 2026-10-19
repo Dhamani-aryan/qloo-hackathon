@@ -18,13 +18,13 @@ The hard part is finding something **specific to these two groups**, and then ch
 
 1. **Describe both groups** with 3–8 favourites each (artists, films, TV, books, games, podcasts, places). Qloo resolves every name, and ambiguous matches like *Shōgun* (TV, book or band?) must be confirmed. Or send each group a phone link and import what they name.
 2. **Add practical choices:** activity type, participant cost, audience age, group size, an existing venue, access needs, and how adventurous the picks should be (familiar, balanced or exploratory). Free-text notes work too: *"some members are 15–17, keep it free, ideally live music"*.
-3. **Choose a bridge.** Up to three options, each ranked **separately against both groups** by Qloo, with Qloo's description and which of each group's favourites contributed.
+3. **Choose a bridge.** The page opens on three points: why these beat the obvious mainstream pick, what the same AI produced without Qloo, and what the agent decided. Below them are up to three options, each ranked **separately against both groups** by Qloo, with Qloo's description and which of each group's favourites contributed.
 4. **Shape the program.** A 4-session plan built on the chosen bridge, with distinct roles for each group. Rebuild it on another bridge in one click.
 5. **Prepare to run it.** A delivery checklist (venue, costs, access, media rights), draft invitations pitched to each group's own tastes, and a side-by-side with what the same model proposes without Qloo.
 
 | Choose a bridge | Shape the program | Prepare to run it |
 |---|---|---|
-| ![Bridges](docs/screenshots/02-bridges.png) | ![Plan](docs/screenshots/03-plan.png) | ![Checklist](docs/screenshots/04-prepare.png) |
+| ![Bridges](docs/screenshots/02-highlights.png) | ![Plan](docs/screenshots/03-plan.png) | ![Checklist](docs/screenshots/04-prepare.png) |
 
 ## Why it only works with Qloo
 
