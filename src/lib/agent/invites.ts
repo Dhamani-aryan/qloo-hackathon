@@ -27,7 +27,11 @@ const SYSTEM =
   "Keep it under 120 words, plain and specific, no hype, no emojis, no diversity framing, " +
   "and never mention religion, ethnicity, politics or other sensitive traits. Put titles in " +
   '"double quotes". Only name works, artists and places that appear in the brief or the plan. ' +
-  "Follow scenario.rules. Use the entity descriptions rather than inferring features from a name. Do not promise venue access, supplied equipment, free admission, dates or bookings that have not been confirmed; use placeholders and describe the message as a draft when details are unresolved.";
+  "Follow scenario.rules. Use the entity descriptions rather than inferring features from a " +
+  "name. Participants read this: never use internal words like bridge, anchor, Qloo, brief, " +
+  "draft or session codes, and don't discuss what is still being confirmed. Write unknown " +
+  "details as placeholders the organizer fills in, like [date], [venue] or [cost], and never " +
+  "promise access, equipment, free entry or bookings.";
 
 export async function writeInvitations(
   llm: LlmClient,
@@ -63,7 +67,8 @@ export async function writeInvitations(
     ...program.sessions.map((s) => s.title),
   ]);
   const guard = (i: Invitation): Invitation => ({
-    subject: clean(i.subject),
+    // The page already marks these as drafts; the subject is what participants see.
+    subject: clean(i.subject).replace(/^\s*draft( invitation)?\s*[:\-–]\s*/i, ""),
     message: clean(i.message),
   });
   return { A: guard(data.A), B: guard(data.B), removedTitles };
