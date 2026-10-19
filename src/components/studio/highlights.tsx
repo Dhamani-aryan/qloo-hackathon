@@ -5,7 +5,7 @@ import type { BaselineProgram } from "@/lib/agent/baseline";
 import type { AgentDecision } from "@/lib/agent/orchestrator";
 import type { Program } from "@/lib/agent/program";
 import type { EngineResult, Scenario } from "@/lib/engine/types";
-import { ordinal } from "../ui";
+import { ordinal, shortLabel } from "../ui";
 
 /**
  * The three things a first-time visitor should see without clicking: why these bridges beat the
@@ -44,8 +44,9 @@ export function Highlights({
               .{" "}
             </>
           ) : null}
-          <b>{top.entity.name}</b> ranks {ordinal(top.pct.A ?? 0)} and {ordinal(top.pct.B ?? 0)} for
-          the two groups
+          <b>{top.entity.name}</b> ranks {ordinal(top.pct.A ?? 0)} for{" "}
+          {shortLabel(scenario.a.label)} and {ordinal(top.pct.B ?? 0)} for{" "}
+          {shortLabel(scenario.b.label)}
           {top.popularity !== null &&
           obvious?.popularity != null &&
           top.popularity < obvious.popularity ? (
