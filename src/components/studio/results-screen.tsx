@@ -5,6 +5,7 @@ import type { Scenario } from "@/lib/engine/types";
 import { Button, Dot, More, Note, Spinner, Title, cx, typeLabel } from "../ui";
 import { CommonGround } from "./bridges-screen";
 import { Comparison } from "./comparison";
+import { Highlights } from "./highlights";
 import { Invitations } from "./invitations";
 import type { Invitations as InvitationsData } from "@/lib/agent/invites";
 import { PlanSection, type ProgramVersion } from "./program-screen";
@@ -204,7 +205,7 @@ export function ResultsScreen({
           <Note tone="warn">
             <p className="font-medium text-ink">No strong common ground this time.</p>
             <p>
-              Add more varied favorites or try Familiar discovery. We haven’t lowered the evidence
+              Add more varied favourites or try Familiar discovery. We haven’t lowered the evidence
               threshold to fill the list.{" "}
               <Button variant="link" onClick={onEdit}>
                 Edit the groups
@@ -252,6 +253,15 @@ export function ResultsScreen({
 
       {engineOk && view.engine && section === "bridges" && (
         <div className="mt-10">
+          <Highlights
+            engine={view.engine}
+            scenario={scenario}
+            program={view.program}
+            baseline={view.baseline}
+            decisions={decisions(run)}
+            running={running}
+          />
+          <div className="mt-12" />
           <CommonGround
             scenario={scenario}
             engine={view.engine}
@@ -465,7 +475,7 @@ function Progress({ run, onStop }: { run: RunState; onStop: () => void }) {
                 ? "Stopped after"
                 : "Connection ended after"}{" "}
             <span className="figures">{Math.round(elapsed)}</span>s ·{" "}
-            <span className="figures">{calls}</span> Qloo query steps
+            <span className="figures">{calls}</span> Qloo queries
             {engine ? (
               <>
                 {" "}
