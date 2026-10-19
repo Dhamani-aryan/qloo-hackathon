@@ -26,7 +26,7 @@ It is also an MCP tool, so Claude, ChatGPT or any agent can call `find_common_gr
 
 ## How we built it
 
-Next.js 16 on Vercel, TypeScript, Upstash Redis. Qloo `/search`, `/v2/insights` (combined signal with explainability, a popularity-capped pass, and per-group scoring with `filter.results.entities`), `/v2/analysis/compare` for shared themes, and `/v2/tags` + `filter.tags` as an agent tool. The bridge engine is deterministic: the same input gives the same bridges, every claim is tied to an evidence record, and the model can't invent a bridge. The model (via the owner's ChatGPT subscription) interprets organizer notes, reviews evidence and chooses tools, writes the plan, critiques it and drafts invitations; a guard removes any title that isn't in Qloo's evidence. 185 automated tests run on synthetic Qloo data.
+Next.js 16 on Vercel, TypeScript, Upstash Redis. Qloo `/search`, `/v2/insights` (combined signal with explainability, a popularity-capped pass, and per-group scoring with `filter.results.entities`), `/v2/analysis/compare` for shared themes, and `/v2/tags` + `filter.tags` as an agent tool. The bridge engine is deterministic: the same input gives the same bridges, every claim is tied to an evidence record, and the model can't invent a bridge. The model (via the owner's ChatGPT subscription) interprets organizer notes, reviews evidence and chooses tools, writes the plan, critiques it and drafts invitations; a guard removes any title that isn't in Qloo's evidence. 186 automated tests run on synthetic Qloo data.
 
 ## Challenges
 

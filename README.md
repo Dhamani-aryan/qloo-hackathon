@@ -66,7 +66,7 @@ npm run dev -- -p 3005
 
 Open [localhost:3005](http://localhost:3005). If a deployment already shares an Upstash credential, set `CHATGPT_AUTH_STORE=redis` with that database instead of signing in again. See [docs/DEPLOY.md](docs/DEPLOY.md).
 
-Checks: `npm test` (185 tests on synthetic Qloo data), `npm run typecheck`, `npm run lint`, `npm run build`. Live checks: `npm run smoke -- <url>` and `npm run spike eval/run.ts`. Real API responses and evaluation outputs stay in git-ignored folders.
+Checks: `npm test` (186 tests on synthetic Qloo data), `npm run typecheck`, `npm run lint`, `npm run build`. Live checks: `npm run smoke -- <url>` and `npm run spike eval/run.ts`. Real API responses and evaluation outputs stay in git-ignored folders.
 
 ## Limits
 
