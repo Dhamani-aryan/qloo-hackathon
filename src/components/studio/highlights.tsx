@@ -57,9 +57,14 @@ export function Highlights({
       <Item term="What Qloo added">
         {stats ? (
           <>
-            Without Qloo, the same AI reused <b>{stats.baseline.reusedSeeds}</b> of your favourites
-            and named <b>{stats.baseline.unverified}</b> titles with no evidence. With it:{" "}
-            <b>{stats.ours.discovered}</b> new titles both groups support.
+            Without Qloo, the same AI named {stats.baseline.named} titles:{" "}
+            <b>{stats.baseline.reusedSeeds}</b> were your own favourites
+            {stats.baseline.unverified > 0 ? (
+              <>
+                , <b>{stats.baseline.unverified}</b> had no evidence
+              </>
+            ) : null}
+            . With Qloo: <b>{stats.ours.discovered}</b> new titles both groups support.
           </>
         ) : running ? (
           "Comparing with the same AI working without Qloo…"
