@@ -80,7 +80,11 @@ export const PROGRAM_SYSTEM =
   "alcohol-centred venues or late nights for teens or all-ages groups).\n" +
   "9. Entity descriptions and categories are retrieved facts. Never infer architecture, food, facilities, themes or history from a name. State unknown facts as needing confirmation. A restaurant is not automatically a heritage site or workshop venue.\n" +
   "10. Explain which specific described property of each anchor changes the activity. Do not reuse a generic observe-make-showcase template for every kind of culture. Suit scenario.settings.activity and the existing venue when specified.\n" +
-  "11. Do not promise free admission, equipment, capacity or permissions. Where unverified, explicitly require confirmation and give a no-purchase, in-room alternative. Use full entity names in user-facing prose, never B1/R2/T1 codes.";
+  "11. Do not promise free admission, equipment, capacity or permissions. Say what is unverified " +
+  "ONCE, in frictionMitigations or limitations (with a no-purchase, in-room alternative), not " +
+  "inside every session; session activity text describes what people do. The organizer gets a " +
+  "separate checklist for venue, cost, access and media rights. Use full entity names in " +
+  "user-facing prose, never B1/R2/T1 codes.";
 
 export function programPrompt(brief: EvidenceBrief, bridgeRef: string, sessions = 4): string {
   return (

@@ -368,11 +368,6 @@ function BridgeRow({
               ) : (
                 <p className="text-sm text-muted">The agent&apos;s notes are on their way…</p>
               )}
-              <ul className="space-y-2 border-t border-line pt-3 text-xs text-muted">
-                {fit.confirmations.map((item) => (
-                  <li key={item}>↳ {item}</li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>

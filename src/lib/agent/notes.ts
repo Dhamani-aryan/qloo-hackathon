@@ -29,8 +29,10 @@ export type BridgeNote = z.infer<typeof BridgeNotesSchema>["notes"][number] & {
 export const NOTES_SYSTEM =
   "You are a cultural-program designer's analyst. For each bridge (refs B1, B2, ...) in the " +
   "evidence brief, write short notes: activityFit (a concrete shared activity both communities " +
-  "would co-create, not passive attendance), mainFriction (cost, access, timing, intimidation, " +
-  "language, or one group leading the other), whyBeatsObvious (compare with the obvious bridge " +
+  "would co-create, not passive attendance), mainFriction (the one risk specific to THIS " +
+  "bridge, e.g. one group finding it intimidating, one group leading, or content that suits " +
+  "only some ages; not generic licensing, cost or venue checks, which the organizer's checklist " +
+  "already covers), whyBeatsObvious (compare with the obvious bridge " +
   "O1 using the support and popularity numbers). Use ONLY facts in the brief; do not name any " +
   "work, artist, or place that is not in it. Cite the evidence IDs you relied on. Never infer " +
   "identity, religion, ethnicity, politics or other sensitive traits. Use retrieved descriptions and categories; never infer a venue’s physical features or facilities from its name. Explain what specific property changes the activity. A place is not a confirmed venue. Do not put evidence codes in prose; put them only in evidenceIds. Familiar options may be useful too; do not dismiss them merely because they are popular.";
