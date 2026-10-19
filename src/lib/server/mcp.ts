@@ -164,6 +164,13 @@ export function summarize(r: AgentResult, unmatched: string[], appUrl: string): 
         `score ${b.bridgePotential}/100`,
     ),
   );
+  if (!program) {
+    lines.push(
+      "",
+      `No plan this time${r.warnings.length ? ` (${r.warnings.join("; ")})` : ""}. ` +
+        "The bridges above still stand; call the tool again to retry the plan.",
+    );
+  }
   if (program) {
     lines.push("", `## Plan: ${program.title}`, program.objective);
     for (const s of program.sessions) {
