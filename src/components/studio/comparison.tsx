@@ -52,7 +52,7 @@ export function Comparison({
           Two proposals. Different evidence.
         </Title>
         <p className="mt-4 max-w-2xl text-ink-2">
-          Same favorites, organizer notes, practical constraints and model. One proposal uses Qloo;
+          Same favourites, organizer notes, practical constraints and model. One proposal uses Qloo;
           the other uses the model’s knowledge. Source counts show provenance, not which program
           people will prefer.
         </p>
@@ -136,7 +136,7 @@ export function Comparison({
               ))}
             </ol>
             <p className="mt-3 text-xs text-muted">
-              Grey: a supplied favorite. <span className="text-warn">Amber</span>: a model proposal
+              Grey: a supplied favourite. <span className="text-warn">Amber</span>: a model proposal
               without Qloo validation. Unvalidated does not mean false or unsuitable; organizer
               feedback is still needed for both plans.
             </p>
